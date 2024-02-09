@@ -5,6 +5,7 @@ from requests.models import Response
 
 from sql_app.register.lineup import Lineups
 
+RUNNING = True
 
 def get_team_lineup(*, lineup_div: element.ResultSet) -> dict:
     """
@@ -61,6 +62,14 @@ def get_lineups() -> None:
 
         game_id += 1
 
+def main():
+    import time
+
+    while RUNNING:
+        get_lineups()
+        time.sleep(1)
+    
+    print("No longer fetch lineups.")
 
 if __name__ == "__main__":
     lineups = get_lineups()

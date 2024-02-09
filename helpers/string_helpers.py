@@ -1,7 +1,10 @@
 import os
 import re
 
+from global_implementations import constants
+from fuzzywuzzy import process
 from unidecode import unidecode
+
 
 RENAME = {
     "Nenê": "Nenê Hilario",
@@ -41,6 +44,21 @@ def convert_season_to_year(*, season:str) -> int:
 def construct_file_path(path: str) -> None:
     if not os.path.exists(path):
         os.makedirs(path)
+
+
+def find_closest_match(
+        *, 
+        value: str, 
+        search_list: list[str], 
+        match_threshold: int = constants.DEFAULT_MATCH_THRESHOLD
+    ) -> str:
+    matches: list[tuple[str, int]] = process.extract(value, search_list, limit=1)
+    valid_matches: list[tuple[str, int]] = list(filter(lambda match: match[1] >= match_threshold, matches))
+
+    if not valid_matches:
+        raise Exception(f"Could not find match for {value}. Closest match = {matches[0]}")
+    else:
+        return valid_matches[0][0]
 
 if __name__ == "__main__":
     # player_id = format_player_id("Terrance Mann")

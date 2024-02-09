@@ -30,7 +30,15 @@ class BaseTable:
     def model_class(self) -> BaseModel:
         return self.__class__.MODEL_CLASS
     
-    def get_record(self, *, id:str, **kwargs):
+
+    def get_all_records(self) -> list[BaseModel]:
+        records = []
+        for record in self.model_class.select():
+            records.append(self.serializer_class(**model_to_dict(record)).dict())
+            
+        return records
+
+    def get_record(self, *, id:str, **kwargs) -> BaseModel:
         id_field = kwargs.get("id_field", self.__class__.PKS[0])
         
         try:
@@ -107,3 +115,7 @@ class BaseTable:
         
         else:
             return self.insert_record(data=data)
+        
+    def get_column_values(self, *, column: str):
+        values = [value[column] for value in self.model_class.select().dicts()]
+        return values
