@@ -16,6 +16,7 @@ from data_scrape.career_stats import CareerStatsScraper
 from data_scrape.gamelog import GamelogScraper
 from data_scrape.lineups import LineupDataScraper
 from data_scrape.player_info import PlayerInfoScraper
+from sql_app.serializers.lineup import MatchupSerializer
 
 from string import ascii_lowercase
 
@@ -44,31 +45,34 @@ class BasketballRefScraper(threading.Thread):
 
     def run(self) -> None:
         while self.RUNNING:
-            matchups: list[tuple[str, str]] = get_matchups()
+            matchups: list[MatchupSerializer] = get_matchups()
 
             for matchup in matchups:
                 print(matchup)
-                for player_name in matchup:
+                for player_name in [matchup.home_player, matchup.away_player]:
                     player_id = get_player_id(player_name=player_name)
 
                     if not player_id:
                         continue
 
-                    # Get the CareerStats for the given player
-                    career_stats: CareerStatsScraper = CareerStatsScraper(
-                        player_id=player_id
-                    )
-                    career_data: pd.DataFrame = career_stats.get_data()
+                    try:
+                        # Get the CareerStats for the given player
+                        career_stats: CareerStatsScraper = CareerStatsScraper(
+                            player_id=player_id
+                        )
+                        career_data: pd.DataFrame = career_stats.get_data()
 
-                    # print(career_stats)
-                    # Get the players active seasons from the CareerStats
-                    seasons_active: list[int] = career_stats.get_active_seasons()
+                        # print(career_stats)
+                        # Get the players active seasons from the CareerStats
+                        seasons_active: list[int] = career_stats.get_active_seasons()
 
-                    # Get the player Gamelog
-                    player_gamelog: pd.DataFrame = get_player_full_gamelog(
-                        player_id=player_id, years_active=seasons_active
-                    )
-                    player_gamelog["player_name"] = player_name
+                        # Get the player Gamelog
+                        player_gamelog: pd.DataFrame = get_player_full_gamelog(
+                            player_id=player_id, years_active=seasons_active
+                        )
+                        player_gamelog["player_name"] = player_name
+                    except Exception as e:
+                        print(e)
 
             time.sleep(1)
         print("No longer scraping bref.")

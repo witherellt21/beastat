@@ -4,6 +4,7 @@ from helpers.string_helpers import find_closest_match
 from sql_app.register.lineup import Lineups
 from sql_app.register.player_info import PlayerInfos
 from sql_app.serializers.player_info import PlayerInfoSerializer
+from sql_app.serializers.lineup import MatchupSerializer
 from typing import Optional
 
 
@@ -39,7 +40,10 @@ def get_matchups() -> "list[tuple[str, str]]":
             matchups.extend(
                 list(
                     map(
-                        lambda position: (row[f"{position}_x"], row[f"{position}_y"]),
+                        lambda position: MatchupSerializer(
+                            home_player=row[f"{position}_x"],
+                            away_player=row[f"{position}_y"],
+                        ),
                         constants.BASKETBALL_POSITIONS,
                     )
                 )
