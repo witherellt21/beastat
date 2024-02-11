@@ -37,12 +37,17 @@ def get_lineups() -> None:
 
     # Initialize a dataframe to contain all of the matchups lineup info for the day
     # lineups: pd.DataFrame = pd.DataFrame(columns=["game_id", "team", "opp", "home", "confirmed", "PG","SG","SF","PF","C","Bench"])
+    lineups = []
+
     game_id: int = 0
     for matchup_div in matchup_divs:
         # Get the home and away team abbreviations
         away_team_span, home_team_span = matchup_div.find_all("span", class_="shrt")
         away_team_name: str = away_team_span.text
         home_team_name: str = home_team_span.text
+
+        lineups.append(away_team_name)
+        lineups.append(home_team_name)
 
         # Get the divs containing the lineup info for the home and away teams
         away_team_lineup_div: element.Tag = matchup_div.find("div", "blk away-team")
@@ -82,6 +87,10 @@ def get_lineups() -> None:
         Lineups.update_or_insert_record(data=home_team_data)
 
         game_id += 1
+
+    for record in Lineups.get_all_records():
+        if record.team not in lineups:
+            Lineups.delete_record(query={"team": record.team})
 
 
 class LineupDataScraper(threading.Thread):

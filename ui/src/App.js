@@ -1,6 +1,8 @@
 import './App.css';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import Home from "./pages/Home";
+import Matchup from "./pages/Matchup"
+
 
 function App() {
   return (
@@ -25,6 +27,7 @@ function App() {
         </nav>
         <Routes>
           <Route path="/" exact Component={Home} />
+          <Route path="/matchup/:id" exact Component={Matchup} />
         </Routes>
       </Router>
     </div>

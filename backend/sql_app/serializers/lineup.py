@@ -1,4 +1,5 @@
 from pydantic import BaseModel as BaseSerializer
+from typing import Optional
 
 
 class LineupSerialzer(BaseSerializer):
@@ -18,3 +19,5 @@ class LineupSerialzer(BaseSerializer):
 class MatchupSerializer(BaseSerializer):
     home_player: str
     away_player: str
+    home_player_id: Optional[str]
+    away_player_id: Optional[str]

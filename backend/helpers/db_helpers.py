@@ -8,8 +8,9 @@ from sql_app.serializers.lineup import MatchupSerializer
 from typing import Optional
 
 
-def get_matchups() -> "list[tuple[str, str]]":
+def get_matchups() -> "list[MatchupSerializer]":
     current_lineups = Lineups.get_all_records()
+    current_lineups = [lineup.dict() for lineup in current_lineups]
 
     lineup_data = pd.DataFrame(current_lineups)
 
@@ -43,6 +44,12 @@ def get_matchups() -> "list[tuple[str, str]]":
                         lambda position: MatchupSerializer(
                             home_player=row[f"{position}_x"],
                             away_player=row[f"{position}_y"],
+                            home_player_id=get_player_id(
+                                player_name=row[f"{position}_x"]
+                            ),
+                            away_player_id=get_player_id(
+                                player_name=row[f"{position}_y"]
+                            ),
                         ),
                         constants.BASKETBALL_POSITIONS,
                     )

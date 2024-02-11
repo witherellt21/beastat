@@ -2,8 +2,8 @@ from fastapi import FastAPI, Depends
 from fastapi.routing import APIRoute
 from fastapi.middleware.cors import CORSMiddleware
 from routers import matchups
+from routers import gamelogs
 
-from data_scrape import lineups
 import time
 import threading
 
@@ -103,7 +103,7 @@ bref_scraper.start()
 # bref_thread = threading.Thread(target=scrape_bref)
 # bref_thread.start()
 
-app = FastAPI()
+app = FastAPI(debug=True)
 
 origins = ["*"]
 
@@ -116,6 +116,7 @@ app.add_middleware(
 )
 
 app.include_router(matchups.router, prefix="/matchups", tags=["matchups"])
+app.include_router(gamelogs.router, prefix="/gamelogs", tags=["gamelogs"])
 
 
 @app.get("/")

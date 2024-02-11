@@ -34,7 +34,7 @@ class BaseTable:
     def get_all_records(self) -> "list[BaseModel]":
         records = []
         for record in self.model_class.select():
-            records.append(self.serializer_class(**model_to_dict(record)).dict())
+            records.append(self.serializer_class(**model_to_dict(record)))
 
         return records
 
@@ -51,6 +51,17 @@ class BaseTable:
         except Exception as e:
             print(e)
             return None
+
+    def filter_records(self, **kwargs) -> "list[BaseSerializer]":
+        records: self.model_class = self.model_class.select().where(
+            *[getattr(self.model_class, key) == value for key, value in kwargs.items()]
+        )
+        serialized_objects = []
+        for record in records:
+            record_as_dict = model_to_dict(record)
+            serialized_objects.append(self.serializer_class(**record_as_dict))
+
+        return serialized_objects
 
     def insert_record(self, *, data: dict) -> Optional[BaseSerializer]:
         """
@@ -119,3 +130,15 @@ class BaseTable:
     def get_column_values(self, *, column: str):
         values = [value[column] for value in self.model_class.select().dicts()]
         return values
+
+    def delete_record(self, **kwargs):
+        query = kwargs.get("query", self.__class__.PKS)
+
+        delete_query = self.model_class.delete().where(
+            *[
+                getattr(self.model_class, key) == query.get(key)
+                for key, value in query.items()
+            ]
+        )
+
+        return delete_query.execute()
