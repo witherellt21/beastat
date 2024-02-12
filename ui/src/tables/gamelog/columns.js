@@ -2,21 +2,30 @@ import { createColumnHelper } from '@tanstack/react-table';
 
 const columnHelper = createColumnHelper();
 
+// let points_sum = 0
+// for (let i = 0; i <= data.length; i++) {
+//     points_sum += data[i].age
+// }
+
 export const columnDef = [
     // columnHelper.display({
     //     id: 'player_id',
     //     header: () => <span>Player ID</span>,
     //     cell: info => info.getValue(),
     // }),
+
+
+
     columnHelper.accessor('player_id', {
         cell: info => info.getValue(),
         header: () => <span className='px-8'>Player ID</span>,
-        // footer: props => props.column.id,
+        footer: props => props.column.id,
     }),
     columnHelper.accessor('Date', {
         cell: info => info.getValue(),
         header: () => <span>Date</span>,
         // footer: props => props.column.id,
+        footer: "FOOTER"
     }),
     columnHelper.accessor('Tm', {
         cell: info => info.getValue(),
@@ -41,6 +50,9 @@ export const columnDef = [
     columnHelper.accessor('PTS', {
         cell: info => info.getValue(),
         header: () => <span className='px-4'>PTS</span>,
+        // aggregationFn: 'mean',
+        // AggregatedCell: ({ cell }) => <div>Team Score: {cell.getValue()}</div>,
+        // footer: props => props
     }),
     columnHelper.accessor('AST', {
         cell: info => info.getValue(),

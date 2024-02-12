@@ -17,6 +17,7 @@ from data_scrape.gamelog import GamelogScraper
 from data_scrape.lineups import LineupDataScraper
 from data_scrape.player_info import PlayerInfoScraper
 from sql_app.serializers.matchup import MatchupSerializer
+from sql_app.register.matchup import Matchups
 
 from string import ascii_lowercase
 
@@ -39,15 +40,19 @@ def get_player_full_gamelog(
 
 
 class BasketballRefScraper(threading.Thread):
-    def __init__(self) -> None:
+    def __init__(self, **kwargs: dict) -> None:
         self.RUNNING: bool = True
+        self.preset_matchups = kwargs.get("preset_matchups", None)
         super().__init__()
 
     def run(self) -> None:
         while self.RUNNING:
-            matchups: list[MatchupSerializer] = get_matchups()
+            matchups: list[MatchupSerializer] = (
+                self.preset_matchups or Matchups.get_all_records()
+            )
 
             for matchup in matchups:
+                print(matchup)
                 for player_name in [matchup.home_player, matchup.away_player]:
                     player_id = get_player_id(player_name=player_name)
 
@@ -95,6 +100,9 @@ class InfoScraper(threading.Thread):
 
 lineup_scraper = LineupDataScraper()
 lineup_scraper.start()
+# bref_scraper = BasketballRefScraper(
+#     preset_matchups=[Matchups.get_record(query={"game_id": 4, "position": "SF"})]
+# )
 bref_scraper = BasketballRefScraper()
 bref_scraper.start()
 # info_scraper = InfoScraper()

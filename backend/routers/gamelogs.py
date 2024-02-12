@@ -21,7 +21,7 @@ router = APIRouter()
 @router.get("/{id}", response_model=List[GamelogSerializer])
 async def get_gamelog_by_player_id(id: str):
     try:
-        return Gamelogs.filter_records(player_id=id)
+        return Gamelogs.filter_records(query={"player_id": id})
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

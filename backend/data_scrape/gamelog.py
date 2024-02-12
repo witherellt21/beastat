@@ -106,5 +106,5 @@ class GamelogScraper(AbstractBaseScraper):
 
 if __name__ == "__main__":
 
-    gamelog = GamelogScraper(player_id="jamesle01", year=2024)
+    gamelog = GamelogScraper(player_id="murrayja01", year=2024)
     print(gamelog.get_data())

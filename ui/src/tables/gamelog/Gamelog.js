@@ -9,7 +9,9 @@ import axios from 'axios';
 import { columnDef } from './columns'
 
 
-function Gamelog() {
+function Gamelog(props) {
+
+    // let player_id = props.
 
     const [gamelogData, sethomePlayerGamelog] = useState({});
     const [sorting, setSorting] = useState([{
@@ -30,11 +32,10 @@ function Gamelog() {
 
 
     useEffect(() => {
-        axios.get(`http://localhost:3001/gamelogs/jamesle01`).then((response) => {
+        axios.get(`http://localhost:3001/matchups/${props.matchup_id}/stats/${props.home_away}`).then((response) => {
             sethomePlayerGamelog(response.data)
-            console.log(response.data)
         });
-    }, []);
+    }, [props.matchup_id, props.home_away]);
 
     return (
         <div className='flex justify-center'>
@@ -71,6 +72,27 @@ function Gamelog() {
                         );
                     })}
                 </tbody>
+                <tfoot>
+                    {tableInstance.getFooterGroups().map((footerElement) => {
+                        // console.log(footerElement)
+                        return <tr key={footerElement.id} className='border-2 border-black'>
+                            {footerElement.headers.map((columnElement) => {
+                                // console.log(columnElement.column.getAggregationFn())
+                                return (
+                                    <th key={columnElement.id} colSpan={columnElement.colSpan}
+                                        className='border-2 border-black text-xs'
+                                    >
+                                        {
+                                            flexRender(
+                                                columnElement.column.columnDef.footer,
+                                                columnElement.getContext()
+                                            )}
+                                    </th>
+                                )
+                            })}
+                        </tr>
+                    })}
+                </tfoot>
             </table>
         </div >
     )

@@ -121,6 +121,7 @@ class CareerStatsScraper(AbstractBaseScraper):
         data = super().clean(data=data)
 
         data = data.dropna(subset="Season")
+        data = data.dropna(subset="G")
 
         data["Awards"] = data["Awards"].fillna("")
 
@@ -158,6 +159,6 @@ class CareerStatsScraper(AbstractBaseScraper):
 
 
 if __name__ == "__main__":
-    player_info: CareerStatsScraper = CareerStatsScraper(player_id="zubaciv01")
+    player_info: CareerStatsScraper = CareerStatsScraper(player_id="portemi01")
     data: pd.DataFrame = player_info.get_data()
     print(data)
