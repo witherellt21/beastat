@@ -27,7 +27,8 @@ function App() {
         </nav>
         <Routes>
           <Route path="/" exact Component={Home} />
-          <Route path="/matchup/:id" exact Component={Matchup} />
+          {/* <Route path="/matchup/:id" exact Component={Matchup} /> */}
+          <Route path="/matchup" exact Component={Matchup} />
         </Routes>
       </Router>
     </div>

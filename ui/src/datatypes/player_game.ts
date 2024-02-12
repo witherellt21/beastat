@@ -1,0 +1,34 @@
+type PlayerGame = {
+    player_id: string
+    G: number
+    Date: Date
+    Age: string
+    Tm: string
+    Opp: string
+    streak: string
+    GS: number
+    MP: number
+    FG: number
+    FGA: number
+    FG_perc: number
+    THP: number
+    THPA: number
+    THP_perc: number
+    FT: number
+    FTA: number
+    FT_perc: number
+    ORB: number
+    DRB: number
+    TRB: number
+    AST: number
+    STL: number
+    BLK: number
+    TOV: number
+    PF: number
+    PTS: number
+    GmSc: number
+    PA: number
+    PR: number
+    RA: number
+    PRA: number
+}
