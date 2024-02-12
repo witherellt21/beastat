@@ -16,7 +16,7 @@ from data_scrape.career_stats import CareerStatsScraper
 from data_scrape.gamelog import GamelogScraper
 from data_scrape.lineups import LineupDataScraper
 from data_scrape.player_info import PlayerInfoScraper
-from sql_app.serializers.lineup import MatchupSerializer
+from sql_app.serializers.matchup import MatchupSerializer
 
 from string import ascii_lowercase
 
@@ -48,7 +48,6 @@ class BasketballRefScraper(threading.Thread):
             matchups: list[MatchupSerializer] = get_matchups()
 
             for matchup in matchups:
-                print(matchup)
                 for player_name in [matchup.home_player, matchup.away_player]:
                     player_id = get_player_id(player_name=player_name)
 

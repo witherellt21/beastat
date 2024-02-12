@@ -25,9 +25,9 @@ class GamelogScraper(AbstractBaseScraper):
         "3P%": "THP_perc",
         "+/-": "plus_minus",
     }
-    DROP_COLUMNS: list[str] = ["Unnamed: 5"]
+    DROP_COLUMNS: "list[str]" = ["Unnamed: 5"]
     TRANSFORMATIONS = {"MP": lambda x: convert_minutes_to_float(x)}
-    COLUMN_TYPES: dict[str:str] = {
+    COLUMN_TYPES: "dict[str:str]" = {
         "Tm": "str",
         "Opp": "str",
         "PTS": "float",
@@ -56,8 +56,8 @@ class GamelogScraper(AbstractBaseScraper):
         "GmSc": "float",
         "plus_minus": "float",
     }
-    DATETIME_COLUMNS: dict[str:str] = {"Date": "%Y-%m-%d"}
-    STAT_AUGMENTATIONS: dict[str:str] = {
+    DATETIME_COLUMNS: "dict[str:str]" = {"Date": "%Y-%m-%d"}
+    STAT_AUGMENTATIONS: "dict[str:str]" = {
         "PA": "PTS+AST",
         "PR": "PTS+TRB",
         "RA": "TRB+AST",
@@ -85,7 +85,7 @@ class GamelogScraper(AbstractBaseScraper):
         return os.path.join(self.full_save_path, f"{self.year}.csv")
 
     def select_dataset_from_html_tables(
-        self, *, datasets: list[pd.DataFrame]
+        self, *, datasets: "list[pd.DataFrame]"
     ) -> pd.DataFrame:
         return list(filter(lambda x: x.shape[1] == 30, datasets))[0]
 
@@ -102,10 +102,6 @@ class GamelogScraper(AbstractBaseScraper):
         data = super().configure_data(data=data)
         data["player_id"] = self.player_id
         return data.fillna(np.nan).replace([np.nan], [None])
-
-    def cache_data(self, *, data: pd.DataFrame) -> None:
-        print(data)
-        return super().cache_data(data=data)
 
 
 if __name__ == "__main__":

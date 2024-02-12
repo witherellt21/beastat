@@ -143,8 +143,6 @@ class CareerStatsScraper(AbstractBaseScraper):
             # Delete duplicate seasons (player played for multiple teams in same season)
             season_stats: pd.DataFrame = season_stats.drop_duplicates(subset="Season")
 
-            print(season_stats)
-
             # Get the seasons active by converting seasons column to a value list
             seasons_active: list[str] = season_stats["Season"].to_list()
             seasons_active: list[int] = list(

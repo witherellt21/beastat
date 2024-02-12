@@ -4,8 +4,12 @@ from bs4 import element
 from requests.models import Response
 
 from sql_app.register.lineup import Lineups
+from sql_app.register.matchup import Matchups
 import threading
 import time
+
+from helpers.db_helpers import get_matchups
+from helpers.db_helpers import get_player_id
 
 
 RUNNING = True
@@ -71,7 +75,8 @@ def get_lineups() -> None:
             "home": False,
             "confirmed": away_team_lineup_confirmed,
         }
-        away_team_data.update(get_team_lineup(lineup_div=away_team_lineup_div))
+        away_team_lineup = get_team_lineup(lineup_div=away_team_lineup_div)
+        away_team_data.update(away_team_lineup)
         # lineups.loc[len(lineups)]: pd.Series = away_team_data
         Lineups.update_or_insert_record(data=away_team_data)
 
@@ -82,15 +87,37 @@ def get_lineups() -> None:
             "home": True,
             "confirmed": home_team_lineup_confirmed,
         }
-        home_team_data.update(get_team_lineup(lineup_div=home_team_lineup_div))
+        home_team_lineup = get_team_lineup(lineup_div=home_team_lineup_div)
+        home_team_data.update(home_team_lineup)
         # lineups.loc[len(lineups)]: pd.Series = home_team_data
         Lineups.update_or_insert_record(data=home_team_data)
+
+        for key, value in home_team_lineup.items():
+            matchup = {
+                "game_id": game_id,
+                "position": key,
+                "home_player": value,
+                "away_player": away_team_lineup[key],
+                "home_player_id": get_player_id(player_name=value),
+                "away_player_id": get_player_id(player_name=away_team_lineup[key]),
+            }
+
+            try:
+                Matchups.update_or_insert_record(
+                    data=matchup, id_fields=["game_id", "position"]
+                )
+            except Exception as e:
+                print("MATCHUP ERROR ", e)
 
         game_id += 1
 
     for record in Lineups.get_all_records():
         if record.team not in lineups:
             Lineups.delete_record(query={"team": record.team})
+
+    for record in Matchups.get_all_records():
+        if record.game_id >= game_id:
+            Matchups.delete_record(query={"id": record.id})
 
 
 class LineupDataScraper(threading.Thread):
@@ -101,6 +128,7 @@ class LineupDataScraper(threading.Thread):
     def run(self) -> None:
         while self.RUNNING:
             get_lineups()
+
             time.sleep(1)
 
 

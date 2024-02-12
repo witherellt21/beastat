@@ -14,10 +14,3 @@ class LineupSerialzer(BaseSerializer):
     PF: str
     C: str
     # Bench: Optional[list]
-
-
-class MatchupSerializer(BaseSerializer):
-    home_player: str
-    away_player: str
-    home_player_id: Optional[str]
-    away_player_id: Optional[str]
