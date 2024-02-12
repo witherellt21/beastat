@@ -9,7 +9,6 @@ import threading
 
 import pandas as pd
 
-from helpers.db_helpers import get_matchups
 from helpers.db_helpers import get_player_id
 
 from data_scrape.career_stats import CareerStatsScraper

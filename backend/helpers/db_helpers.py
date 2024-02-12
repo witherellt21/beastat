@@ -11,64 +11,6 @@ from sql_app.serializers.gamelog import GamelogSerializer
 from typing import Optional
 
 
-def get_matchups() -> "list[MatchupSerializer]":
-    """
-    Get all the matchups from the
-    """
-    current_lineups = Lineups.get_all_records()
-    current_lineups = [lineup.dict() for lineup in current_lineups]
-
-    lineup_data = pd.DataFrame(current_lineups)
-
-    if not lineup_data.empty:
-        # Merge the lineups for each game to get the opposing teams lineup
-        lineups_matchups: pd.DataFrame = (
-            lineup_data.merge(
-                lineup_data, left_on=["game_id", "team"], right_on=["game_id", "opp"]
-            )
-            .drop(
-                labels=[
-                    "team_x",
-                    "opp_x",
-                    "home_x",
-                    "confirmed_x",
-                    "team_y",
-                    "opp_y",
-                    "home_y",
-                    "confirmed_y",
-                ],
-                axis="columns",
-            )
-            .drop_duplicates(subset="game_id")
-        )
-
-        matchups: list = []
-        for index, row in lineups_matchups.iterrows():
-            matchups.extend(
-                list(
-                    map(
-                        lambda position: MatchupSerializer(
-                            game_id=row["game_id"],
-                            position=position,
-                            home_player=row[f"{position}_x"],
-                            away_player=row[f"{position}_y"],
-                            home_player_id=get_player_id(
-                                player_name=row[f"{position}_x"]
-                            ),
-                            away_player_id=get_player_id(
-                                player_name=row[f"{position}_y"]
-                            ),
-                        ),
-                        constants.BASKETBALL_POSITIONS,
-                    )
-                )
-            )
-
-        return matchups
-    else:
-        return []
-
-
 def get_matchup_gamelog(
     *, id: str, home_player: bool = True
 ) -> "list[GamelogSerializer]":

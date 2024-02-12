@@ -11,7 +11,6 @@ import uuid
 import pandas as pd
 
 from global_implementations import constants
-from helpers.db_helpers import get_matchups
 from helpers.db_helpers import get_matchup_gamelog
 from sql_app.register.lineup import Lineups
 from sql_app.register.matchup import Matchups

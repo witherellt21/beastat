@@ -9,11 +9,11 @@ import axios from 'axios';
 import { columnDef } from './columns'
 
 
-function Gamelog(props) {
+function MatchupGamelog(props) {
 
     // let player_id = props.
 
-    const [gamelogData, sethomePlayerGamelog] = useState({});
+    const [matchupData, setMatchupData] = useState({});
     const [sorting, setSorting] = useState([{
         desc: false,
         id: "Date"
@@ -21,7 +21,7 @@ function Gamelog(props) {
 
     const tableInstance = useReactTable({
         columns: columnDef,
-        data: gamelogData,
+        data: matchupData,
         state: {
             sorting,
         },
@@ -33,12 +33,15 @@ function Gamelog(props) {
 
     useEffect(() => {
         axios.get(`http://localhost:3001/matchups/${props.matchup_id}/stats/${props.home_away}`).then((response) => {
-            sethomePlayerGamelog(response.data)
+            setMatchupData(response.data)
         });
     }, [props.matchup_id, props.home_away]);
 
     return (
-        <div className='flex justify-center'>
+        <div className='flex flex-col justify-center'>
+            <h1 className='py-2 font-bold'>
+                Matchup Gamelog
+            </h1>
             <table className='table-auto'>
                 <thead>
                     {tableInstance.getHeaderGroups().map((headerElement) => {
@@ -74,10 +77,8 @@ function Gamelog(props) {
                 </tbody>
                 <tfoot>
                     {tableInstance.getFooterGroups().map((footerElement) => {
-                        // console.log(footerElement)
                         return <tr key={footerElement.id} className='border-2 border-black'>
                             {footerElement.headers.map((columnElement) => {
-                                // console.log(columnElement.column.getAggregationFn())
                                 return (
                                     <th key={columnElement.id} colSpan={columnElement.colSpan}
                                         className='border-2 border-black text-xs'
@@ -98,4 +99,4 @@ function Gamelog(props) {
     )
 }
 
-export default Gamelog;
+export default MatchupGamelog;

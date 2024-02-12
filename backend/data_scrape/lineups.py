@@ -8,7 +8,6 @@ from sql_app.register.matchup import Matchups
 import threading
 import time
 
-from helpers.db_helpers import get_matchups
 from helpers.db_helpers import get_player_id
 
 
