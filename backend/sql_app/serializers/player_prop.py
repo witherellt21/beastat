@@ -11,4 +11,4 @@ class PlayerPropSerializer(BaseSerializer):
     implied_odds_over: float
     odds_under: int
     implied_odds_under: float
-    timestampe: datetime.datetime
+    timestamp: datetime.datetime

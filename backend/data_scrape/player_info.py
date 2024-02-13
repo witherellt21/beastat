@@ -104,12 +104,12 @@ class PlayerInfoScraper(AbstractBaseScraper):
     DROP_COLUMNS: "list[str]" = ["colleges"]
     TABLE: PlayerInfo = PlayerInfos
 
-    def __init__(self, *, last_initial: str):
-        super().__init__(player_id=last_initial)
-
     @property
     def download_url(self) -> str:
-        return f"http://www.basketball-reference.com/players/{self.player_id}/"
+        return "http://www.basketball-reference.com/players/{}.html"
+
+    def format_url_args(self, *, identifier: str) -> "list[str]":
+        return [identifier]
 
     def select_dataset_from_html_tables(
         self, *, datasets: "list[pd.DataFrame]"

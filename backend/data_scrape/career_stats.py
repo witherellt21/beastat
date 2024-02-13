@@ -152,7 +152,6 @@ class CareerStatsScraper(AbstractBaseScraper):
                 )
             )
         except Exception as e:
-            print(self.data)
             raise e
 
         return seasons_active

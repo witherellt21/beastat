@@ -4,7 +4,7 @@ import {
     useReactTable,
     getCoreRowModel,
 } from '@tanstack/react-table';
-// import axios from 'axios';
+import axios from 'axios';
 import { propLinesColumns } from './columns'
 
 
@@ -151,9 +151,10 @@ function PropLines(props) {
 
 
     useEffect(() => {
-        // axios.get(`http://localhost:3001/proplines/${props.player_id}`).then((response) => {
-        //     setPropData(response.data)
-        // });
+        axios.get(`http://localhost:3001/player-props/${props.player_id}`).then((response) => {
+            setPropData(response.data)
+            console.log(response.data)
+        });
         // setPropData({ player_id: props.player_id, ...exampleData })
         // console.log(propData)
     }, [props.player_id]);
@@ -163,6 +164,9 @@ function PropLines(props) {
             <h1 className='py-2 font-bold'>
                 Prop Lines
             </h1>
+            <button onClick={() => {
+                console.log(propData)
+            }}>Check</button>
             <table className='table-auto'>
                 <thead>
                     {tableInstance.getHeaderGroups().map((headerElement) => {

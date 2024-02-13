@@ -25,7 +25,9 @@ class BaseTable:
 
         self.db = db
 
-        if self.db:
+        # if self.db:
+        if not self.db == None:
+            print(f"Creating table for {self.__class__.__name__}.")
             self.db.create_tables([self.model_class])
 
     @property
@@ -80,6 +82,9 @@ class BaseTable:
         for record in records:
             serialized = self.serializer_class(**model_to_dict(record))
             serialized_objects.append(serialized.dict() if as_df else serialized)
+
+        # if as_df:
+        #     print(serialized_objects)
 
         return pd.DataFrame(serialized_objects) if as_df else serialized_objects
 

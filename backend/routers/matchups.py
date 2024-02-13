@@ -54,15 +54,20 @@ async def retrieve_matchup(id: str):
 # RetrieveMatchupStats
 ############################
 
+import traceback
+
 
 @router.get("/{id}/stats/{home_away}", response_model=List[GamelogSerializer])
 async def retrieve_matchup_stats(id: str, home_away: str):
     try:
         if home_away == "home":
-            return get_matchup_gamelog(id=id)
+            matchup = get_matchup_gamelog(id=id)
         else:
-            return get_matchup_gamelog(id=id, home_player=False)
+            matchup = get_matchup_gamelog(id=id, home_player=False)
+
+        return matchup
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error processing request: {e}",

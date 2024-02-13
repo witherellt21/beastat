@@ -20,6 +20,7 @@ from sql_app.serializers.matchup import MatchupSerializer
 from sql_app.register.matchup import Matchups
 
 from string import ascii_lowercase
+import traceback
 
 RUNNING = True
 
@@ -47,19 +48,19 @@ class BasketballRefScraper(threading.Thread):
 
     def run(self) -> None:
         while self.RUNNING:
-            matchups: list[MatchupSerializer] = (
-                self.preset_matchups or Matchups.get_all_records()
-            )
+            try:
+                matchups: list[MatchupSerializer] = (
+                    self.preset_matchups or Matchups.get_all_records()
+                )
 
-            for matchup in matchups:
-                print(matchup)
-                for player_name in [matchup.home_player, matchup.away_player]:
-                    player_id = get_player_id(player_name=player_name)
+                for matchup in matchups:
+                    print(matchup)
+                    for player_name in [matchup.home_player, matchup.away_player]:
+                        player_id = get_player_id(player_name=player_name)
 
-                    if not player_id:
-                        continue
+                        if not player_id:
+                            continue
 
-                    try:
                         # Get the CareerStats for the given player
                         career_stats: CareerStatsScraper = CareerStatsScraper(
                             player_id=player_id
@@ -75,8 +76,11 @@ class BasketballRefScraper(threading.Thread):
                             player_id=player_id, years_active=seasons_active
                         )
                         player_gamelog["player_name"] = player_name
-                    except Exception as e:
-                        print(e)
+
+            except Exception as e:
+                print(
+                    f"Error occured in running thread for {self.__class__.__name__}. {traceback.format_exc()}"
+                )
 
             time.sleep(1)
         print("No longer scraping bref.")
@@ -98,13 +102,13 @@ class InfoScraper(threading.Thread):
             player_info.get_data()
 
 
-lineup_scraper = LineupDataScraper()
-lineup_scraper.start()
-# bref_scraper = BasketballRefScraper(
-#     preset_matchups=[Matchups.get_record(query={"game_id": 4, "position": "SF"})]
-# )
-bref_scraper = BasketballRefScraper()
-bref_scraper.start()
+# lineup_scraper = LineupDataScraper()
+# lineup_scraper.start()
+# # bref_scraper = BasketballRefScraper(
+# #     preset_matchups=[Matchups.get_record(query={"game_id": 4, "position": "SF"})]
+# # )
+# bref_scraper = BasketballRefScraper()
+# bref_scraper.start()
 
 player_props_scraper = PlayerPropsScraper()
 player_props_scraper.start()
@@ -129,6 +133,7 @@ app.add_middleware(
 
 app.include_router(matchups.router, prefix="/matchups", tags=["matchups"])
 app.include_router(gamelogs.router, prefix="/gamelogs", tags=["gamelogs"])
+app.include_router(gamelogs.router, prefix="/player-props", tags=["player-props"])
 
 
 @app.get("/")

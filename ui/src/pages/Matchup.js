@@ -13,8 +13,12 @@ function Matchup() {
     const [homeAwayToggle, setHomeAwayToggle] = useState(true);
 
     useEffect(() => {
-        axios.get(`http://localhost:3001/matchups/${id}`).then((response) => {
-            setMatchup(response.data)
+        axios.get(`http://localhost:3001/matchups/${id}`).then(async (response) => {
+            await setMatchup(response.data)
+            console.log(response.data)
+        }).catch((err) => {
+            console.log(err);
+            return null;
         });
     }, [id]);
 
@@ -55,6 +59,9 @@ function Matchup() {
                 </div>
                 {/* This div contains the MatchupGamelog for the selected player. */}
                 <div className='flex justify-center'>
+                    <button onClick={() => {
+                        console.log(matchup)
+                    }}>Check</button>
                     {homeAwayToggle
                         ? < PropLines player_id={matchup.home_player_id} />
                         : <PropLines player_id={matchup.away_player_id} />
