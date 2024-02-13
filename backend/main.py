@@ -15,6 +15,7 @@ from data_scrape.career_stats import CareerStatsScraper
 from data_scrape.gamelog import GamelogScraper
 from data_scrape.lineups import LineupDataScraper
 from data_scrape.player_info import PlayerInfoScraper
+from data_scrape.player_props import PlayerPropsScraper
 from sql_app.serializers.matchup import MatchupSerializer
 from sql_app.register.matchup import Matchups
 
@@ -104,6 +105,11 @@ lineup_scraper.start()
 # )
 bref_scraper = BasketballRefScraper()
 bref_scraper.start()
+
+player_props_scraper = PlayerPropsScraper()
+player_props_scraper.start()
+
+
 # info_scraper = InfoScraper()
 # info_scraper.start()
 # bref_thread = threading.Thread(target=scrape_bref)

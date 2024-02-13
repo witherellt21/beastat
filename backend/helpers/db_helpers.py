@@ -1,7 +1,6 @@
 import pandas as pd
 from global_implementations import constants
 from helpers.string_helpers import find_closest_match
-from sql_app.register.lineup import Lineups
 from sql_app.register.matchup import Matchups
 from sql_app.register.gamelog import Gamelogs
 from sql_app.register.player_info import PlayerInfos
@@ -60,23 +59,25 @@ def get_matchup_gamelog(
 
 
 def get_player_id(*, player_name: str) -> Optional[str]:
-    player: PlayerInfoSerializer = PlayerInfos.get_record(query={"name": player_name})
+    first_name, last_name = player_name.split(" ")[:2]
+    return f"{last_name.lower()[:5]}{first_name.lower()[:2]}01"
+    # player: PlayerInfoSerializer = PlayerInfos.get_record(query={"name": player_name})
 
-    if not player:
-        player_names: list[str] = PlayerInfos.get_column_values(column="name")
+    # if not player:
+    #     player_names: list[str] = PlayerInfos.get_column_values(column="name")
 
-        player_name_match: str = find_closest_match(
-            value=player_name, search_list=player_names
-        )
+    #     player_name_match: str = find_closest_match(
+    #         value=player_name, search_list=player_names
+    #     )
 
-        if not player_name_match:
-            return None
+    #     if not player_name_match:
+    #         return None
 
-        player: PlayerInfoSerializer = PlayerInfos.get_record(
-            query={"name": player_name_match}
-        )
+    #     player: PlayerInfoSerializer = PlayerInfos.get_record(
+    #         query={"name": player_name_match}
+    #     )
 
-    return player.player_id
+    # return player.player_id
 
 
 if __name__ == "__main__":

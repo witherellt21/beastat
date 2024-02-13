@@ -24,7 +24,9 @@ class BaseTable:
             raise Exception("Must specify the SERIALIZER_CLASS class attribute.")
 
         self.db = db
-        self.db.create_tables([self.model_class])
+
+        if self.db:
+            self.db.create_tables([self.model_class])
 
     @property
     def serializer_class(self) -> BaseSerializer:

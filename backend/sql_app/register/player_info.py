@@ -1,3 +1,4 @@
+import peewee
 from sql_app.models.player_info import College
 from sql_app.models.player_info import PlayerInfo
 from sql_app.serializers.player_info import CollegeSerializer
@@ -6,17 +7,26 @@ from sql_app.serializers.player_info import PlayerInfoSerializer
 from sql_app.database import DB
 from sql_app.register.base import BaseTable
 
+
 class PlayerInfoTable(BaseTable):
     MODEL_CLASS = PlayerInfo
     SERIALIZER_CLASS = PlayerInfoSerializer
     PKS = ["player_id"]
-        
+
+
 class CollegeTable(BaseTable):
     MODEL_CLASS = College
     SERIALIZER_CLASS = CollegeSerializer
 
+    # try:
+
+
 PlayerInfos = PlayerInfoTable(DB)
 Colleges = CollegeTable(DB)
+
+
+# except peewee.OperationalError as e:
+#     print("Unable to connect to database for PlayerInfo.")
 
 # def populate_db_from_csv():
 #     # with open('saved_tables\\player_data\\player_ids\\a.csv') as f:

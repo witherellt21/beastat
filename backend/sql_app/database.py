@@ -16,4 +16,5 @@ try:
 
     DB.connect()
 except:
+    DB = None
     print("Unable to connect to DB.")

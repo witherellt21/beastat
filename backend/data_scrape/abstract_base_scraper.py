@@ -31,7 +31,8 @@ class AbstractBaseScraper(ABC):
     RENAME_COLUMNS: "dict[str:str]" = {}
     TABLE: BaseTable = None
     DROP_COLUMNS: "list[str]" = []
-    TRANSFORMATIONS = {}
+    TRANSFORMATIONS: "dict[str: Callable]" = {}
+    DATA_TRANSFORMATIONS: "list[Callable]" = []
 
     def __init__(self, *, player_id: str):
         if not self.__class__.TABLE:
@@ -134,6 +135,11 @@ class AbstractBaseScraper(ABC):
         # Apply all transformations to the dataset
         for column, transformation in self.__class__.TRANSFORMATIONS.items():
             data[column] = data[column].apply(transformation)
+
+        for transformation_function in self.__class__.DATA_TRANSFORMATIONS:
+            data = transformation_function(dataset=data)
+
+        print(data)
 
         # Convert the columns to the desired types
         data: pd.DataFrame = data.astype(self.__class__.COLUMN_TYPES)
