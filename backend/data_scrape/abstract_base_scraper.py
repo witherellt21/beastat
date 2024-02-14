@@ -60,18 +60,16 @@ class AbstractBaseScraper(ABC, threading.Thread):
         if not self.__class__.TABLE:
             raise Exception("Must specify a table for the scaper to save data to.")
 
-        # self.player_id: str = player_id
-        # self.player_initial: str = player_id[0]
-
         threading.Thread.__init__(self, name=self.__class__.__name__)
 
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(self.__class__.LOG_LEVEL)
         self.logger.addHandler(STREAM_HANDLER)
 
+        self.last_download_time = None
+
         self.RUNNING = False
         self.idenifier = None
-        # self.url_args = []
 
         args_expected = self.download_url.count("{}")
         if args_expected:
@@ -119,9 +117,6 @@ class AbstractBaseScraper(ABC, threading.Thread):
                 )
             )
 
-    # @abstractmethod
-    # def get_identifiers(self):
-    #     pass
     @property
     def default_identifiers(self) -> "dict[str: list]":
         return self.__class__.DEFAULT_IDENTIFIERS
@@ -134,7 +129,7 @@ class AbstractBaseScraper(ABC, threading.Thread):
     def refresh_rate(self) -> int:
         return self.__class__.REFRESH_RATE
 
-    def get_identifiers(self) -> "dict[str: list]":
+    def get_identifiers(self) -> "list[str|tuple[str]]":
         return self.default_identifiers
 
     @property
@@ -150,9 +145,13 @@ class AbstractBaseScraper(ABC, threading.Thread):
                 identifiers = self.get_identifiers()
 
                 if identifiers:
-                    for identifier in self.get_identifiers():
+                    for identifier in identifiers:
+                        if not self.RUNNING:
+                            break
+
                         self.get_data(identifier=identifier)
                         time.sleep(0.1)
+
                 else:
                     self.get_data()
                     time.sleep(0.1)
@@ -162,7 +161,7 @@ class AbstractBaseScraper(ABC, threading.Thread):
             except Exception as e:
                 consecutive_errors += 1
                 self.logger.error(
-                    f"Error occured in running thread for {self.__class__.__name__} ({consecutive_errors} in a row): \n\n {traceback.format_exc()}.\n\n"
+                    f"Error occured in running thread for {self.__class__.__name__} ({consecutive_errors} in a row) ({identifier}): \n\n {traceback.format_exc()}.\n\n"
                 )
                 if consecutive_errors >= 10:
                     self.kill_process()
@@ -172,7 +171,7 @@ class AbstractBaseScraper(ABC, threading.Thread):
         self.logger.critical(f"PROCESS KILLED FOR {self.__class__.__name__}.")
 
     def generate_exception_msg(self, *, exception_type: str) -> str:
-        return f"{self.__class__._exception_msgs.get(exception_type, self.__class__._DEFAULT_ERROR_MSG)} {{ id = {self.player_id} }}"
+        return f"{self.__class__._exception_msgs.get(exception_type, self.__class__._DEFAULT_ERROR_MSG)}"
 
     def get_data(self, *, identifier: str = None) -> None:
         url_args: "list[str]" = (
@@ -181,7 +180,6 @@ class AbstractBaseScraper(ABC, threading.Thread):
 
         # Download the data
         data = self.download_data(url_args=url_args)
-        time.sleep(self.refresh_rate)
 
         if data.empty:
             return
@@ -208,12 +206,29 @@ class AbstractBaseScraper(ABC, threading.Thread):
         self.logger.debug("Starting to download_data.")
 
         try:
+            if self.last_download_time:
+                wait = max(self.last_download_time - time.time() + self.refresh_rate, 0)
+            else:
+                wait = 0
+
+            if wait:
+                time.sleep(wait)
+
             url: str = self.get_download_url(url_args=url_args)
             http_response: str = format_pandas_http_request(url=url)
             datasets: list[pd.DataFrame] = pd.read_html(http_response)
             self.logger.info("Data download successful for %s", url_args)
 
+            self.last_download_time = time.time()
+
         except HTTPError as http_error:
+
+            if http_error.code == 404:
+                self.logger.error(
+                    "There might be an error in your download_url %s", url
+                )
+
+                return None
 
             if http_error.code == 429:
                 self.logger.error(
@@ -247,7 +262,7 @@ class AbstractBaseScraper(ABC, threading.Thread):
         for row in row_dicts:
             self.table.update_or_insert_record(data=row)
 
-        self.data = data
+        self.logger.debug(f"\n{data}")
 
     def configure_data(self, *, data: pd.DataFrame) -> pd.DataFrame:
         """

@@ -1,9 +1,16 @@
+import logging
 import os
+
 import numpy as np
 import pandas as pd
 
 from data_scrape.abstract_base_scraper import AbstractBaseScraper
+from helpers.db_helpers import get_player_id
+from helpers.db_helpers import get_player_active_seasons
 from sql_app.register.gamelog import Gamelogs
+from sql_app.register.matchup import Matchups
+
+from exceptions import NoDataFoundException
 
 
 def convert_minutes_to_float(time: str):
@@ -64,32 +71,45 @@ class GamelogScraper(AbstractBaseScraper):
         "PRA": "PTS+TRB+AST",
     }
     TABLE = Gamelogs
-
-    def __init__(self, *, player_id: str, year: int):
-        super().__init__(player_id=player_id)
-
-        self.year = year
+    LOG_LEVEL = logging.INFO
 
     @property
     def download_url(self):
-        return f"http://www.basketball-reference.com/players/{self.player_initial}/{self.player_id}/gamelog/{self.year}"
+        return "http://www.basketball-reference.com/players/{}/{}/gamelog/{}"
 
-    @property
-    def save_path(self):
-        return os.path.join(
-            "player_data", "gamelogs", self.player_initial, self.player_id
-        )
-
-    @property
-    def save_file(self) -> str:
-        return os.path.join(self.full_save_path, f"{self.year}.csv")
+    def format_url_args(self, *, identifier: str) -> "list[str]":
+        player_id, year = identifier
+        return [player_id[0], player_id, year]
 
     def select_dataset_from_html_tables(
         self, *, datasets: "list[pd.DataFrame]"
     ) -> pd.DataFrame:
+        # TODO: This filter seems awfully presumptuous, maybe we should change it at some point
         return list(filter(lambda x: x.shape[1] == 30, datasets))[0]
 
+    def get_identifiers(self) -> "list[str|tuple[str]]":
+        # TODO: There has to be a faster way to do this. Without extend and iteration
+        matchups = Matchups.get_all_records(as_df=True)
+
+        players = np.concatenate(
+            (matchups["home_player_id"].unique(), matchups["away_player_id"].unique())
+        )
+
+        identifiers = []
+        for player in players:
+            try:
+                active_seasons = get_player_active_seasons(player_id=player)
+
+                identifiers.extend(
+                    list(map(lambda year: (player, year), active_seasons))
+                )
+            except NoDataFoundException:
+                continue
+
+        return identifiers
+
     def clean(self, *, data: pd.DataFrame) -> pd.DataFrame:
+        # TODO: We can create class attributes for removing rows and setting the index
         # Remove extra column rows from dataset
         data: pd.DataFrame = data[data["Rk"] != "Rk"]
 
@@ -100,11 +120,21 @@ class GamelogScraper(AbstractBaseScraper):
 
     def configure_data(self, *, data: pd.DataFrame) -> pd.DataFrame:
         data = super().configure_data(data=data)
-        data["player_id"] = self.player_id
+        # TODO: Can probably move this to base
         return data.fillna(np.nan).replace([np.nan], [None])
+
+    def download_data(self, *, url_args: "list[str]" = []) -> pd.DataFrame:
+        # TODO: we shouln't make augmentations here. So we will need to fix the SAVE_IDENTIFIER_AS attribute to a dict and support lists
+        data = super().download_data(url_args=url_args)
+        data["player_id"] = url_args[1]
+        return data
+
+    def cache_data(self, *, data: pd.DataFrame) -> None:
+        self.logger.debug(data)
+        pass
 
 
 if __name__ == "__main__":
 
-    gamelog = GamelogScraper(player_id="murrayja01", year=2024)
-    print(gamelog.get_data())
+    gamelog = GamelogScraper()
+    gamelog.get_data(identifier=("jamesle01", 2023))

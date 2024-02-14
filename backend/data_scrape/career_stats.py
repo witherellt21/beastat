@@ -3,14 +3,16 @@ import numpy as np
 import pandas as pd
 
 # Module imports
+import logging
 import os
 import re
 
 # Package imports
 from data_scrape.abstract_base_scraper import AbstractBaseScraper
+from data_scrape.test.main_tester_functions import test_scraper_thread
 from helpers.string_helpers import convert_season_to_year
 from sql_app.register.career_stats import CareerStatss
-
+from sql_app.register.matchup import Matchups
 
 IS_SEASON = re.compile("^\d{4}")
 
@@ -92,21 +94,14 @@ class CareerStatsScraper(AbstractBaseScraper):
     }
 
     TABLE = CareerStatss
-
-    def __init__(self, *, player_id: str) -> None:
-        super().__init__(player_id=player_id)
+    LOG_LEVEL = logging.INFO
 
     @property
     def download_url(self):
-        return f"http://www.basketball-reference.com/players/{self.player_initial}/{self.player_id}.html"
+        return "http://www.basketball-reference.com/players/{}/{}.html"
 
-    @property
-    def save_path(self):
-        return os.path.join("player_data", "career_stats", self.player_initial)
-
-    def generate_exception_msg(self, *, exception_type: str) -> str:
-        exception_msg = super().generate_exception_msg(exception_type=exception_type)
-        return exception_msg + f"{{ id: {self.player_id}}}"
+    def format_url_args(self, *, identifier: str) -> "list[str]":
+        return [identifier[0], identifier]
 
     def select_dataset_from_html_tables(
         self, *, datasets: "list[pd.DataFrame]"
@@ -116,6 +111,14 @@ class CareerStatsScraper(AbstractBaseScraper):
             filter(lambda dataset: "Season" in dataset.columns, datasets)
         )
         return season_stat_datasets[0]
+
+    def get_identifiers(self) -> "list[str | tuple[str]]":
+        matchups = Matchups.get_all_records(as_df=True)
+
+        player_ids = np.concatenate(
+            (matchups["home_player_id"].unique(), matchups["away_player_id"].unique())
+        )
+        return list(player_ids)
 
     def clean(self, *, data: pd.DataFrame) -> pd.DataFrame:
         data = super().clean(data=data)
@@ -129,35 +132,18 @@ class CareerStatsScraper(AbstractBaseScraper):
 
     def configure_data(self, *, data: pd.DataFrame) -> pd.DataFrame:
         data = super().configure_data(data=data)
-        data["player_id"] = self.player_id
         data = data.fillna(np.nan).replace([np.nan], [None])
         return data
 
-    def get_active_seasons(self) -> "list[int]":
-        try:
-            # Filter the career stats to contain just the season averages
-            season_stats: pd.DataFrame = self.data[
-                self.data["Season"].str.contains("^\d{4}") == True
-            ]
-            season_stats: pd.DataFrame = season_stats.dropna()
-
-            # Delete duplicate seasons (player played for multiple teams in same season)
-            season_stats: pd.DataFrame = season_stats.drop_duplicates(subset="Season")
-
-            # Get the seasons active by converting seasons column to a value list
-            seasons_active: list[str] = season_stats["Season"].to_list()
-            seasons_active: list[int] = list(
-                map(
-                    lambda season: convert_season_to_year(season=season), seasons_active
-                )
-            )
-        except Exception as e:
-            raise e
-
-        return seasons_active
+    def download_data(self, *, url_args: "list[str]" = []) -> pd.DataFrame:
+        # TODO: we shouln't make augmentations here. So we will need to fix the SAVE_IDENTIFIER_AS attribute to a dict and support lists
+        data = super().download_data(url_args=url_args)
+        data["player_id"] = url_args[1]
+        return data
 
 
 if __name__ == "__main__":
-    player_info: CareerStatsScraper = CareerStatsScraper(player_id="portemi01")
-    data: pd.DataFrame = player_info.get_data()
-    print(data)
+    # player_info: CareerStatsScraper = CareerStatsScraper(player_id="portemi01")
+    # data: pd.DataFrame = player_info.get_data()
+    # print(data)
+    test_scraper_thread(CareerStatsScraper)

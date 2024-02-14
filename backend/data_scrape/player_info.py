@@ -3,11 +3,13 @@ import pandas as pd
 from global_implementations import constants
 from helpers.string_helpers import get_player_id_from_name
 from data_scrape.abstract_base_scraper import AbstractBaseScraper
+from data_scrape.test.main_tester_functions import test_scraper_thread
 from unidecode import unidecode
+import logging
 
 from sql_app.register.player_info import PlayerInfo
 from sql_app.register.player_info import PlayerInfos
-from sql_app.register.player_info import Colleges
+from string import ascii_lowercase
 
 
 def get_player_ids(*, source_table: pd.DataFrame, id_from_column: str) -> pd.Series:
@@ -72,10 +74,7 @@ def convert_colleges_to_list(
 
 
 class PlayerInfoScraper(AbstractBaseScraper):
-    _exception_msgs: "dict[str:str]" = {
-        "load_data": "Unable to load data.",
-        "download_data": "Unable to download data.",
-    }
+    # TODO: Lets see if we can speed up how a lot of the post download logic is done
 
     STAT_AUGMENTATIONS = {
         "player_id": lambda dataset: get_player_ids(
@@ -103,10 +102,12 @@ class PlayerInfoScraper(AbstractBaseScraper):
     }
     DROP_COLUMNS: "list[str]" = ["colleges"]
     TABLE: PlayerInfo = PlayerInfos
+    DEFAULT_IDENTIFIERS = list(ascii_lowercase)
+    LOG_LEVEL = logging.INFO
 
     @property
     def download_url(self) -> str:
-        return "http://www.basketball-reference.com/players/{}.html"
+        return "http://www.basketball-reference.com/players/{}/"
 
     def format_url_args(self, *, identifier: str) -> "list[str]":
         return [identifier]
@@ -125,6 +126,6 @@ if __name__ == "__main__":
 
     #     print(data)
 
-    player_info: PlayerInfo = PlayerInfo(last_initial="j")
-    data: pd.DataFrame = player_info.download_data()
-    print(data)
+    # player_info_scraper: PlayerInfoScraper = PlayerInfoScraper()
+    # player_info_scraper.get_data(identifier="a")
+    test_scraper_thread(scraper_class=PlayerInfoScraper)

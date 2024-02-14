@@ -1,123 +1,28 @@
-from fastapi import FastAPI, Depends
-from fastapi.routing import APIRoute
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import matchups
 from routers import gamelogs
 
-import time
-import threading
-
-import pandas as pd
-
-from helpers.db_helpers import get_player_id
-
 from data_scrape.career_stats import CareerStatsScraper
 from data_scrape.gamelog import GamelogScraper
 from data_scrape.lineups import LineupDataScraper
-from data_scrape.player_info import PlayerInfoScraper
 from data_scrape.player_props import PlayerPropsScraper
-from sql_app.serializers.matchup import MatchupSerializer
-from sql_app.register.matchup import Matchups
 
-from string import ascii_lowercase
-import traceback
+# TODO: MASSIVE work needs to be done in keeping these scrapers asynchronous in case data is missing
+lineup_scraper = LineupDataScraper()
+lineup_scraper.start()
 
-RUNNING = True
-
-
-def get_player_full_gamelog(
-    *, player_id: str, years_active: "list[int]"
-) -> pd.DataFrame:
-    # Get the players full gamelog
-    full_gamelog_data = pd.DataFrame()
-    for year in years_active:
-        current_gamelog: GamelogScraper = GamelogScraper(player_id=player_id, year=year)
-        current_gamelog_data: pd.DataFrame = current_gamelog.get_data()
-        full_gamelog_data = pd.concat(
-            [full_gamelog_data, current_gamelog_data], ignore_index=True
-        )
-
-    return full_gamelog_data
-
-
-class BasketballRefScraper(threading.Thread):
-    def __init__(self, **kwargs: dict) -> None:
-        self.RUNNING: bool = True
-        self.preset_matchups = kwargs.get("preset_matchups", None)
-        super().__init__()
-
-    def run(self) -> None:
-        while self.RUNNING:
-            try:
-                matchups: list[MatchupSerializer] = (
-                    self.preset_matchups or Matchups.get_all_records()
-                )
-
-                for matchup in matchups:
-                    print(matchup)
-                    for player_name in [matchup.home_player, matchup.away_player]:
-                        player_id = get_player_id(player_name=player_name)
-
-                        if not player_id:
-                            continue
-
-                        # Get the CareerStats for the given player
-                        career_stats: CareerStatsScraper = CareerStatsScraper(
-                            player_id=player_id
-                        )
-                        career_data: pd.DataFrame = career_stats.get_data()
-
-                        # print(career_stats)
-                        # Get the players active seasons from the CareerStats
-                        seasons_active: list[int] = career_stats.get_active_seasons()
-
-                        # Get the player Gamelog
-                        player_gamelog: pd.DataFrame = get_player_full_gamelog(
-                            player_id=player_id, years_active=seasons_active
-                        )
-                        player_gamelog["player_name"] = player_name
-
-            except Exception as e:
-                print(
-                    f"Error occured in running thread for {self.__class__.__name__}. {traceback.format_exc()}"
-                )
-
-            time.sleep(1)
-        print("No longer scraping bref.")
-
-
-class InfoScraper(threading.Thread):
-    def __init__(self) -> None:
-        self.RUNNING: bool = True
-        super().__init__()
-
-    def run(self) -> None:
-        # Get all of the active players by last initial
-        for letter in ascii_lowercase:
-            # TODO: idea - create an EXPECTED_COLUMNS variable for ABD and initialize the data using this. This would save an empty dataframe
-            if letter == "x":
-                continue
-
-            player_info = PlayerInfoScraper(last_initial=letter)
-            player_info.get_data()
-
-
-# lineup_scraper = LineupDataScraper()
-# lineup_scraper.start()
-# # bref_scraper = BasketballRefScraper(
-# #     preset_matchups=[Matchups.get_record(query={"game_id": 4, "position": "SF"})]
-# # )
-# bref_scraper = BasketballRefScraper()
-# bref_scraper.start()
+# career_stats_scraper = CareerStatsScraper()
+# career_stats_scraper.start()
 
 player_props_scraper = PlayerPropsScraper()
 player_props_scraper.start()
 
+# # player_info_scraper = PlayerInfoScraper()
+# # player_info_scraper.start()
+gamelog_scraper = GamelogScraper()
+gamelog_scraper.start()
 
-# info_scraper = InfoScraper()
-# info_scraper.start()
-# bref_thread = threading.Thread(target=scrape_bref)
-# bref_thread.start()
 
 app = FastAPI(debug=True)
 
