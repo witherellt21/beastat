@@ -41,9 +41,14 @@ function Matchup() {
             </div> */}
             <div className='flex flex-col w-full'>
                 {/* This div contains the buttons for toggling between Player Analyzers */}
-                <div className='flex flex-row justify-center h-12'>
+                <div className='flex flex-row justify-center h-12 mb-6'>
                     <button
-                        className='flex-1 bg-gray-300 hover:bg-gray-400'
+                        className={'flex-1 text-lg hover:bg-gray-200' + `( 
+                            ${!homeAwayToggle
+                                ? 'bg-gray-100 border-4 border-gray-400 border-opacity-10 hover:bg-gray-200'
+                                : 'bg-gray-100 border-2 border-gray-300 border-opacity-80 shadow-gray-400 shadow-inner hover:bg-gray-200'
+                            }
+                        )`}
                         onClick={() => {
                             if (!homeAwayToggle) {
                                 setHomeAwayToggle(true)
@@ -54,7 +59,12 @@ function Matchup() {
                         {matchup.home_player}
                     </button>
                     <button
-                        className='flex-1 border-l-2 border-black bg-gray-300 hover:bg-gray-400'
+                        className={'flex-1 text-lg hover:bg-gray-200' + `( 
+                            ${homeAwayToggle
+                                ? 'bg-gray-100 border-4 border-gray-400 border-opacity-10 hover:bg-gray-200'
+                                : 'bg-gray-100 border-2 border-gray-300 border-opacity-80 shadow-gray-400 shadow-inner hover:bg-gray-200'
+                            }
+                        )`}
                         onClick={() => {
                             if (homeAwayToggle) {
                                 setHomeAwayToggle(false)

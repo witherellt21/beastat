@@ -9,8 +9,9 @@ import { propLinesColumns } from './columns'
 
 
 function PropLines(props) {
+    const [showingImpliedOdds, showImpliedOdds] = useState(false)
     const [propData, setPropData] = useState([])
-    const [columnVisibility, setColumnVisibility] = React.useState({
+    const [columnVisibility, setColumnVisibility] = useState({
         AST_over_implied: false,
         AST_under_implied: false,
         PTS_over_implied: false,
@@ -50,22 +51,55 @@ function PropLines(props) {
     }, [props.player_id]);
 
     return (
-        <div className='flex flex-col justify-center'>
-            <h1 className='py-2 font-bold'>
-                Prop Lines
-            </h1>
-            <button onClick={() => {
-                console.log(propData)
-                console.log(tableInstance.getRowModel())
-            }}>Check</button>
+
+        <div className='flex flex-col p-4 justify-center'>
+            <div className="flex items-center justify-center bg-red-300 rounded-t-2xl border-2 border-b-0 border-black">
+                <div className="flex-1"></div>
+                <div className="w-32">
+                    <h1 className='flex-1 font-bold text-2xl py-1'>
+                        Prop Lines
+                    </h1>
+                </div>
+                <div className="flex flex-1 items-center h-full">
+                    <div className=" w-30 ml-auto">
+                        <button className={'text-xs p-2 py-1 mr-2 rounded-2xl border border-gray-300 bg-gray-100 hover:bg-gray-200' + `(
+                            ${showingImpliedOdds
+                                ? 'shadow-inner '
+                                : 'shadow-md border-opacity-20 '}
+                        )`
+                        } onClick={() => {
+                            tableInstance.getAllLeafColumns().map((column) => {
+                                if (column.id.endsWith('over') | column.id.endsWith('under')) {
+                                    column.toggleVisibility(!column.getIsVisible())
+                                    // showImpliedOdds = false;
+                                }
+                                if (column.id.endsWith('implied')) {
+                                    column.toggleVisibility(!column.getIsVisible())
+                                    // showImpliedOdds = column.getIsVisible();
+
+                                }
+                            })
+
+                            showImpliedOdds(!showingImpliedOdds)
+                        }}>
+                            Implied Odds
+                        </button>
+                    </div>
+                </div>
+            </div >
+
             <table className='table-auto'>
                 <thead>
                     {tableInstance.getHeaderGroups().map((headerElement) => {
-                        return <tr key={headerElement.id}>
+                        // console.log(headerElement)
+                        return <tr key={headerElement.id} className={headerElement.depth === 0 ? 'h-8 text-lg' : ''}>
                             {headerElement.headers.map((columnElement) => {
+
                                 return (
                                     <th key={columnElement.id} colSpan={columnElement.colSpan}
-                                        className='border-2 border-black text-xs px-2'
+                                        className={'border-2 border-black text-xs px-2' + `(
+                                            ${headerElement.depth === 0 ? 'text-lg' : ''}
+                                        )`}
                                     >
                                         {
                                             flexRender(
@@ -80,11 +114,9 @@ function PropLines(props) {
                 </thead>
                 <tbody>
                     {tableInstance.getRowModel().rows.map((row) => {
-                        console.log(propData)
                         return (
                             <tr key={row.id}>
                                 {row.getVisibleCells().map((cell) => {
-                                    console.log(cell.column.columnDef.cell)
                                     return <td key={cell.id} className='py-1 border w-16 border-gray-300 text-xs'>
                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                     </td>;
@@ -94,31 +126,6 @@ function PropLines(props) {
                     })}
                 </tbody>
             </table>
-            <label>
-                {/* <input
-                    {...{
-                        type: 'checkbox',
-                        checked: true,
-                        onChange: column.getToggleVisibilityHandler(),
-                    }}
-                />{' '}
-                Implied Odds */}
-                <button onClick={() =>
-                    tableInstance.getAllLeafColumns().map((column) => {
-                        if (column.id.endsWith('over') | column.id.endsWith('under')) {
-                            console.log(columnVisibility)
-                            column.toggleVisibility(!column.getIsVisible())
-                        }
-                        if (column.id.endsWith('implied')) {
-                            console.log(columnVisibility)
-                            column.toggleVisibility(!column.getIsVisible())
-                        }
-                    })
-                    // console.log(tableInstance.getAllLeafColumns())
-                }>
-                    Toggle Visibility
-                </button>
-            </label>
         </div >
     )
 }
