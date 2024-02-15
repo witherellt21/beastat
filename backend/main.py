@@ -2,26 +2,48 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import matchups
 from routers import gamelogs
+from routers import player_props
+from fastapi.logger import logger
 
 from data_scrape.career_stats import CareerStatsScraper
 from data_scrape.gamelog import GamelogScraper
 from data_scrape.lineups import LineupDataScraper
 from data_scrape.player_props import PlayerPropsScraper
 
+import logging
+import threading
+import config
+
+main_formatter = logging.Formatter(
+    "[{levelname:^10}] [ {asctime} ] [{threadName:^20}]  {message}",
+    "%I:%M:%S %p",
+    style="{",
+)
+
+main_stream_handler = logging.StreamHandler()
+main_stream_handler.setFormatter(main_formatter)
+
+main_logger = logging.getLogger("main")
+main_logger.setLevel(logging.DEBUG)
+main_logger.addHandler(main_stream_handler)
+
+
 # TODO: MASSIVE work needs to be done in keeping these scrapers asynchronous in case data is missing
-lineup_scraper = LineupDataScraper()
-lineup_scraper.start()
+if config.DATA_SCRAPE.get("Lineups"):
+    lineup_scraper = LineupDataScraper()
+    lineup_scraper.start()
 
 # career_stats_scraper = CareerStatsScraper()
 # career_stats_scraper.start()
-
-player_props_scraper = PlayerPropsScraper()
-player_props_scraper.start()
+if config.DATA_SCRAPE.get("PlayerProps"):
+    player_props_scraper = PlayerPropsScraper()
+    player_props_scraper.start()
 
 # # player_info_scraper = PlayerInfoScraper()
 # # player_info_scraper.start()
-gamelog_scraper = GamelogScraper()
-gamelog_scraper.start()
+if config.DATA_SCRAPE.get("Gamelogs"):
+    gamelog_scraper = GamelogScraper()
+    gamelog_scraper.start()
 
 
 app = FastAPI(debug=True)
@@ -38,7 +60,7 @@ app.add_middleware(
 
 app.include_router(matchups.router, prefix="/matchups", tags=["matchups"])
 app.include_router(gamelogs.router, prefix="/gamelogs", tags=["gamelogs"])
-app.include_router(gamelogs.router, prefix="/player-props", tags=["player-props"])
+app.include_router(player_props.router, prefix="/player-props", tags=["player-props"])
 
 
 @app.get("/")

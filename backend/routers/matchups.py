@@ -20,6 +20,10 @@ from sql_app.serializers.gamelog import GamelogSerializer
 
 from typing import List
 
+import logging
+
+logger = logging.getLogger("main")
+
 router = APIRouter()
 
 ############################

@@ -106,6 +106,8 @@ class GamelogScraper(AbstractBaseScraper):
             except NoDataFoundException:
                 continue
 
+        self.logger.debug(f"Getting gamelogs for {identifiers}")
+
         return identifiers
 
     def clean(self, *, data: pd.DataFrame) -> pd.DataFrame:
@@ -128,10 +130,6 @@ class GamelogScraper(AbstractBaseScraper):
         data = super().download_data(url_args=url_args)
         data["player_id"] = url_args[1]
         return data
-
-    def cache_data(self, *, data: pd.DataFrame) -> None:
-        self.logger.debug(data)
-        pass
 
 
 if __name__ == "__main__":

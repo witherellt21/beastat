@@ -59,9 +59,19 @@ class BaseTable:
                 ]
             )
 
-            return self.serializer_class(**model_to_dict(db_row))
+            return self.read_serializer_class(**model_to_dict(db_row))
 
         except peewee.DoesNotExist as e:
+            return None
+
+    def get_or_create(self, *, data: "dict[str: str]" = {}) -> BaseSerializer:
+        validated_data: BaseSerializer = self.serializer_class(**data)
+
+        result, created = self.model_class.get_or_create(**validated_data.model_dump())
+
+        if result:
+            return self.read_serializer_class(**model_to_dict(result))
+        else:
             return None
 
     def filter_records(
@@ -80,11 +90,8 @@ class BaseTable:
         # Serialize rows and convert to desired output type
         serialized_objects = []
         for record in records:
-            serialized = self.serializer_class(**model_to_dict(record))
+            serialized = self.read_serializer_class(**model_to_dict(record))
             serialized_objects.append(serialized.dict() if as_df else serialized)
-
-        # if as_df:
-        #     print(serialized_objects)
 
         return pd.DataFrame(serialized_objects) if as_df else serialized_objects
 

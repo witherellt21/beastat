@@ -9,18 +9,25 @@ function Matchup() {
     let { id } = useParams();
     let navigate = useNavigate();
 
+    const [isLoading, setLoading] = useState(true);
     const [matchup, setMatchup] = useState({});
     const [homeAwayToggle, setHomeAwayToggle] = useState(true);
+
+    let loaded = false;
 
     useEffect(() => {
         axios.get(`http://localhost:3001/matchups/${id}`).then(async (response) => {
             await setMatchup(response.data)
-            console.log(response.data)
+            setLoading(false);
         }).catch((err) => {
             console.log(err);
             return null;
         });
-    }, [id]);
+    }, [id, loaded]);
+
+    // if (isLoading) {
+    //     return <div className="App">Loading...</div>;
+    // }
 
     return (
         <div>
@@ -57,23 +64,35 @@ function Matchup() {
                         {matchup.away_player}
                     </button>
                 </div>
+                {/* 
+                This div contains the Proplines for the selected player.
+                It will only load after the matchup is successfully set.
+                */}
+                {/* <button onClick={() => {
+                    console.log(matchup)
+                }}>Check</button> */}
+                {/* {(matchup.homeAwayToggle && matchup.away_player_id) */}
+                {!isLoading
+                    ? <div className='flex justify-center'>
+                        {homeAwayToggle
+                            ? < PropLines player_id={matchup.home_player_id} />
+                            : <PropLines player_id={matchup.away_player_id} />
+                        }
+                    </div>
+                    : <div>
+                        No data to display.
+                    </div>
+                }
                 {/* This div contains the MatchupGamelog for the selected player. */}
                 <div className='flex justify-center'>
-                    <button onClick={() => {
-                        console.log(matchup)
-                    }}>Check</button>
-                    {homeAwayToggle
-                        ? < PropLines player_id={matchup.home_player_id} />
-                        : <PropLines player_id={matchup.away_player_id} />
+                    {
+                        homeAwayToggle
+                            ? <MatchupGamelog matchup_id={id} home_away="home" />
+                            : <MatchupGamelog matchup_id={id} home_away="away" />
                     }
+
                 </div>
-                {/* This div contains the MatchupGamelog for the selected player. */}
-                <div className='flex justify-center'>
-                    {homeAwayToggle
-                        ? < MatchupGamelog matchup_id={id} home_away="home" />
-                        : <MatchupGamelog matchup_id={id} home_away="away" />
-                    }
-                </div>
+
             </div>
         </div >
     )

@@ -77,6 +77,7 @@ function MatchupGamelog(props) {
                 </tbody>
                 <tfoot>
                     {tableInstance.getFooterGroups().map((footerElement) => {
+                        // console.log(matchupData)
                         return <tr key={footerElement.id} className='border-2 border-black'>
                             {footerElement.headers.map((columnElement) => {
                                 return (

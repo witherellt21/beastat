@@ -9,152 +9,42 @@ import { propLinesColumns } from './columns'
 
 
 function PropLines(props) {
-
-    // let player_id = props.
-
-    const exampleData = {
-        PTS: {
-            line: 25.5,
-            odds: -115
-        },
-        AST: {
-            line: 4.5,
-            odds: -115
-        },
-        TRB: {
-            line: 6.5,
-            odds: -110
-        },
-        PA: {
-            line: 29.5,
-            odds: -120
-        },
-        PR: {
-            line: 32.5,
-            odds: -115
-        },
-        RA: {
-            line: 11.5,
-            odds: -115
-        },
-        PRA: {
-            line: 36.5,
-            odds: -115
-        },
-        STL: {
-            line: 1.5,
-            odds: 115
-        },
-        BLK: {
-            line: 0.5,
-            odds: -130
-        },
-        THP: {
-            line: 2.5,
-            odds: -145
-        }
-    }
-
-    const [propData, setPropData] = useState([{
-        PTS: {
-            line: 25.5,
-            odds: -115
-        },
-        AST: {
-            line: 4.5,
-            odds: -115
-        },
-        TRB: {
-            line: 6.5,
-            odds: -110
-        },
-        PA: {
-            line: 29.5,
-            odds: -120
-        },
-        PR: {
-            line: 32.5,
-            odds: -115
-        },
-        RA: {
-            line: 11.5,
-            odds: -115
-        },
-        PRA: {
-            line: 36.5,
-            odds: -115
-        },
-        STL: {
-            line: 1.5,
-            odds: 115
-        },
-        BLK: {
-            line: 0.5,
-            odds: -130
-        },
-        THP: {
-            line: 2.5,
-            odds: -145
-        }
-    }]);
-
-    // columnHelper.accessor('PTS', {
-    //     cell: info => info.getValue(),
-    //     header: () => <span className='px-4'>PTS</span>,
-    //     // aggregationFn: 'mean',
-    //     // AggregatedCell: ({ cell }) => <div>Team Score: {cell.getValue()}</div>,
-    //     // footer: props => props
-    // }),
-    // columnHelper.accessor('AST', {
-    //     cell: info => info.getValue(),
-    //     header: () => <span className='px-4'>AST</span>,
-    // }),
-    // columnHelper.accessor('TRB', {
-    //     cell: info => info.getValue(),
-    //     header: () => <span className='px-4'>TRB</span>,
-    // }),
-    // columnHelper.accessor('PA', {
-    //     cell: info => info.getValue(),
-    //     header: () => <span className='px-4'>PA</span>,
-    // }),
-    // columnHelper.accessor('PR', {
-    //     cell: info => info.getValue(),
-    //     header: () => <span className='px-4'>PR</span>,
-    // }),
-    // columnHelper.accessor('RA', {
-    //     cell: info => info.getValue(),
-    //     header: () => <span className='px-4'>RA</span>,
-    // }),
-    // columnHelper.accessor('PRA', {
-    //     cell: info => info.getValue(),
-    //     header: () => <span className='px-4'>PRA</span>,
-    // }),
-    // columnHelper.accessor('STL', {
-    //     cell: info => info.getValue(),
-    //     header: () => <span className='px-4'>STL</span>,
-    // }),
-    // columnHelper.accessor('BLK', {
-    //     cell: info => info.getValue(),
-    //     header: () => <span className='px-4'>BLK</span>,
-    // }),
-    // columnHelper.accessor('THP', {
-    //     cell: info => info.getValue(),
-    //     header: () => <span className='px-4'>THP</span>,
-    // }),
+    const [propData, setPropData] = useState([])
+    const [columnVisibility, setColumnVisibility] = React.useState({
+        AST_over_implied: false,
+        AST_under_implied: false,
+        PTS_over_implied: false,
+        PTS_under_implied: false,
+        THP_over_implied: false,
+        THP_under_implied: false,
+        TRB_over_implied: false,
+        TRB_under_implied: false,
+    })
 
     const tableInstance = useReactTable({
         columns: propLinesColumns,
         data: propData,
+        state: {
+            columnVisibility,
+        },
+        onColumnVisibilityChange: setColumnVisibility,
         getCoreRowModel: getCoreRowModel(),
         debugTable: true,
+        debugHeaders: true,
+        debugColumns: true,
+
     })
 
 
     useEffect(() => {
-        axios.get(`http://localhost:3001/player-props/${props.player_id}`).then((response) => {
-            setPropData(response.data)
-            console.log(response.data)
-        });
+        axios.get(`http://localhost:3001/player-props/${props.player_id}`)
+            .then((response) => {
+                setPropData(response.data)
+                // console.log(response.data)
+            })
+            .catch((error) => {
+                console.log(error)
+            });
         // setPropData({ player_id: props.player_id, ...exampleData })
         // console.log(propData)
     }, [props.player_id]);
@@ -166,6 +56,7 @@ function PropLines(props) {
             </h1>
             <button onClick={() => {
                 console.log(propData)
+                console.log(tableInstance.getRowModel())
             }}>Check</button>
             <table className='table-auto'>
                 <thead>
@@ -189,11 +80,12 @@ function PropLines(props) {
                 </thead>
                 <tbody>
                     {tableInstance.getRowModel().rows.map((row) => {
+                        console.log(propData)
                         return (
                             <tr key={row.id}>
                                 {row.getVisibleCells().map((cell) => {
                                     console.log(cell.column.columnDef.cell)
-                                    return <td key={cell.id} className='py-1 border border-gray-300 text-xs'>
+                                    return <td key={cell.id} className='py-1 border w-16 border-gray-300 text-xs'>
                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                     </td>;
                                 })}
@@ -202,6 +94,31 @@ function PropLines(props) {
                     })}
                 </tbody>
             </table>
+            <label>
+                {/* <input
+                    {...{
+                        type: 'checkbox',
+                        checked: true,
+                        onChange: column.getToggleVisibilityHandler(),
+                    }}
+                />{' '}
+                Implied Odds */}
+                <button onClick={() =>
+                    tableInstance.getAllLeafColumns().map((column) => {
+                        if (column.id.endsWith('over') | column.id.endsWith('under')) {
+                            console.log(columnVisibility)
+                            column.toggleVisibility(!column.getIsVisible())
+                        }
+                        if (column.id.endsWith('implied')) {
+                            console.log(columnVisibility)
+                            column.toggleVisibility(!column.getIsVisible())
+                        }
+                    })
+                    // console.log(tableInstance.getAllLeafColumns())
+                }>
+                    Toggle Visibility
+                </button>
+            </label>
         </div >
     )
 }

@@ -24,6 +24,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: nbastats-app
+    # volumes:
+    #   - server:/app/backend
     ports:
       - 3001:8080
     links:
@@ -32,3 +34,7 @@ services:
       nbastats-db:
         condition: service_healthy
     restart: on-failure
+
+
+# volumes:
+#   server:

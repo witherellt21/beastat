@@ -46,6 +46,7 @@ class AbstractBaseScraper(ABC, threading.Thread):
     STAT_AUGMENTATIONS: "dict[str: str]" = {}
     FILTERS: "list[Callable]" = []
     RENAME_COLUMNS: "dict[str:str]" = {}
+    REPLACE_VALUES = {}
     TABLE: BaseTable = None
     DROP_COLUMNS: "list[str]" = []
     TRANSFORMATIONS: "dict[str: Callable]" = {}
@@ -277,6 +278,9 @@ class AbstractBaseScraper(ABC, threading.Thread):
 
         # Drop unwanted columns
         data: pd.DataFrame = data.drop(columns=self.__class__.DROP_COLUMNS)
+
+        # Replace row values with desired row values
+        data: pd.DataFrame = data.replace(self.__class__.REPLACE_VALUES)
 
         # Apply all transformations to the dataset
         for column, transformation in self.__class__.TRANSFORMATIONS.items():

@@ -34,6 +34,9 @@ def get_matchup_gamelog(
         query={"player_id": matchup.away_player_id}, as_df=True
     )
 
+    if home_player_df.empty or away_player_df.empty:
+        return []
+
     # Merge the datasets on games they played against each other and drop inactive games
     matchup_gamelog = pd.merge(
         home_player_df,

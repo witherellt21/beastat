@@ -4,6 +4,8 @@ import re
 from data_scrape.abstract_base_scraper import AbstractBaseScraper
 from helpers.db_helpers import get_player_id
 from sql_app.register.player_prop import PlayerProps
+from sql_app.register.player_prop import PropLines
+from sql_app.serializers.player_prop import PlayerPropSerializer
 from typing import Callable
 import threading
 import traceback
@@ -94,7 +96,8 @@ def get_player_props(*, dataset: pd.DataFrame):
     )
 
     # Drop the old over/under data and return
-    return full_data.drop(columns=["OVER", "UNDER"])
+    full_data = full_data.drop(columns=["OVER", "UNDER"])
+    return full_data
 
 
 def set_player_id(*, dataset: pd.DataFrame) -> pd.DataFrame:
@@ -106,6 +109,12 @@ def set_player_id(*, dataset: pd.DataFrame) -> pd.DataFrame:
 
 class PlayerPropsScraper(AbstractBaseScraper):
     RENAME_COLUMNS: "dict[str:str]" = {"PLAYER": "player_name"}
+    REPLACE_VALUES = {
+        "points": "PTS",
+        "assists": "AST",
+        "threes": "THP",
+        "rebounds": "TRB",
+    }
     DATA_TRANSFORMATIONS = [get_player_props, set_player_id]
 
     DEFAULT_IDENTIFIERS: "dict[str:list]" = ["points", "assists", "threes", "rebounds"]
@@ -127,6 +136,33 @@ class PlayerPropsScraper(AbstractBaseScraper):
         self, *, datasets: "list[pd.DataFrame]"
     ) -> pd.DataFrame:
         return pd.concat(datasets, ignore_index=True)
+
+    def cache_data(self, *, data: pd.DataFrame) -> None:
+        """
+        - Get or create the player props instance
+        - Create or update the prop line on the player instance
+        """
+        self.logger.debug("Saving data to database.")
+
+        row_dicts = data.to_dict(orient="records")
+        for row in row_dicts:
+            player: PlayerPropSerializer = PlayerProps.get_or_create(
+                data={"player_id": row["player_id"], "name": row["player_name"]}
+            )
+
+            prop_line = PropLines.update_or_insert_record(
+                data={
+                    "player_id": player.id,
+                    "stat": row["stat"],
+                    "line": row["line"],
+                    "over": row["odds_over"],
+                    "under": row["odds_under"],
+                    "over_implied": row["implied_odds_over"],
+                    "under_implied": row["implied_odds_under"],
+                }
+            )
+
+        self.logger.debug(f"\n{data}")
 
 
 def test_scraper_thread():
