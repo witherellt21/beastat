@@ -4,6 +4,7 @@ import axios from 'axios';
 import PropLines from '../tables/proplines/PropLines';
 import PlayerHitrates from './PlayerHitrates';
 import Gamelog from './Gamelog';
+import FiltersMenu from './FiltersMenu';
 
 
 function Matchup() {
@@ -16,6 +17,7 @@ function Matchup() {
     const [homePlayerHitrates, setHomePlayerHitrates] = useState({})
     const [awayPlayerHitrates, setAwayPlayerHitrates] = useState({})
     const [displayFrame, setDisplayFrame] = useState(0)
+    const [showFiltersMenu, setShowFiltersMenu] = useState(false)
 
     let loaded = false;
 
@@ -49,9 +51,10 @@ function Matchup() {
 
     return (
         <div>
-            <div className='flex flex-col w-full'>
+            <div className='w-full h-screen flex flex-col'>
                 {/* This div contains the buttons for toggling between Player Analyzers */}
                 <div className='flex flex-row justify-center h-12 mb-6'>
+                    {/* Player 1 Selector */}
                     <button
                         className={'flex-1 text-lg hover:bg-gray-200' + `( 
                             ${!homeAwayToggle
@@ -68,6 +71,7 @@ function Matchup() {
                     >
                         {matchup.home_player}
                     </button>
+                    {/* Player 2 Selector */}
                     <button
                         className={'flex-1 text-lg hover:bg-gray-200' + `( 
                             ${homeAwayToggle
@@ -103,7 +107,18 @@ function Matchup() {
                         </div>
                     )
                 }
-                {/* This div contains the MatchupGamelog for the selected player. */}
+                <button onClick={() => {
+                    setShowFiltersMenu(!showFiltersMenu);
+                }}>
+                    Filters
+                </button>
+                {showFiltersMenu &&
+                    <FiltersMenu
+                        show={showFiltersMenu}
+                        close={() => setShowFiltersMenu(false)}
+                    />
+                }
+                {/* This div contains the matchup data for the selected player with the given filter selection. */}
                 <div className='flex flex-none justify-center'>
                     <div className='p-8 w-4/6'>
                         <div className='flex flex-col justify-center'>
