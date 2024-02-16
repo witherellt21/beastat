@@ -9,9 +9,14 @@ import threading
 import time
 
 from helpers.db_helpers import get_player_id
+from routers import faker
 
+import logging
 
 RUNNING = True
+
+
+logger = logging.getLogger("main")
 
 
 def get_team_lineup(*, lineup_div: element.ResultSet) -> dict:
@@ -126,9 +131,15 @@ class LineupDataScraper(threading.Thread):
 
     def run(self) -> None:
         while self.RUNNING:
-            get_lineups()
+            if faker.FAKING:
+                Matchups.update_or_insert_record(
+                    data=faker.FakeMatchup, id_fields=["game_id", "position"]
+                )
+            else:
+                get_lineups()
+                time.sleep(1)
 
-            time.sleep(1)
+            # logger.debug("Updated matchups.")
 
 
 if __name__ == "__main__":

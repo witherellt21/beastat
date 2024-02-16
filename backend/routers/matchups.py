@@ -12,6 +12,7 @@ import pandas as pd
 
 from global_implementations import constants
 from helpers.db_helpers import get_matchup_gamelog
+from routers import faker
 from sql_app.register.lineup import Lineups
 from sql_app.register.matchup import Matchups
 from sql_app.serializers.matchup import MatchupSerializer
@@ -19,8 +20,8 @@ from sql_app.serializers.matchup import MatchupReadSerializer
 from sql_app.serializers.gamelog import GamelogSerializer
 
 from typing import List
-
 import logging
+
 
 logger = logging.getLogger("main")
 
