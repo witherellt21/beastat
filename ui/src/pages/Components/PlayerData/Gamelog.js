@@ -1,6 +1,8 @@
 import React from 'react'
 
-function Gamelog() {
+function Gamelog({
+    gamelogData
+}) {
     return (
         <div>Gamelog</div>
     )

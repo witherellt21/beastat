@@ -8,9 +8,8 @@ import axios from 'axios';
 import { propLinesColumns } from './columns'
 
 
-function PropLines(props) {
+function PropLines({ propData }) {
     const [showingImpliedOdds, showImpliedOdds] = useState(false)
-    const [propData, setPropData] = useState([])
     const [columnVisibility, setColumnVisibility] = useState({
         AST_over_implied: false,
         AST_under_implied: false,
@@ -36,19 +35,7 @@ function PropLines(props) {
 
     })
 
-
-    useEffect(() => {
-        axios.get(`http://localhost:3001/player-props/${props.player_id}`)
-            .then((response) => {
-                setPropData(response.data)
-            })
-            .catch((error) => {
-                console.log(error)
-            });
-    }, [props.player_id]);
-
     return (
-
         <div className='flex flex-col p-4 justify-center'>
             <div className="flex items-center justify-center bg-red-300 rounded-t-2xl border-2 border-b-0 border-black">
                 <div className="flex-1"></div>
@@ -87,12 +74,15 @@ function PropLines(props) {
                     {tableInstance.getHeaderGroups().map((headerElement) => {
                         return <tr key={headerElement.id} className={headerElement.depth === 0 ? 'h-8 text-lg' : ''}>
                             {headerElement.headers.map((columnElement) => {
-
+                                console.log(columnElement)
                                 return (
                                     <th key={columnElement.id} colSpan={columnElement.colSpan}
                                         className={'border-2 border-black text-xs px-2' + `(
                                             ${headerElement.depth === 0 ? 'text-lg' : ''}
-                                        )`}
+                                        )` + `(
+                                            ${headerElement.depth === 1 ? 'w-16' : ''}
+                                        )`
+                                        }
                                     >
                                         {
                                             flexRender(
@@ -110,7 +100,7 @@ function PropLines(props) {
                         return (
                             <tr key={row.id}>
                                 {row.getVisibleCells().map((cell) => {
-                                    return <td key={cell.id} className='py-1 border w-16 border-gray-300 text-xs'>
+                                    return <td key={cell.id} className='py-1 border border-gray-300 text-xs'>
                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                     </td>;
                                 })}
@@ -119,7 +109,7 @@ function PropLines(props) {
                     })}
                 </tbody>
             </table>
-        </div >
+        </div>
     )
 }
 
