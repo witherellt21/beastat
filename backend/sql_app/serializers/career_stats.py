@@ -1,40 +1,41 @@
 from typing import Optional
 from pydantic import BaseModel as BaseSerializer
 
+
 class CareerStatsSerializer(BaseSerializer):
-    player_id : str
-    Season : str
-    Age : Optional[float]
-    Tm : str
-    Lg : str
-    Pos : str
-    G : int
-    GS : int
-    MP : float
-    FG : float
-    FGA : float
-    FG_perc : float
-    THP : float
-    THPA : float
-    THP_perc : Optional[float]
-    TWP : float
-    TWPA : float
-    TWP_perc : float
-    eFG_perc : float
-    FT : float
-    FTA : float
-    FT_perc : float
-    ORB : float
-    DRB : float
-    TRB : float
-    AST : float
-    STL : float
-    BLK : float
-    TOV : float
-    PF : float
-    PTS : float
-    Awards : str
-    PA : float
-    PR : float
-    RA : float
-    PRA : float
+    player_id: str
+    Season: str
+    Age: Optional[float]
+    Tm: str
+    Lg: str
+    Pos: str
+    G: int
+    GS: int
+    MP: float
+    FG: Optional[float]
+    FGA: Optional[float]
+    FG_perc: Optional[float]
+    THP: Optional[float]
+    THPA: Optional[float]
+    THP_perc: Optional[float]
+    TWP: Optional[float]
+    TWPA: Optional[float]
+    TWP_perc: Optional[float]
+    eFG_perc: Optional[float]
+    FT: Optional[float]
+    FTA: Optional[float]
+    FT_perc: Optional[float]
+    ORB: Optional[float]
+    DRB: Optional[float]
+    TRB: Optional[float]
+    AST: Optional[float]
+    STL: Optional[float]
+    BLK: Optional[float]
+    TOV: Optional[float]
+    PF: Optional[float]
+    PTS: Optional[float]
+    Awards: Optional[str]
+    PA: Optional[float]
+    PR: Optional[float]
+    RA: Optional[float]
+    PRA: Optional[float]

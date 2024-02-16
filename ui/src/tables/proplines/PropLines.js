@@ -41,13 +41,10 @@ function PropLines(props) {
         axios.get(`http://localhost:3001/player-props/${props.player_id}`)
             .then((response) => {
                 setPropData(response.data)
-                // console.log(response.data)
             })
             .catch((error) => {
                 console.log(error)
             });
-        // setPropData({ player_id: props.player_id, ...exampleData })
-        // console.log(propData)
     }, [props.player_id]);
 
     return (
@@ -71,12 +68,9 @@ function PropLines(props) {
                             tableInstance.getAllLeafColumns().map((column) => {
                                 if (column.id.endsWith('over') | column.id.endsWith('under')) {
                                     column.toggleVisibility(!column.getIsVisible())
-                                    // showImpliedOdds = false;
                                 }
                                 if (column.id.endsWith('implied')) {
                                     column.toggleVisibility(!column.getIsVisible())
-                                    // showImpliedOdds = column.getIsVisible();
-
                                 }
                             })
 
@@ -91,7 +85,6 @@ function PropLines(props) {
             <table className='table-auto'>
                 <thead>
                     {tableInstance.getHeaderGroups().map((headerElement) => {
-                        // console.log(headerElement)
                         return <tr key={headerElement.id} className={headerElement.depth === 0 ? 'h-8 text-lg' : ''}>
                             {headerElement.headers.map((columnElement) => {
 

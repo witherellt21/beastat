@@ -9,6 +9,7 @@ from helpers.db_helpers import get_player_id
 from helpers.db_helpers import get_player_active_seasons
 from sql_app.register.gamelog import Gamelogs
 from sql_app.register.matchup import Matchups
+from sql_app.register.player_info import PlayerInfos
 
 from exceptions import NoDataFoundException
 
@@ -72,6 +73,7 @@ class GamelogScraper(AbstractBaseScraper):
     }
     TABLE = Gamelogs
     LOG_LEVEL = logging.INFO
+    IDENTIFIER_OPTIONS = {"player_ids": "all"}
 
     @property
     def download_url(self):
@@ -89,11 +91,22 @@ class GamelogScraper(AbstractBaseScraper):
 
     def get_identifiers(self) -> "list[str|tuple[str]]":
         # TODO: There has to be a faster way to do this. Without extend and iteration
-        matchups = Matchups.get_all_records(as_df=True)
+        if self.identifier_source == "matchups_only":
+            matchups = Matchups.get_all_records(as_df=True)
 
-        players = np.concatenate(
-            (matchups["home_player_id"].unique(), matchups["away_player_id"].unique())
-        )
+            players = np.concatenate(
+                (
+                    matchups["home_player_id"].unique(),
+                    matchups["away_player_id"].unique(),
+                )
+            )
+        elif self.identifier_source == "all":
+            all_players = PlayerInfos.get_all_records(as_df=True)
+
+            if not all_players.empty:
+                players = list(all_players["player_id"].values)
+            else:
+                return []
 
         identifiers = []
         for player in players:
@@ -104,6 +117,7 @@ class GamelogScraper(AbstractBaseScraper):
                     list(map(lambda year: (player, year), active_seasons))
                 )
             except NoDataFoundException:
+                self.logger.error(f"Could not find active seasons for the {player}.")
                 continue
 
         self.logger.debug(f"Getting gamelogs for {identifiers}")

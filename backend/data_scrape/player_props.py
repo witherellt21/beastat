@@ -10,8 +10,9 @@ from typing import Callable
 import threading
 import traceback
 import logging
-
 import time
+
+from pydantic_core import ValidationError
 
 plus_minus_match = re.compile("−|\+")
 minus_match = re.compile("−")
@@ -146,6 +147,13 @@ class PlayerPropsScraper(AbstractBaseScraper):
 
         row_dicts = data.to_dict(orient="records")
         for row in row_dicts:
+
+            if row["player_id"] == None:
+                self.logger.debug(
+                    f"Player's ID does not exist: player_name = {row.get('player_name')}. Congifure the player info scraper to get all active player's id's."
+                )
+                continue
+
             player: PlayerPropSerializer = PlayerProps.get_or_create(
                 data={"player_id": row["player_id"], "name": row["player_name"]}
             )

@@ -29,20 +29,26 @@ main_logger.addHandler(main_stream_handler)
 
 
 # TODO: MASSIVE work needs to be done in keeping these scrapers asynchronous in case data is missing
-if config.DATA_SCRAPE.get("Lineups"):
+if config.DATA_SCRAPE.get("Lineups").get("status"):
     lineup_scraper = LineupDataScraper()
     lineup_scraper.start()
 
-# career_stats_scraper = CareerStatsScraper()
-# career_stats_scraper.start()
-if config.DATA_SCRAPE.get("PlayerProps"):
+if config.DATA_SCRAPE.get("CareerStats", {}).get("status"):
+    career_stats_scraper = CareerStatsScraper(
+        **config.DATA_SCRAPE.get("CareerStats", {}).get("options", {})
+    )
+    career_stats_scraper.start()
+
+if config.DATA_SCRAPE.get("PlayerProps").get("status"):
     player_props_scraper = PlayerPropsScraper()
     player_props_scraper.start()
 
 # # player_info_scraper = PlayerInfoScraper()
 # # player_info_scraper.start()
-if config.DATA_SCRAPE.get("Gamelogs"):
-    gamelog_scraper = GamelogScraper()
+if config.DATA_SCRAPE.get("Gamelogs", {}).get("status"):
+    gamelog_scraper = GamelogScraper(
+        **config.DATA_SCRAPE.get("Gamelogs", {}).get("options", {})
+    )
     gamelog_scraper.start()
 
 

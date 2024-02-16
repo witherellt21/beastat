@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import MatchupGamelog from '../tables/gamelog/MatchupGamelog';
 import PropLines from '../tables/proplines/PropLines';
+import PlayerHitrates from './PlayerHitrates';
+import Gamelog from './Gamelog';
 
 
 function Matchup() {
@@ -12,33 +13,42 @@ function Matchup() {
     const [isLoading, setLoading] = useState(true);
     const [matchup, setMatchup] = useState({});
     const [homeAwayToggle, setHomeAwayToggle] = useState(true);
+    const [homePlayerHitrates, setHomePlayerHitrates] = useState({})
+    const [awayPlayerHitrates, setAwayPlayerHitrates] = useState({})
+    const [displayFrame, setDisplayFrame] = useState(0)
 
     let loaded = false;
 
     useEffect(() => {
         axios.get(`http://localhost:3001/matchups/${id}`).then(async (response) => {
-            await setMatchup(response.data)
-            setLoading(false);
+            setMatchup(response.data)
+
+            axios.get(`http://localhost:3001/player-props/${response.data.home_player_id}/hitrates`).then(async (response) => {
+                await setHomePlayerHitrates(response.data)
+            }).catch((err) => {
+                console.log(err);
+                return null;
+            });
+            axios.get(`http://localhost:3001/player-props/${response.data.away_player_id}/hitrates`).then(async (response) => {
+                await setAwayPlayerHitrates(response.data)
+            }).catch((err) => {
+                console.log(err);
+                return null;
+            });
+            setLoading(false)
+
+            console.log(homePlayerHitrates)
+            console.log(awayPlayerHitrates)
+
         }).catch((err) => {
             console.log(err);
             return null;
         });
-    }, [id, loaded]);
 
-    // if (isLoading) {
-    //     return <div className="App">Loading...</div>;
-    // }
+    }, [id, loaded]);
 
     return (
         <div>
-            {/* <div>
-                <div>
-                    {matchup.home_player}
-                </div>
-                <div>
-                    {matchup.away_player}
-                </div>
-            </div> */}
             <div className='flex flex-col w-full'>
                 {/* This div contains the buttons for toggling between Player Analyzers */}
                 <div className='flex flex-row justify-center h-12 mb-6'>
@@ -78,31 +88,76 @@ function Matchup() {
                 This div contains the Proplines for the selected player.
                 It will only load after the matchup is successfully set.
                 */}
-                {/* <button onClick={() => {
-                    console.log(matchup)
-                }}>Check</button> */}
-                {/* {(matchup.homeAwayToggle && matchup.away_player_id) */}
                 {!isLoading
-                    ? <div className='flex justify-center'>
-                        {homeAwayToggle
-                            ? < PropLines player_id={matchup.home_player_id} />
-                            : <PropLines player_id={matchup.away_player_id} />
-                        }
-                    </div>
-                    : <div>
-                        No data to display.
-                    </div>
+                    ? (
+                        <div className='flex justify-center'>
+                            {homeAwayToggle
+                                ? < PropLines player_id={matchup.home_player_id} />
+                                : <PropLines player_id={matchup.away_player_id} />
+                            }
+                        </div>
+                    )
+                    : (
+                        <div>
+                            No data to display.
+                        </div>
+                    )
                 }
                 {/* This div contains the MatchupGamelog for the selected player. */}
-                <div className='flex justify-center'>
-                    {
-                        homeAwayToggle
-                            ? <MatchupGamelog matchup_id={id} home_away="home" />
-                            : <MatchupGamelog matchup_id={id} home_away="away" />
-                    }
+                <div className='flex flex-none justify-center'>
+                    <div className='p-8 w-4/6'>
+                        <div className='flex flex-col justify-center'>
+                            <div className='flex h-10'>
+                                <button
+                                    className={'flex flex-1 justify-center items-center border-r-0 border-2 border-gray-900 rounded-tl-md hover:bg-gray-200  bg-blue-600'
+                                        // + `(${displayFrame == 0
+                                        //     ? 'bg-blue-600'
+                                        //     : 'bg-gray-600'
+                                        // })`
+                                    }
+                                    onClick={() => {
+                                        setDisplayFrame(0)
+                                    }}
+                                >
+                                    Stat Hit-Rates
+                                </button>
+                                <div className='border-l-2 border-gray-900'></div>
+                                <button
+                                    className='flex flex-1 justify-center items-center border-l-0 border-2 border-gray-900 rounded-tr-md hover:bg-gray-200'
+                                    onClick={() => {
+                                        setDisplayFrame(1)
+                                    }}
+                                >
+                                    Gamelogs
+                                </button>
+                            </div>
+                            {displayFrame == 1
+                                ? <div >
+                                    {
+                                        homeAwayToggle
+                                            ? <Gamelog matchup_id={id} home_away="home" />
+                                            : <Gamelog matchup_id={id} home_away="away" />
+                                    }
 
+                                </div>
+                                : <div />
+                            }
+                            {!isLoading && displayFrame == 0
+                                ? (
+                                    <div className='justify-center'>
+                                        {homeAwayToggle
+                                            ? < PlayerHitrates hitrates={homePlayerHitrates} />
+                                            : < PlayerHitrates hitrates={awayPlayerHitrates} />
+                                        }
+                                    </div>
+                                )
+                                : (
+                                    <div />
+                                )
+                            }
+                        </div>
+                    </div>
                 </div>
-
             </div>
         </div >
     )

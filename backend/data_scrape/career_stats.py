@@ -13,6 +13,8 @@ from data_scrape.test.main_tester_functions import test_scraper_thread
 from helpers.string_helpers import convert_season_to_year
 from sql_app.register.career_stats import CareerStatss
 from sql_app.register.matchup import Matchups
+from sql_app.register.player_info import PlayerInfos
+
 
 IS_SEASON = re.compile("^\d{4}")
 
@@ -113,12 +115,27 @@ class CareerStatsScraper(AbstractBaseScraper):
         return season_stat_datasets[0]
 
     def get_identifiers(self) -> "list[str | tuple[str]]":
-        matchups = Matchups.get_all_records(as_df=True)
+        if self.identifier_source == "matchups_only":
+            matchups = Matchups.get_all_records(as_df=True)
 
-        player_ids = np.concatenate(
-            (matchups["home_player_id"].unique(), matchups["away_player_id"].unique())
-        )
-        return list(player_ids)
+            player_ids = list(
+                np.concatenate(
+                    (
+                        matchups["home_player_id"].unique(),
+                        matchups["away_player_id"].unique(),
+                    )
+                )
+            )
+
+        elif self.identifier_source == "all":
+            all_players = PlayerInfos.get_all_records(as_df=True)
+
+            if not all_players.empty:
+                player_ids = list(all_players["player_id"].values)
+            else:
+                return []
+
+        return player_ids
 
     def clean(self, *, data: pd.DataFrame) -> pd.DataFrame:
         data = super().clean(data=data)

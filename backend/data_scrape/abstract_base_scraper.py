@@ -57,7 +57,7 @@ class AbstractBaseScraper(ABC, threading.Thread):
     REFRESH_RATE: int = 5
     LOG_LEVEL = logging.INFO
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         if not self.__class__.TABLE:
             raise Exception("Must specify a table for the scaper to save data to.")
 
@@ -70,13 +70,14 @@ class AbstractBaseScraper(ABC, threading.Thread):
         self.last_download_time = None
 
         self.RUNNING = False
-        self.idenifier = None
 
         args_expected = self.download_url.count("{}")
         if args_expected:
             self.identifier_required = True
         else:
             self.identifier_required = False
+
+        self.identifier_source = kwargs.get("identifier_source", "matchups_only")
 
         if self.identifier_required and not self.get_identifiers():
             raise NotImplementedError(
@@ -144,28 +145,35 @@ class AbstractBaseScraper(ABC, threading.Thread):
         while self.RUNNING:
             try:
                 identifiers = self.get_identifiers()
+            except Exception as e:
+                self.logger.error(e)
+                self.kill_process()
 
-                if identifiers:
-                    for identifier in identifiers:
-                        if not self.RUNNING:
-                            break
+            if identifiers:
+                for identifier in identifiers:
+                    if not self.RUNNING:
+                        break
 
+                    try:
                         self.get_data(identifier=identifier)
                         time.sleep(0.1)
 
-                else:
-                    self.get_data()
-                    time.sleep(0.1)
+                        consecutive_errors = 0
 
-                consecutive_errors = 0
+                    except Exception as e:
+                        consecutive_errors += 1
+                        self.logger.error(
+                            f"Error occured in running thread for {self.__class__.__name__} ({consecutive_errors} in a row) ({identifier}): \n\n {traceback.format_exc()}.\n\n"
+                        )
 
-            except Exception as e:
-                consecutive_errors += 1
-                self.logger.error(
-                    f"Error occured in running thread for {self.__class__.__name__} ({consecutive_errors} in a row) ({identifier}): \n\n {traceback.format_exc()}.\n\n"
-                )
-                if consecutive_errors >= 10:
-                    self.kill_process()
+                        if consecutive_errors >= 10:
+                            self.kill_process()
+
+                        continue
+
+            else:
+                self.get_data()
+                time.sleep(0.1)
 
     def kill_process(self, *args):
         self.RUNNING = False

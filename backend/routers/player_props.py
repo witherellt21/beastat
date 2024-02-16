@@ -6,6 +6,7 @@ from sql_app.serializers.player_prop import ReadPlayerPropSerializer
 from sql_app.serializers.player_prop import ReadPropLineSerializer
 from sql_app.register.player_prop import PlayerProps
 from sql_app.register.player_prop import PropLines
+from sql_app.register.gamelog import Gamelogs
 from typing import List
 
 import logging
@@ -22,8 +23,7 @@ router = APIRouter()
 
 @router.get("/{player_id}")
 async def get_props_by_player_id(player_id: str):
-    # lines = PropLines.filter_records(query="player_id")
-    player: PlayerPropSerializer = PlayerProps.get_record(
+    player: ReadPlayerPropSerializer = PlayerProps.get_record(
         query={"player_id": player_id}
     )
 
@@ -31,12 +31,10 @@ async def get_props_by_player_id(player_id: str):
         print(f"No prop lines for player: {player_id}")
         return []
 
-    # logger.debug(player)
     lines: list[ReadPropLineSerializer] = PropLines.filter_records(
         query={"player_id": player.id}
     )
 
-    # player_lines = {line.stat: }
     new_lines = {}
     for line in lines:
         new_lines[line.stat] = {
@@ -49,55 +47,45 @@ async def get_props_by_player_id(player_id: str):
 
     return [new_lines]
 
-    # player_props: pd.DataFrame = PlayerProps.filter_records(
-    #     query={"player_id": player_id}, as_df=True
-    # )
 
-    # if player_props.empty:
-    #     return ReadPlayerPropSerializer(player_name=player_id)
+@router.get("/{player_id}/hitrates")
+async def get_player_hitrates(player_id: str):
+    player: ReadPlayerPropSerializer = PlayerProps.get_record(
+        query={"player_id": player_id}
+    )
 
-    # # grouped_by_stat = player_props.groupby("stat")
-    # stat_types = player_props["stat"].values
+    if not player:
+        print(f"No prop lines for player: {player_id}")
+        return {}
 
-    # # line_slice = player_props[
-    # #     "stat",
-    # #     "line",
-    # #     "odds_over",
-    # #     "odds_under",
-    # #     "implied_odds_over",
-    # #     "implied_odds_under",
-    # # ]
-    # ast_line: pd.DataFrame = player_props[player_props["stat"] == "assists"]
+    # Get the prop lines for the given player
+    lines: list[ReadPropLineSerializer] = PropLines.filter_records(
+        query={"player_id": player.id}
+    )
 
-    # if not ast_line.empty:
-    #     ast_line: object = ast_line.iloc[0]
+    # Get player career gamelog
+    career_gamelog: pd.DataFrame = Gamelogs.filter_records(
+        query={"player_id": player_id}, as_df=True
+    )
 
-    #     validated_data: PlayerPropSerializer = PlayerPropSerializer(**ast_line)
+    if career_gamelog.empty:
+        return {}
 
-    #     payload = {
-    #         "player_name": validated_data.player_name,
-    #         "AST": {
-    #             "line": validated_data.line,
-    #             "over": {
-    #                 "odds": validated_data.odds_over,
-    #                 "implied_odds": validated_data.implied_odds_over,
-    #             },
-    #             "under": {
-    #                 "odds": validated_data.odds_under,
-    #                 "implied_odds": validated_data.implied_odds_under,
-    #             },
-    #         },
-    #     }
+    career_gamelog = career_gamelog.dropna(subset=["G"])
 
-    #     response_data = ReadPlayerPropSerializer(**payload)
+    average_minutes_played = career_gamelog["MP"].mean()
 
-    #     return [response_data]
+    career_gamelog = career_gamelog[
+        career_gamelog["MP"] >= average_minutes_played * 0.9
+    ]
 
-    # return ReadPlayerPropSerializer(player_name=player_id)
+    career_games_played = len(career_gamelog)
 
-    # payload = {
-    #     'player_name': player_props.loc[]
-    # }
+    hitrates = {}
+    for line in lines:
+        stat_overs = career_gamelog[career_gamelog[line.stat] >= line.line]
+        hitrates[line.stat] = round(
+            len(stat_overs) / career_games_played * 100, ndigits=2
+        )
 
-
-# if __name__ == "__main__":
+    return hitrates
