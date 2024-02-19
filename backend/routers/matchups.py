@@ -70,6 +70,8 @@ async def retrieve_matchup_stats(id: str, home_away: str):
         else:
             matchup = get_matchup_gamelog(id=id, home_player=False)
 
+        logger.debug(matchup)
+
         return matchup
     except Exception as e:
         traceback.print_exc()

@@ -21,11 +21,6 @@ function Matchup() {
     const [queryFilter, setQueryFilters] = useState({});
 
 
-    let loaded = false;
-
-    // let query = {}
-
-
     useEffect(() => {
         axios.get(`http://localhost:3001/matchups/${id}`).then(async (response) => {
             setMatchup(response.data)

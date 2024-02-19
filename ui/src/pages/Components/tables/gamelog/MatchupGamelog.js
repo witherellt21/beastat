@@ -1,19 +1,15 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import {
     flexRender,
     useReactTable,
     getCoreRowModel,
     getSortedRowModel,
 } from '@tanstack/react-table';
-import axios from 'axios';
 import { columnDef } from './columns'
 
 
-function MatchupGamelog(props) {
+function MatchupGamelog({ matchupData }) {
 
-    // let player_id = props.
-
-    const [matchupData, setMatchupData] = useState({});
     const [sorting, setSorting] = useState([{
         desc: false,
         id: "Date"
@@ -30,13 +26,6 @@ function MatchupGamelog(props) {
         debugTable: true,
     })
 
-
-    useEffect(() => {
-        axios.get(`http://localhost:3001/matchups/${props.matchup_id}/stats/${props.home_away}`).then((response) => {
-            setMatchupData(response.data)
-        });
-    }, [props.matchup_id, props.home_away]);
-
     return (
         <div className='flex flex-col justify-center'>
             <h1 className='py-2 font-bold'>
@@ -49,7 +38,7 @@ function MatchupGamelog(props) {
                             {headerElement.headers.map((columnElement) => {
                                 return (
                                     <th key={columnElement.id} colSpan={columnElement.colSpan}
-                                        className='border-2 border-black text-xs'
+                                        className='px-2 border-2 border-black text-xs'
                                     >
                                         {
                                             flexRender(
@@ -67,7 +56,7 @@ function MatchupGamelog(props) {
                         return (
                             <tr key={row.id}>
                                 {row.getVisibleCells().map((cell) => {
-                                    return <td key={cell.id} className='py-1 border border-gray-300 text-xs'>
+                                    return <td key={cell.id} className=' py-1 border border-gray-300 text-xs'>
                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                     </td>;
                                 })}
@@ -77,12 +66,11 @@ function MatchupGamelog(props) {
                 </tbody>
                 <tfoot>
                     {tableInstance.getFooterGroups().map((footerElement) => {
-                        // console.log(matchupData)
                         return <tr key={footerElement.id} className='border-2 border-black'>
                             {footerElement.headers.map((columnElement) => {
                                 return (
                                     <th key={columnElement.id} colSpan={columnElement.colSpan}
-                                        className='border-2 border-black text-xs'
+                                        className='px-4 border-2 border-black text-xs'
                                     >
                                         {
                                             flexRender(

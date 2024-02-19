@@ -5,9 +5,9 @@ FakeMatchup = {
     "game_id": "1",
     "position": "PG",
     "home_player": "Lebron James",
-    "away_player": "James Harden",
+    "away_player": "Jimmy Butler",
     "home_player_id": "jamesle01",
-    "away_player_id": "hardeja01",
+    "away_player_id": "butleji01",
 }
 
 FakeMatchups = [FakeMatchup]

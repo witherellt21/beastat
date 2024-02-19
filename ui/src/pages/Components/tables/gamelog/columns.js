@@ -1,24 +1,12 @@
 import { createColumnHelper } from '@tanstack/react-table';
 
+
 const columnHelper = createColumnHelper();
 
-// let points_sum = 0
-// for (let i = 0; i <= data.length; i++) {
-//     points_sum += data[i].age
-// }
-
 export const columnDef = [
-    // columnHelper.display({
-    //     id: 'player_id',
-    //     header: () => <span>Player ID</span>,
-    //     cell: info => info.getValue(),
-    // }),
-
-
-
     columnHelper.accessor('player_id', {
         cell: info => info.getValue(),
-        header: () => <span className='px-8'>Player ID</span>,
+        header: () => <span>Player ID</span>,
         footer: props => props.column.id,
     }),
     columnHelper.accessor('Date', {
@@ -29,90 +17,90 @@ export const columnDef = [
     }),
     columnHelper.accessor('Tm', {
         cell: info => info.getValue(),
-        header: () => <span className='px-4'>Team</span>,
+        header: () => <span>Team</span>,
     }),
     columnHelper.accessor('Opp', {
         cell: info => info.getValue(),
-        header: () => <span className='px-4'>Opp</span>,
+        header: () => <span>Opp</span>,
     }),
     columnHelper.accessor('streak', {
         cell: info => info.getValue(),
-        header: () => <span className='px-4'>Streak</span>,
+        header: () => <span>Streak</span>,
     }),
     columnHelper.accessor('GS', {
         cell: info => info.getValue(),
-        header: () => <span className='px-4'>GS</span>,
+        header: () => <span>GS</span>,
     }),
     columnHelper.accessor('MP', {
         cell: info => info.getValue(),
-        header: () => <span className='px-4'>MP</span>,
+        header: () => <span>MP</span>,
     }),
     columnHelper.accessor('PTS', {
         cell: info => info.getValue(),
-        header: () => <span className='px-4'>PTS</span>,
+        header: () => <span>PTS</span>,
         // aggregationFn: 'mean',
         // AggregatedCell: ({ cell }) => <div>Team Score: {cell.getValue()}</div>,
         // footer: props => props
     }),
     columnHelper.accessor('AST', {
         cell: info => info.getValue(),
-        header: () => <span className='px-4'>AST</span>,
+        header: () => <span>AST</span>,
     }),
     columnHelper.accessor('TRB', {
         cell: info => info.getValue(),
-        header: () => <span className='px-4'>TRB</span>,
+        header: () => <span>TRB</span>,
     }),
     columnHelper.accessor('PA', {
         cell: info => info.getValue(),
-        header: () => <span className='px-4'>PA</span>,
+        header: () => <span>PA</span>,
     }),
     columnHelper.accessor('PR', {
         cell: info => info.getValue(),
-        header: () => <span className='px-4'>PR</span>,
+        header: () => <span>PR</span>,
     }),
     columnHelper.accessor('RA', {
         cell: info => info.getValue(),
-        header: () => <span className='px-4'>RA</span>,
+        header: () => <span>RA</span>,
     }),
     columnHelper.accessor('PRA', {
         cell: info => info.getValue(),
-        header: () => <span className='px-4'>PRA</span>,
+        header: () => <span>PRA</span>,
     }),
     columnHelper.accessor('STL', {
         cell: info => info.getValue(),
-        header: () => <span className='px-4'>STL</span>,
+        header: () => <span>STL</span>,
     }),
     columnHelper.accessor('BLK', {
         cell: info => info.getValue(),
-        header: () => <span className='px-4'>BLK</span>,
+        header: () => <span>BLK</span>,
     }),
     columnHelper.accessor('FG', {
         cell: info => info.getValue(),
-        header: () => <span className='px-4'>FG</span>,
+        header: () => <span>FG</span>,
     }),
     columnHelper.accessor('FGA', {
         cell: info => info.getValue(),
-        header: () => <span className='px-4'>FGA</span>,
+        header: () => <span>FGA</span>,
     }),
     columnHelper.accessor('THP', {
         cell: info => info.getValue(),
-        header: () => <span className='px-4'>THP</span>,
+        header: () => <span>3P</span>,
     }),
     columnHelper.accessor('THPA', {
         cell: info => info.getValue(),
-        header: () => <span className='px-4'>THPA</span>,
+        header: () => <span>3PA</span>,
     }),
     columnHelper.accessor('FT', {
         cell: info => info.getValue(),
-        header: () => <span className='px-4'>FT</span>,
+        header: () => <span>FT</span>,
     }),
     columnHelper.accessor('FTA', {
         cell: info => info.getValue(),
-        header: () => <span className='px-4'>FTA</span>,
+        header: () => <span>FTA</span>,
     }),
     columnHelper.accessor('PF', {
         cell: info => info.getValue(),
-        header: () => <span className='px-4'>PF</span>,
+        header: () => <span>PF</span>,
     }),
 
 ]

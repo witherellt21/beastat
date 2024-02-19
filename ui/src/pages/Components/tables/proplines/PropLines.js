@@ -1,10 +1,9 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useState } from 'react'
 import {
     flexRender,
     useReactTable,
     getCoreRowModel,
 } from '@tanstack/react-table';
-import axios from 'axios';
 import { propLinesColumns } from './columns'
 
 

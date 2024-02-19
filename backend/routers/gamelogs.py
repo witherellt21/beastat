@@ -10,6 +10,9 @@ from sql_app.register.gamelog import Gamelogs
 from sql_app.serializers.gamelog import GamelogSerializer
 
 from typing import List
+import logging
+
+logger = logging.getLogger("main")
 
 router = APIRouter()
 
@@ -21,7 +24,8 @@ router = APIRouter()
 @router.get("/{id}", response_model=List[GamelogSerializer])
 async def get_gamelog_by_player_id(id: str):
     try:
-        return Gamelogs.filter_records(query={"player_id": id})
+        gamelog = Gamelogs.filter_records(query={"player_id": id})
+        return gamelog
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

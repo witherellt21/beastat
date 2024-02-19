@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import Gamelog from './PlayerData/Gamelog';
-import PlayerHitrates from './PlayerData/PlayerHitrates';
+import Gamelog from './Gamelog';
+import PlayerHitrates from './PlayerHitrates';
 import FiltersMenu from './FiltersMenu';
 
 
@@ -15,7 +15,7 @@ function PlayerData({
 
     return (
         <div className='w-full flex justify-center'>
-            <div className='p-8 w-4/6 '>
+            <div className='p-8 w-5/6 '>
                 <div className='p-2 flex justify-end'>
                     <button className='p-2 flex border border-black rounded-xl' onClick={() => {
                         setShowFiltersMenu(!showFiltersMenu);
