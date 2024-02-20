@@ -72,7 +72,7 @@ class GamelogScraper(AbstractBaseScraper):
         "PRA": "PTS+TRB+AST",
     }
     TABLE = Gamelogs
-    LOG_LEVEL = logging.INFO
+    LOG_LEVEL = logging.DEBUG
     IDENTIFIER_OPTIONS = {"player_ids": "all"}
 
     @property

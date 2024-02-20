@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-// import logo from "./assets/x.svg";
 import GamesFilters from './FiltersMenus/GamesFilters';
 import MinutesFilters from './FiltersMenus/MinutesFilters';
 import LineupFilters from './FiltersMenus/LineupFilters';
@@ -8,6 +7,7 @@ function FiltersMenu({
     show,
     close,
     apply,
+    queryFilters
 }) {
 
     const [selection, setSelection] = useState("games");
@@ -28,15 +28,10 @@ function FiltersMenu({
 
     return (
         <div>
-            {/* <div class="w-full bg-gray-200 flex justify-center items-center"> */}
-            {/* <div class="bg-gray-400 w-96 h-96 relative z-0"> */}
-            {/* < div > */}
-            <div class="absolute inset-0 flex justify-center items-center z-10 backdrop-blur-sm">
+            <div className="absolute inset-0 flex justify-center items-center z-10 backdrop-blur-sm">
                 <div className='flex flex-col shadow-2xl rounded-2xl'>
                     <div className='h-14 px-4 pt-4 flex flex-row justify-between bg-gradient-to-b from-gray-300 to-gray-200 border-b-2 border-black rounded-t-2xl'>
-                        {/* <div className='h-full flex items-end '> */}
                         <label className='h-full pb-1 flex items-end text-2xl'>Filter Settings</label>
-                        {/* </div> */}
                         <div className='h-full flex items-start'>
                             <button className='p-1 border border-gray-500 rounded-md hover:shadow-inner hover:border-gray-700' onClick={close}>
                                 <svg fill="#000000" width="18px" height="18px" viewBox="0 0 256 256" id="Flat" xmlns="http://www.w3.org/2000/svg">
@@ -68,9 +63,9 @@ function FiltersMenu({
                         </div>
                         <div className='border-black'></div>
                         <div className='h-full w-96 bg-white'>
-                            {showGamesMenu && <GamesFilters apply={setCurrentQuery} />}
-                            {showMinutesMenu && <MinutesFilters apply={setCurrentQuery} />}
-                            {showLineupsMenu && <LineupFilters apply={setCurrentQuery} />}
+                            {/* {showGamesMenu && <GamesFilters apply={setCurrentQuery} />} */}
+                            {showMinutesMenu && <MinutesFilters setCurrentQuery={setCurrentQuery} />}
+                            {/* {showLineupsMenu && <LineupFilters apply={setCurrentQuery} />} */}
                         </div>
                     </div>
                     <div className='h-10 px-2 flex justify-between bg-gradient-to-b from-gray-300 to-gray-100 border-t border-gray-400 rounded-b-2xl'>
@@ -86,8 +81,8 @@ function FiltersMenu({
                             <button
                                 className='text-sm px-4 border border-black rounded-lg bg-gradient-to-b from-indigo-400 to-indigo-200 active:shadow-xl active:from-indigo-500 active:to-indigo-300 '
                                 onClick={() => {
-                                    apply(currentQuery)
-                                    close()
+                                    apply({ ...queryFilters, ...currentQuery });
+                                    close();
                                 }}
                             >
                                 Apply

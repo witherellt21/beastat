@@ -73,7 +73,6 @@ function PropLines({ propData }) {
                     {tableInstance.getHeaderGroups().map((headerElement) => {
                         return <tr key={headerElement.id} className={headerElement.depth === 0 ? 'h-8 text-lg' : ''}>
                             {headerElement.headers.map((columnElement) => {
-                                console.log(columnElement)
                                 return (
                                     <th key={columnElement.id} colSpan={columnElement.colSpan}
                                         className={'border-2 border-black text-xs px-2' + `(

@@ -70,6 +70,66 @@ def get_matchup_gamelog(
     ]
 
 
+def get_matchup_gamelog_by_player_id(*, player_id: str) -> "list[GamelogSerializer]":
+    matchup_if_home_player: MatchupSerializer = Matchups.get_record(
+        query={"home_player_id": player_id}
+    )
+    matchup_if_away_player: MatchupSerializer = Matchups.get_record(
+        query={"away_player_id": player_id}
+    )
+
+    if matchup_if_home_player:
+        matchup = matchup_if_home_player
+        home_player = True
+    elif matchup_if_away_player:
+        matchup = matchup_if_away_player
+        home_player = False
+    else:
+        return []
+
+    home_player_df: pd.DataFrame = Gamelogs.filter_records(
+        query={"player_id": matchup.home_player_id}, as_df=True
+    )
+    away_player_df: pd.DataFrame = Gamelogs.filter_records(
+        query={"player_id": matchup.away_player_id}, as_df=True
+    )
+
+    if home_player_df.empty or away_player_df.empty:
+        return []
+
+    # Merge the datasets on games they played against each other and drop inactive games
+    matchup_gamelog = pd.merge(
+        home_player_df,
+        away_player_df,
+        left_on=["Date", "Tm"],
+        right_on=["Date", "Opp"],
+    ).dropna()
+
+    # Get the original column names of the datasets that were not duplicated
+    column_headers = home_player_df.loc[:, home_player_df.columns != "Date"].columns
+
+    # Create filters to separate the respective datasets for each player
+    if home_player:
+        subset_filter: list = ["Date"] + list(
+            map(lambda stat: f"{stat}_x", column_headers)
+        )
+    else:
+        subset_filter: list = ["Date"] + list(
+            map(lambda stat: f"{stat}_y", column_headers)
+        )
+
+    rename_function = lambda column: column.rsplit("_", 1)[0]
+
+    # Rename the columns for each player to remove the suffixes
+    matchup_data: pd.DataFrame = matchup_gamelog[subset_filter].rename(
+        rename_function, axis="columns"
+    )
+
+    return [
+        GamelogSerializer(**game) for game in matchup_data.to_dict(orient="records")
+    ]
+
+
 def get_player_id(*, player_name: str) -> Optional[str]:
     player: PlayerInfoSerializer = PlayerInfos.get_record(query={"name": player_name})
 

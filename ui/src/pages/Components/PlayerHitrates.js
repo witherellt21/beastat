@@ -4,7 +4,7 @@ function PlayerHitrates(props) {
 
 
     return (
-        <div className='flex flex-col p-8 bg-gray-500 rounded-b-xl'>
+        <div className='flex flex-col p-8 rounded-b-xl'>
             {/* <h1 className='flex-1 font-bold text-2xl'>
                 Stat Hit-Rates
             </h1> */}

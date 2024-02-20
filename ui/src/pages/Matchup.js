@@ -9,16 +9,11 @@ function Matchup() {
     let { id } = useParams();
     let navigate = useNavigate();
 
-    const [isLoading, setLoading] = useState(true);
+    const [matchupLoaded, setMatchupLoaded] = useState(false);
     const [matchup, setMatchup] = useState({});
     const [homeAwayToggle, setHomeAwayToggle] = useState(true);
-    const [homeGamelog, setHomeGamelog] = useState([]);
-    const [awayGamelog, setAwayGamelog] = useState([]);
-    const [homePlayerHitrates, setHomePlayerHitrates] = useState({});
-    const [awayPlayerHitrates, setAwayPlayerHitrates] = useState({});
     const [homePropLines, setHomePropLines] = useState([]);
     const [awayPropLines, setAwayPropLines] = useState([])
-    const [queryFilter, setQueryFilters] = useState({});
 
 
     useEffect(() => {
@@ -30,61 +25,43 @@ function Matchup() {
             return null;
         });
 
-        getPlayerData(queryFilter);
+        setMatchupLoaded(true);
 
-    }, [id, queryFilter]);
+    }, [id]);
 
-    const getPlayerData = async (query) => {
+    useEffect(() => {
+        if (matchupLoaded) {
+            axios.get(`http://localhost:3001/player-props/${matchup.home_player_id}`)
+                .then((response) => {
+                    setHomePropLines(response.data)
+                })
+                .catch((error) => {
+                    console.log(error)
+                    return null;
+                });
+            axios.get(`http://localhost:3001/player-props/${matchup.away_player_id}`)
+                .then((response) => {
+                    setAwayPropLines(response.data)
+                })
+                .catch((error) => {
+                    console.log(error)
+                    return null;
+                });
+        }
 
-        axios.get(`http://localhost:3001/player-props/${matchup.home_player_id}/hitrates`).then(async (response) => {
-            await setHomePlayerHitrates(response.data)
-        }).catch((err) => {
-            console.log(err);
-            return null;
-        });
-        axios.get(`http://localhost:3001/player-props/${matchup.away_player_id}/hitrates`).then(async (response) => {
-            await setAwayPlayerHitrates(response.data)
-        }).catch((err) => {
-            console.log(err);
-            return null;
-        });
-        axios.get(`http://localhost:3001/player-props/${matchup.home_player_id}`)
-            .then((response) => {
-                setHomePropLines(response.data)
-            })
-            .catch((error) => {
-                console.log(error)
-                return null;
-            });
-        axios.get(`http://localhost:3001/player-props/${matchup.away_player_id}`)
-            .then((response) => {
-                setAwayPropLines(response.data)
-            })
-            .catch((error) => {
-                console.log(error)
-                return null;
-            });
+    }, [matchupLoaded])
 
-        axios.get(`http://localhost:3001/matchups/${id}/stats/home`).then((response) => {
-            setHomeGamelog(response.data)
-        });
-        axios.get(`http://localhost:3001/matchups/${id}/stats/home`).then((response) => {
-            setAwayGamelog(response.data)
-        });
-
-        setLoading(false);
-    }
 
     return (
         <div>
             <div className='w-full h-screen flex flex-col'>
                 {/* This div contains the buttons for toggling between Player Analyzers */}
-                <div className='flex flex-row justify-center h-12 mb-6'>
+                <div className='flex flex-row justify-center h-12 min-h-12 mb-6'>
                     {/* Player 1 Selector */}
                     <button
                         className={'flex-1 text-lg hover:bg-gray-200' + `( 
                             ${!homeAwayToggle
-                                ? 'bg-gray-100 border-4 border-gray-400 border-opacity-10 hover:bg-gray-200'
+                                ? 'bg-gray-100 border-4 border-gray-400 border-opacity-10 hover:bg-gray-200 '
                                 : 'bg-gray-100 border-2 border-gray-300 border-opacity-80 shadow-gray-400 shadow-inner hover:bg-gray-200'
                             }
                         )`}
@@ -118,7 +95,7 @@ function Matchup() {
                 This div contains the all data for the selected player.
                 It will only load after the matchup is successfully set.
                 */}
-                {!isLoading
+                {matchupLoaded
                     ? (
                         <div className='flex flex-col justify-center '>
                             {homeAwayToggle
@@ -131,9 +108,7 @@ function Matchup() {
                                         {/* This div represents the second row of the player data column. */}
                                         <div className='flex flex-row justify-center '>
                                             <PlayerData
-                                                gamelogData={homeGamelog}
-                                                playerHitrates={homePlayerHitrates}
-                                                setQueryFilters={setQueryFilters}
+                                                player_id={matchup.home_player_id}
                                             />
                                         </div>
                                     </div>
@@ -147,9 +122,7 @@ function Matchup() {
                                         {/* This div represents the second row of the player data column. */}
                                         <div className='flex flex-row justify-center'>
                                             <PlayerData
-                                                gamelogData={awayGamelog}
-                                                playerHitrates={awayPlayerHitrates}
-                                                setQueryFilters={setQueryFilters}
+                                                player_id={matchup.away_player_id}
                                             />
                                         </div>
                                     </div>

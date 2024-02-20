@@ -6,6 +6,7 @@ from fastapi import APIRouter
 
 import pandas as pd
 
+from helpers.db_helpers import get_matchup_gamelog_by_player_id
 from sql_app.register.gamelog import Gamelogs
 from sql_app.serializers.gamelog import GamelogSerializer
 
@@ -24,8 +25,7 @@ router = APIRouter()
 @router.get("/{id}", response_model=List[GamelogSerializer])
 async def get_gamelog_by_player_id(id: str):
     try:
-        gamelog = Gamelogs.filter_records(query={"player_id": id})
-        return gamelog
+        return get_matchup_gamelog_by_player_id(player_id=id)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

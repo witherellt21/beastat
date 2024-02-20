@@ -1,13 +1,21 @@
 import React from 'react'
-import MatchupGamelog from './tables/gamelog/MatchupGamelog';
+import GamelogTable from './tables/gamelog/GamelogTable';
 
 function Gamelog({
     gamelogData
 }) {
+    var rows = [], i = 0, len = 10;
+    while (++i <= len) rows.push(i)
+
     return (
-        <div>
-            <MatchupGamelog matchupData={gamelogData} />
-        </div>
+        <div className='flex justify-center'>
+            <div>
+                <h1 className='font-bold'>
+                    Gamelog
+                </h1>
+                <GamelogTable gamelogData={gamelogData} />
+            </div>
+        </div >
     )
 }
 

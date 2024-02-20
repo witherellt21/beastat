@@ -1,17 +1,36 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Gamelog from './Gamelog';
 import PlayerHitrates from './PlayerHitrates';
 import FiltersMenu from './FiltersMenu';
-
+import axios from 'axios';
 
 function PlayerData({
-    gamelogData,
-    playerHitrates,
-    setQueryFilters
+    player_id
 }) {
 
     const [showFiltersMenu, setShowFiltersMenu] = useState(false);
     const [displayFrame, setDisplayFrame] = useState(0)
+    const [gamelogData, setGamelogData] = useState([]);
+    const [playerHitrates, setPlayerHitrates] = useState({});
+    const [queryFilters, setQueryFilters] = useState({
+        MP: '> 0',
+        Games: 'matchup'
+    });
+
+    useEffect(() => {
+        console.log(queryFilters)
+        axios.get(`http://localhost:3001/player-props/${player_id}/hitrates`).then(async (response) => {
+            await setPlayerHitrates(response.data)
+        }).catch((err) => {
+            console.log(err);
+            return null;
+        });
+
+        axios.get(`http://localhost:3001/gamelogs/${player_id}`).then(async (response) => {
+            await setGamelogData(response.data)
+        });
+
+    }, [player_id, queryFilters])
 
     return (
         <div className='w-full flex justify-center'>
@@ -21,7 +40,7 @@ function PlayerData({
                         setShowFiltersMenu(!showFiltersMenu);
                     }}>
                         <svg
-                            class="svg-icon"
+                            className="svg-icon"
                             fill="#000000"
                             width="30px"
                             height="30px"
@@ -38,18 +57,16 @@ function PlayerData({
                             show={showFiltersMenu}
                             close={() => setShowFiltersMenu(false)}
                             apply={setQueryFilters}
+                            queryFilters={queryFilters}
                         />
                     }
                 </div>
                 <div className='flex flex-col justify-center'>
-                    <div className='flex h-10'>
+                    <div className='h-10 mb-4 flex'>
                         <button
-                            className={'flex flex-1 justify-center items-center border-r-0 border-2 border-gray-900 rounded-tl-md hover:bg-gray-200  bg-blue-600'
-                                // + `(${displayFrame == 0
-                                //     ? 'bg-blue-600'
-                                //     : 'bg-gray-600'
-                                // })`
-                            }
+                            className={'flex flex-1 justify-center items-center border-r-0 border-2 border-gray-900 rounded-tl-md hover:bg-gray-200' + `(
+                                ${displayFrame == 0 && 'bg-gray-300'}
+                            )`}
                             onClick={() => {
                                 setDisplayFrame(0)
                             }}
@@ -58,7 +75,9 @@ function PlayerData({
                         </button>
                         <div className='border-l-2 border-gray-900'></div>
                         <button
-                            className='flex flex-1 justify-center items-center border-l-0 border-2 border-gray-900 rounded-tr-md hover:bg-gray-200'
+                            className={'flex flex-1 justify-center items-center border-l-0 border-2 border-gray-900 rounded-tr-md hover:bg-gray-200' + `(
+                                ${displayFrame == 1 && 'bg-gray-300'}
+                            )`}
                             onClick={() => {
                                 setDisplayFrame(1)
                             }}
@@ -74,7 +93,7 @@ function PlayerData({
                     }
                     {displayFrame == 0
                         ? (
-                            <div className='justify-center'>
+                            <div>
                                 < PlayerHitrates hitrates={playerHitrates} />
                             </div>
                         )
