@@ -14,7 +14,7 @@ function FiltersMenu({
     const [showGamesMenu, setShowGamesMenu] = useState(true);
     const [showMinutesMenu, setShowMinutesMenu] = useState(false);
     const [showLineupsMenu, setShowLineupsMenu] = useState(false);
-    const [currentQuery, setCurrentQuery] = useState({})
+    const [currentQuery, setCurrentQuery] = useState(queryFilters)
 
     useEffect(() => {
         selection === "games" ? setShowGamesMenu(true) : setShowGamesMenu(false);
@@ -28,7 +28,7 @@ function FiltersMenu({
 
     return (
         <div>
-            <div className="absolute inset-0 flex justify-center items-center z-10 backdrop-blur-sm">
+            <div className="fixed inset-0 flex justify-center items-center z-10 backdrop-blur-sm overflow-hidden">
                 <div className='flex flex-col shadow-2xl rounded-2xl'>
                     <div className='h-14 px-4 pt-4 flex flex-row justify-between bg-gradient-to-b from-gray-300 to-gray-200 border-b-2 border-black rounded-t-2xl'>
                         <label className='h-full pb-1 flex items-end text-2xl'>Filter Settings</label>
@@ -63,9 +63,9 @@ function FiltersMenu({
                         </div>
                         <div className='border-black'></div>
                         <div className='h-full w-96 bg-white'>
-                            {/* {showGamesMenu && <GamesFilters apply={setCurrentQuery} />} */}
-                            {showMinutesMenu && <MinutesFilters setCurrentQuery={setCurrentQuery} />}
-                            {/* {showLineupsMenu && <LineupFilters apply={setCurrentQuery} />} */}
+                            {showGamesMenu && <GamesFilters setCurrentQuery={setCurrentQuery} currentQuery={currentQuery} />}
+                            {showMinutesMenu && <MinutesFilters setCurrentQuery={setCurrentQuery} currentQuery={currentQuery} />}
+                            {showLineupsMenu && <LineupFilters setCurrentQuery={setCurrentQuery} currentQuery={currentQuery} />}
                         </div>
                     </div>
                     <div className='h-10 px-2 flex justify-between bg-gradient-to-b from-gray-300 to-gray-100 border-t border-gray-400 rounded-b-2xl'>
@@ -82,6 +82,7 @@ function FiltersMenu({
                                 className='text-sm px-4 border border-black rounded-lg bg-gradient-to-b from-indigo-400 to-indigo-200 active:shadow-xl active:from-indigo-500 active:to-indigo-300 '
                                 onClick={() => {
                                     apply({ ...queryFilters, ...currentQuery });
+                                    setCurrentQuery(queryFilters);
                                     close();
                                 }}
                             >

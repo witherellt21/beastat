@@ -1,37 +1,38 @@
 import React, { useState } from 'react'
+import MenuTitle from './MenuTitle';
 
 function MinutesFilters({
-    setCurrentQuery
+    setCurrentQuery,
+    currentQuery
 }) {
-    const [selectedMinutes, setSelectedMinutes] = useState(0);
+    // const [selectedMinutes, setSelectedMinutes] = useState(0);
 
     const handleChange = (new_value) => {
-        setSelectedMinutes(new_value);
+        // setSelectedMinutes(new_value);
         setCurrentQuery({
-            MP: "> " + new_value.toString()
+            // MP: "> " + new_value.toString()
+            MP: new_value
         });
     }
 
     return (
         // <div className='flex justify-center bg-red-500'>
-        <div className='flex flex-col items-center'>
-            <div className='py-2 font-bold'>
-                Minutes Filters
-            </div>
-            <div className='w-2/3 py-2 border-t-2 border-black border-solid'></div>
-            {/* <select value={selectedMinutes} onChange={(e) => setSelectedMinutes(e.target.value)}>
-                <option>20+</option>
-                <option>20+</option>
-            </select> */}
-            {/* <input type='button' onClick={() => handleChange(selectedMinutes - 1)} /> */}
+        <div>
+            {/* <div className='flex flex-col items-center'> */}
+
+            {/* <div className='w-2/3 py-2 border-t-2 border-black border-solid'></div> */}
+            <MenuTitle title="Filter Minutes Played" />
             <div className='flex flex-none justify-center items-center'>
-                {/* <div> */}
+                <label htmlFor='minimum-minutes-played-input'>Minutes Played (min):</label>
                 <input
-                    type='text' value={selectedMinutes} onChange={(e) => handleChange(e.target.value)}
+                    name='minimum-minutes-played-input'
+                    type='text'
+                    value={currentQuery.MP}
+                    onChange={(e) => handleChange(e.target.value)}
                     className='w-10 mx-1 text-center border border-black rounded-md'
                 />
                 {/* </div> */}
-                <div className='flex flex-col'>
+                {/* <div className='flex flex-col'>
                     <button
                         className='px-1 flex border border-black'
                         onClick={() => handleChange(selectedMinutes + 1)}
@@ -49,8 +50,8 @@ function MinutesFilters({
                 l-149.996,150c-5.858,5.858-5.858,15.355,0,21.213c5.857,5.857,15.355,5.858,21.213,0l139.39-139.393l139.397,139.393
                 C307.322,253.536,311.161,255,315,255c3.839,0,7.678-1.464,10.607-4.394C331.464,244.748,331.464,235.251,325.606,229.393z"/>
                         </svg>
-                    </button>
-                    <button
+                    </button> */}
+                {/* <button
                         className='px-1 flex border border-black'
                         onClick={() => handleChange(selectedMinutes - 1)}
                     >
@@ -70,10 +71,11 @@ function MinutesFilters({
                 c15.756-15.86,15.756-41.571,0-57.431s-41.299-15.859-57.051,0L480,344.181z"/>
                             </g>
                         </svg>
-                    </button>
-                </div>
+                    </button> */}
+                {/* </div> */}
             </div>
-        </div>
+        </div >
+        // </div >
     )
 }
 

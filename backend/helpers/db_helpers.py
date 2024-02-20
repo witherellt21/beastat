@@ -70,7 +70,7 @@ def get_matchup_gamelog(
     ]
 
 
-def get_matchup_gamelog_by_player_id(*, player_id: str) -> "list[GamelogSerializer]":
+def get_matchup_gamelog_by_player_id(*, player_id: str) -> pd.DataFrame:
     matchup_if_home_player: MatchupSerializer = Matchups.get_record(
         query={"home_player_id": player_id}
     )
@@ -125,9 +125,7 @@ def get_matchup_gamelog_by_player_id(*, player_id: str) -> "list[GamelogSerializ
         rename_function, axis="columns"
     )
 
-    return [
-        GamelogSerializer(**game) for game in matchup_data.to_dict(orient="records")
-    ]
+    return matchup_data
 
 
 def get_player_id(*, player_name: str) -> Optional[str]:

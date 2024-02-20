@@ -14,11 +14,29 @@ function PlayerData({
     const [playerHitrates, setPlayerHitrates] = useState({});
     const [queryFilters, setQueryFilters] = useState({
         MP: '> 0',
-        Games: 'matchup'
+        // Games: 'matchup',
+        Date: '2000',
+        matchups_only: false
     });
 
     useEffect(() => {
-        console.log(queryFilters)
+        let query = ''
+
+        let i = 0
+        for (const [key, value] of Object.entries(queryFilters)) {
+            console.log(`${key} ${value}`);
+            if (['Date', 'matchups_only'].includes(`${key}`)) {
+                continue
+            }
+            if (i == 0) {
+                query = query + `${key} ${value}`
+            } else {
+                query = query + ` & ${key} ${value}`
+            }
+            i++
+        }
+        console.log(query)
+
         axios.get(`http://localhost:3001/player-props/${player_id}/hitrates`).then(async (response) => {
             await setPlayerHitrates(response.data)
         }).catch((err) => {
@@ -26,7 +44,7 @@ function PlayerData({
             return null;
         });
 
-        axios.get(`http://localhost:3001/gamelogs/${player_id}`).then(async (response) => {
+        axios.get(`http://localhost:3001/gamelogs/${player_id}?query=${query}&&startyear=${queryFilters.Date}&&matchups_only=${queryFilters.matchups_only}`).then(async (response) => {
             await setGamelogData(response.data)
         });
 
@@ -52,14 +70,14 @@ function PlayerData({
                             />
                         </svg>
                     </button>
-                    {showFiltersMenu &&
+                    {/* {showFiltersMenu &&
                         <FiltersMenu
                             show={showFiltersMenu}
                             close={() => setShowFiltersMenu(false)}
                             apply={setQueryFilters}
                             queryFilters={queryFilters}
                         />
-                    }
+                    } */}
                 </div>
                 <div className='flex flex-col justify-center'>
                     <div className='h-10 mb-4 flex'>
@@ -103,6 +121,14 @@ function PlayerData({
                     }
                 </div>
             </div>
+            {showFiltersMenu &&
+                <FiltersMenu
+                    show={showFiltersMenu}
+                    close={() => setShowFiltersMenu(false)}
+                    apply={setQueryFilters}
+                    queryFilters={queryFilters}
+                />
+            }
         </div>
     )
 }

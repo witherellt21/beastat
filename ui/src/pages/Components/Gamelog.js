@@ -9,12 +9,12 @@ function Gamelog({
 
     return (
         <div className='flex justify-center'>
-            <div>
+            < div >
                 <h1 className='font-bold'>
                     Gamelog
                 </h1>
                 <GamelogTable gamelogData={gamelogData} />
-            </div>
+            </div >
         </div >
     )
 }
