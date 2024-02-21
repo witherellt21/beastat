@@ -32,7 +32,6 @@ async def get_gamelog_by_player_id(
     try:
         if matchups_only:
             gamelog: pd.DataFrame = get_matchup_gamelog_by_player_id(player_id=id)
-            print(gamelog)
         else:
             gamelog: pd.DataFrame = Gamelogs.filter_records(
                 query={"player_id": id}, as_df=True
@@ -44,20 +43,18 @@ async def get_gamelog_by_player_id(
 
             if startyear:
                 try:
-                    # year = datetime.datetime(int(startyear))
                     queried = queried[queried["Date"].dt.year >= int(startyear)]
-                    print(queried)
                 except Exception as e:
                     print(e)
 
-            as_dict = queried.to_dict(orient="records")
+            return queried.to_dict(orient="records")
             # list_type: TypeAdapter = TypeAdapter(List[GamelogSerializer])
             # validated_data = list_type.validate_python(
             #     queried.to_dict(orient="records")
             # )
             # print(validated_data)
-            # return validated_data
-            return as_dict
+            return validated_data
+            # return as_dict
         else:
             return []
 

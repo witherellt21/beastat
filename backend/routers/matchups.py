@@ -3,6 +3,8 @@ from fastapi import Depends, FastAPI, HTTPException, status
 from datetime import datetime, timedelta
 from typing import List, Union, Optional
 
+import requests
+
 from fastapi import APIRouter
 import time
 import uuid
@@ -27,6 +29,7 @@ logger = logging.getLogger("main")
 
 router = APIRouter()
 
+
 ############################
 # ListMatchups
 ############################
@@ -44,7 +47,7 @@ async def list_matchups():
 
 @router.get("/{id}", response_model=MatchupSerializer)
 async def retrieve_matchup(id: str):
-    matchup = Matchups.get_record(query={"id": id})
+    matchup: MatchupSerializer = Matchups.get_record(query={"id": id})
 
     if matchup:
         return matchup
