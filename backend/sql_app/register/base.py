@@ -4,18 +4,25 @@ from datetime import datetime
 from playhouse.shortcuts import model_to_dict
 from pydantic import BaseModel as BaseSerializer
 from typing import Any
+from typing import Literal
 from typing import Optional
+from typing import overload
+from typing import Type
 from sql_app.models.base import BaseModel
 
 import pandas as pd
 
+from typing import TypeVar
+
+# Serializer = TypeVar("Serializer", bound="BaseSerializer")
+
 
 class BaseTable:
 
-    MODEL_CLASS: BaseModel = None
-    SERIALIZER_CLASS = None
-    READ_SERIALIZER_CLASS = None
-    PKS: str = ["id"]
+    MODEL_CLASS: Type[BaseModel]
+    SERIALIZER_CLASS: Type[BaseSerializer]
+    READ_SERIALIZER_CLASS: Optional[Type[BaseSerializer]] = None
+    PKS: list[str] = ["id"]
 
     def __init__(self, db: peewee.Database):
         if not self.model_class:
@@ -31,28 +38,45 @@ class BaseTable:
             self.db.create_tables([self.model_class])
 
     @property
-    def serializer_class(self) -> BaseSerializer:
+    def serializer_class(self) -> Type[BaseSerializer]:
         return self.__class__.SERIALIZER_CLASS
 
     @property
-    def read_serializer_class(self) -> BaseSerializer:
+    def read_serializer_class(self) -> Type[BaseSerializer]:
         return self.__class__.READ_SERIALIZER_CLASS or self.serializer_class
 
     @property
-    def model_class(self) -> BaseModel:
+    def model_class(self) -> Type[BaseModel]:
         return self.__class__.MODEL_CLASS
 
-    def get_all_records(self, *, as_df=False) -> "list[BaseSerializer] | pd.DataFrame":
+    @overload
+    def get_all_records(self, *, as_df: Literal[True]) -> pd.DataFrame: ...
+
+    @overload
+    def get_all_records(self, *, as_df: Literal[False]) -> list[BaseSerializer]: ...
+
+    @overload
+    def get_all_records(self) -> list[BaseSerializer]: ...
+
+    @overload
+    def filter_records(self, *, query: dict, as_df: Literal[True]) -> pd.DataFrame: ...
+
+    @overload
+    def filter_records(
+        self, *, query: dict, as_df: Literal[False]
+    ) -> list[BaseSerializer]: ...
+
+    def get_all_records(self, *, as_df=False) -> list[BaseSerializer] | pd.DataFrame:
         records = []
         for record in self.model_class.select():
             serialized = self.read_serializer_class(**model_to_dict(record))
-            records.append(serialized.dict() if as_df else serialized)
+            records.append(serialized.model_dump() if as_df else serialized)
 
         return pd.DataFrame(records) if as_df else records
 
     def get_record(self, query: dict = {}) -> Optional[BaseSerializer]:
         try:
-            db_row: self.model_class = self.model_class.get(
+            db_row = self.model_class.get(
                 *[
                     getattr(self.model_class, field) == value
                     for field, value in query.items()
@@ -64,7 +88,7 @@ class BaseTable:
         except peewee.DoesNotExist as e:
             return None
 
-    def get_or_create(self, *, data: "dict[str: str]" = {}) -> BaseSerializer:
+    def get_or_create(self, *, data: dict[str, str] = {}) -> Optional[BaseSerializer]:
         validated_data: BaseSerializer = self.serializer_class(**data)
 
         result, created = self.model_class.get_or_create(**validated_data.model_dump())
@@ -79,7 +103,7 @@ class BaseTable:
         *,
         query: dict = {},
         as_df: bool = False,
-    ) -> "list[BaseSerializer] | pd.DataFrame":
+    ) -> list[BaseSerializer] | pd.DataFrame:
         """
         Return all rows matching the search query.
         """
@@ -141,8 +165,9 @@ class BaseTable:
     ) -> Optional[BaseSerializer]:
         id_fields = kwargs.get("id_fields", self.__class__.PKS)
 
+        existing_row: Optional[BaseModel]
         try:
-            existing_row: BaseModel = self.model_class.get(
+            existing_row = self.model_class.get(
                 *[
                     getattr(self.model_class, id_field) == data.get(id_field)
                     for id_field in id_fields
@@ -161,19 +186,14 @@ class BaseTable:
     def delete_record(self, **kwargs) -> BaseModel:
         query = kwargs.get("query", self.__class__.PKS)
 
-        try:
-            delete_query = self.model_class.delete().where(
-                *[
-                    getattr(self.model_class, key) == query.get(key)
-                    for key, value in query.items()
-                ]
-            )
+        delete_query = self.model_class.delete().where(
+            *[
+                getattr(self.model_class, key) == query.get(key)
+                for key, value in query.items()
+            ]
+        )
 
-            return delete_query.execute()
-        except peewee.DoesNotExist as e:
-            print(
-                f"Could not delete record for table {self.model_class} with query {query}."
-            )
+        return delete_query.execute()
 
     def get_column_values(self, *, column: str) -> "list[Any]":
         values = [value[column] for value in self.model_class.select().dicts()]

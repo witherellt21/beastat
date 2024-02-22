@@ -1,18 +1,10 @@
-from peewee import *
+from peewee import CharField, AutoField, FloatField, IntegerField, ForeignKeyField
 from sql_app.models.base import BaseModel
 
 
 class Player(BaseModel):
-    # id = AutoField(unique=True)
     player_id = CharField(unique=True)
     name = CharField()
-    # stat = CharField()
-    # line = FloatField()
-    # odds_over = IntegerField()
-    # implied_odds_over = FloatField()
-    # odds_under = IntegerField()
-    # implied_odds_under = FloatField()
-    # timestamp = DateTimeField()
 
 
 class PropLine(BaseModel):

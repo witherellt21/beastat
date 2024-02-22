@@ -7,7 +7,6 @@ from data_scrape.test.main_tester_functions import test_scraper_thread
 from unidecode import unidecode
 import logging
 
-from sql_app.register.player_info import PlayerInfo
 from sql_app.register.player_info import PlayerInfos
 from string import ascii_lowercase
 
@@ -16,7 +15,7 @@ def get_player_ids(*, source_table: pd.DataFrame, id_from_column: str) -> pd.Ser
     source_table["player_id"] = source_table.apply(
         lambda row: get_player_id_from_name(player_name=row[id_from_column]), axis=1
     )
-    duplicate_ids: list[str] = source_table["player_id"].unique()
+    duplicate_ids: list[str] = list(source_table["player_id"].unique())
 
     # For each player id, we will have to append the necessary duplicate value
     for id in duplicate_ids:
@@ -31,63 +30,33 @@ def get_player_ids(*, source_table: pd.DataFrame, id_from_column: str) -> pd.Ser
                 f"0{occurence_value}" if occurence_value < 10 else str(occurence_value)
             )
 
-            # Append the unique identifier to the player id to create the unique idS
-            source_table.loc[index, "player_id"] = row["player_id"] + unique_identifier
+            # Append the unique identifier to the player id to create the unique id
+            source_table.loc[index, "player_id"] = row["player_id"] + unique_identifier  # type: ignore
             occurence_value += 1
 
     return source_table["player_id"]
 
 
-def decode_player_name(*, source_table: pd.DataFrame, id_from_column: str) -> pd.Series:
-    for index, row in source_table.iterrows():
-        source_table.loc[index, id_from_column] = unidecode(row[id_from_column])
-
-    return source_table[id_from_column]
-
-
-def convert_height_to_inches(
-    *, source_table: pd.DataFrame, id_from_column: str
-) -> pd.Series:
-    for index, row in source_table.iterrows():
-        feet, inches = row[id_from_column].split("-")
-        source_table.loc[index, id_from_column] = int(feet) * 12 + int(inches)
-
-    return source_table[id_from_column]
-
-
-def convert_colleges_to_list(
-    *, source_table: pd.DataFrame, id_from_column: str
-) -> pd.Series:
-    source_table[id_from_column].loc[source_table[id_from_column].isnull()] = (
-        source_table[id_from_column]
-        .loc[source_table[id_from_column].isnull()]
-        .apply(lambda x: [])
-    )
-    source_table[id_from_column] = list(
-        map(
-            lambda colleges: [colleges] if type(colleges) != list else colleges,
-            source_table[id_from_column],
-        )
-    )
-
-    return source_table[id_from_column]
+def convert_height_to_inches(*, height: str) -> int:
+    feet, inches = height.split("-")
+    return int(feet) * 12 + int(inches)
 
 
 class PlayerInfoScraper(AbstractBaseScraper):
-    # TODO: Lets see if we can speed up how a lot of the post download logic is done
+    class Constants:
+        QUERY_SET = [{"player_last_initial": letter} for letter in ascii_lowercase]
 
+    # TODO: Lets see if we can speed up how a lot of the post download logic is done
     STAT_AUGMENTATIONS = {
         "player_id": lambda dataset: get_player_ids(
             source_table=dataset, id_from_column="name"
-        ),
-        "name": lambda dataset: decode_player_name(
-            source_table=dataset, id_from_column="name"
-        ),
-        "height": lambda dataset: convert_height_to_inches(
-            source_table=dataset, id_from_column="height"
-        ),
-        # "colleges": lambda dataset: convert_colleges_to_list(source_table=dataset, id_from_column="colleges")
+        )
     }
+    TRANSFORMATIONS = {
+        "name": lambda name: unidecode(name),
+        "height": lambda height: convert_height_to_inches(height=height),
+    }
+
     FILTERS = [lambda dataframe: dataframe["active_to"] == constants.CURRENT_SEASON]
     DATETIME_COLUMNS = {"birth_date": "%B %d, %Y"}
     RENAME_COLUMNS = {
@@ -98,19 +67,17 @@ class PlayerInfoScraper(AbstractBaseScraper):
         "Ht": "height",
         "Wt": "weight",
         "Birth Date": "birth_date",
-        "Colleges": "colleges",
     }
-    DROP_COLUMNS: "list[str]" = ["colleges"]
-    TABLE: PlayerInfo = PlayerInfos
+    TABLE = PlayerInfos
     DEFAULT_IDENTIFIERS = list(ascii_lowercase)
     LOG_LEVEL = logging.INFO
 
     @property
     def download_url(self) -> str:
-        return "http://www.basketball-reference.com/players/{}/"
+        return "http://www.basketball-reference.com/players/{player_last_initial}/"
 
-    def format_url_args(self, *, identifier: str) -> "list[str]":
-        return [identifier]
+    def get_query_set(self) -> list[dict[str, str]]:
+        return self.Constants.QUERY_SET
 
     def select_dataset_from_html_tables(
         self, *, datasets: "list[pd.DataFrame]"
@@ -126,6 +93,6 @@ if __name__ == "__main__":
 
     #     print(data)
 
-    # player_info_scraper: PlayerInfoScraper = PlayerInfoScraper()
-    # player_info_scraper.get_data(identifier="a")
-    test_scraper_thread(scraper_class=PlayerInfoScraper)
+    player_info_scraper: PlayerInfoScraper = PlayerInfoScraper()
+    player_info_scraper.get_data(query={"player_last_initial": "a"})
+    # test_scraper_thread(scraper_class=PlayerInfoScraper)

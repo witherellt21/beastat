@@ -1,7 +1,20 @@
 import pandas as pd
-from collections.abc import Callable
+from typing import Callable, Mapping
 
 MATHEMATICAL_OPERATORS = ["+", "-"]
+
+
+def reorder_columns(
+    *, dataframe: pd.DataFrame, column_order: list[str]
+) -> pd.DataFrame:
+    columns = list(dataframe)
+    for column in reversed(column_order):
+        try:
+            columns.insert(0, columns.pop(columns.index(column)))
+        except ValueError:
+            continue
+
+    return dataframe.loc[:, columns]
 
 
 def filter_dataframe(
@@ -13,7 +26,9 @@ def filter_dataframe(
 
 
 def augment_dataframe(
-    *, dataframe: pd.DataFrame, augmentations: "dict[str:str | Callable]"
+    *,
+    dataframe: pd.DataFrame,
+    augmentations: Mapping[str, str | Callable[[pd.DataFrame], pd.Series]]
 ):
     """
     Augment the dataset using the passed dictionary of key: expression pairings and evaluating

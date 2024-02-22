@@ -1,17 +1,25 @@
 import time
+from typing import Optional
+from typing import TypedDict
+from typing import Unpack
+from typing import Type
+from typing import Any
+
 
 import numpy as np
 import pandas as pd
-
+from pandas._typing import Dtype
 
 from abc import ABC
-from abc import abstractmethod
+from abc import abstractmethod, abstractproperty
 from collections.abc import Callable
 from global_implementations import constants
 from helpers.dataset_helpers import augment_dataframe
 from helpers.dataset_helpers import filter_dataframe
+from helpers.dataset_helpers import reorder_columns
 from helpers.http_helpers import format_pandas_http_request
 from urllib.error import HTTPError
+from pydantic.fields import FieldInfo
 
 from sql_app.register.base import BaseTable
 import threading
@@ -33,66 +41,157 @@ STREAM_HANDLER = logging.StreamHandler()
 STREAM_HANDLER.setFormatter(DEFAULT_LOG_FORMATTER)
 
 
+def get_column_types_for_table(
+    *, table: BaseTable, ignore_columns: list[str]
+) -> dict[str, Dtype]:
+    table_columns: dict[str, FieldInfo] = table.read_serializer_class.model_fields
+    table_types: dict[str, Any] = {k: v.annotation for k, v in table_columns.items()}
+
+    column_types: dict[str, Dtype] = {}
+    for column, dtype in table_types.items():
+        if column in ignore_columns:
+            continue
+        else:
+            union_args: Optional[list[Type]] = getattr(dtype, "__args__", None)
+            column_types[column] = union_args[0] if union_args else dtype
+
+    return column_types
+
+
+class ScraperKwargs(TypedDict, total=False):
+    table: BaseTable
+    column_types: dict[str, Dtype]
+    datetime_columns: dict[str, str]
+    query_save_columns: dict[str, str] | list[str]
+    refresh_rate: int
+
+
 class AbstractBaseScraper(ABC, threading.Thread):
+    """
+    Required class attributes:
+    - TABLE (can also be passed as init parameter 'table')
+
+    Optional class attributes:
+    - COLUMN_TYPES: overrides types derived from table
+    - DATETIME_COLUMNS: overrides datetime columns derived from table
+    - DESIRED_COLUMNS: "list[str]" = [] => overrides columns derived from table
+    - STAT_AUGMENTATIONS: "dict[str: str]" = {}
+    - TRANSFORMATIONS: "dict[str: Callable]" = {}
+    - DATA_TRANSFORMATIONS: "list[Callable]" = []
+    - QUERY_SAVE_COLUMNS: dict[str, str] | list[str]
+    - REFRESH_RATE: int = 5
+    - LOG_LEVEL = logging.INFO
+    """
 
     _DEFAULT_ERROR_MSG: str = "There was an error."
-    _exception_msgs: "dict[str: str]" = {
+    _exception_msgs: "dict[str, str]" = {
         "load_data": _DEFAULT_ERROR_MSG,
         "download_data": _DEFAULT_ERROR_MSG,
     }
 
-    COLUMN_TYPES: "dict[str: str]" = {}
-    DATETIME_COLUMNS: "dict[str: str]" = {}
-    STAT_AUGMENTATIONS: "dict[str: str]" = {}
-    FILTERS: "list[Callable]" = []
-    RENAME_COLUMNS: "dict[str:str]" = {}
-    REPLACE_VALUES = {}
-    TABLE: BaseTable = None
-    DROP_COLUMNS: "list[str]" = []
-    TRANSFORMATIONS: "dict[str: Callable]" = {}
-    DATA_TRANSFORMATIONS: "list[Callable]" = []
-    DEFAULT_IDENTIFIERS: "list[str]" = []
-    SAVE_IDENTIFIER_AS: str = None
+    # This could maybe come from the table itself, then overriden by this
+    COLUMN_TYPES: dict[str, Dtype] = {}
+    DATETIME_COLUMNS: dict[str, str] = {}
+
+    # Adds column labled by key using a synctatic string or a callable function with argument that accepts the full dataset.
+    STAT_AUGMENTATIONS: dict[str, str | Callable[[pd.DataFrame], pd.Series]] = {}
+
+    # Select specific rows from the dataset based on callable filter functions
+    FILTERS: list[Callable] = []
+    RENAME_COLUMNS: dict[str, str] = {}
+
+    # Rename values by key to the specified value
+    RENAME_VALUES = {}
+
+    TABLE: Optional[BaseTable] = None
+
+    # A function to tranform a specific column (key) on a dataset by a callable function (value) uses apply method
+    TRANSFORMATIONS: dict[str | tuple[str, str], Callable[[Any], Any]] = {}
+    DATA_TRANSFORMATIONS: list[Callable] = []
+
+    QUERY_SAVE_COLUMNS: dict[str, str] | list[str] = []
+
+    COLUMN_ORDERING: list[str] = []
 
     REFRESH_RATE: int = 5
     LOG_LEVEL = logging.INFO
 
-    def __init__(self, *args, **kwargs):
-        if not self.__class__.TABLE:
-            raise Exception("Must specify a table for the scaper to save data to.")
-
+    def __init__(self, **kwargs: Unpack[ScraperKwargs]):
         threading.Thread.__init__(self, name=self.__class__.__name__)
+        self.RUNNING = False
 
+        # If kwargs are passed containing information for these, override the class attribute.
+        table: Optional[BaseTable] = kwargs.get("table", self.__class__.TABLE)
+
+        if table == None:
+            raise Exception(
+                "Must specify a table for the scaper to save data to. Add the 'TABLE' class attribute or pass a table to the keyword 'table'."
+            )
+
+        self.table: BaseTable = table
+
+        self.column_types: dict[str, Dtype] = kwargs.get(
+            "column_types", self.__class__.COLUMN_TYPES
+        )
+        self.datetime_columns: dict[str, str] = kwargs.get(
+            "datetime_columns", self.__class__.DATETIME_COLUMNS
+        )
+        self.refresh_rate: int = kwargs.get("refresh_rate", self.__class__.REFRESH_RATE)
+
+        query_save_columns: dict[str, str] | list[str] = kwargs.get(
+            "query_save_columns", self.__class__.QUERY_SAVE_COLUMNS
+        )
+
+        self.query_save_columns: dict[str, str]
+
+        if isinstance(query_save_columns, list):
+            self.query_save_columns = {column: column for column in query_save_columns}
+        else:
+            self.query_save_columns = query_save_columns
+
+        # If we still don't have column types, get them from the table
+        if not self.column_types:
+            ignore_columns = list(self.__class__.STAT_AUGMENTATIONS.keys()) + list(
+                self.__class__.DATETIME_COLUMNS.keys()
+            )
+            self.column_types = get_column_types_for_table(
+                table=self.table,
+                ignore_columns=ignore_columns,
+            )
+
+        self.desired_columns = list(table.read_serializer_class.model_fields.keys())
+
+        # Configure our logger
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(self.__class__.LOG_LEVEL)
         self.logger.addHandler(STREAM_HANDLER)
 
-        self.last_download_time = None
+        # Initialize as None to download immediately on first loop.
+        self.last_download_time: Optional[float] = None
 
-        self.RUNNING = False
+        # Get the number of arguments expected to be returned from identifiers.
+        # args_expected: int = self.download_url.count("{}")
+        # if args_expected:
+        #     self.identifier_required = True
+        # else:
+        #     self.identifier_required = False
 
-        args_expected = self.download_url.count("{}")
-        if args_expected:
-            self.identifier_required = True
-        else:
-            self.identifier_required = False
+        # if self.identifier_required and not self.get_identifiers():
+        #     raise NotImplementedError(
+        #         "Please specify either a DEFAULT_IDENTIFIERS class attribute or override "
+        #         "the get_identifiers() method for dynamic identifiers."
+        #     )
 
-        self.identifier_source = kwargs.get("identifier_source", "matchups_only")
-
-        if self.identifier_required and not self.get_identifiers():
-            raise NotImplementedError(
-                "Please specify either a DEFAULT_IDENTIFIERS class attribute or override "
-                "the get_identifiers() method for dynamic identifiers."
-            )
-
-    @property
-    @abstractmethod
+    @abstractproperty
     def download_url(self) -> str:
+        """
+        Specify a format string as the base download url to receive keyword arguments.
+        """
         raise NotImplementedError("Must override the abstract property 'download_url'.")
 
     @abstractmethod
     def select_dataset_from_html_tables(
-        self, *, datasets: "list[pd.DataFrame]"
+        self, *, datasets: list[pd.DataFrame]
     ) -> pd.DataFrame:
         """
         Operation to perform after fetching tables from html to get the desired dataset.
@@ -102,14 +201,18 @@ class AbstractBaseScraper(ABC, threading.Thread):
         )
 
     @abstractmethod
-    def format_url_args(self, *, identifier: str) -> "list[str]":
-        raise NotImplementedError(
-            "Must override the abstract method 'format_url_args'."
-        )
+    def get_query_set(self) -> list[dict[str, str]]:
+        """
+        Function returning a list of query parameters to add insert in the base download url for scraping.
+        """
+        raise NotImplementedError("Must override the abstract method 'get_query_set'.")
 
-    def get_download_url(self, *, url_args: list = []) -> str:
+    def get_download_url(self, *, url_kwargs: dict[str, str] = {}) -> str:
+        """
+        Insert the given url keyword args into the base download url.
+        """
         try:
-            return self.download_url.format(*url_args)
+            return self.download_url.format(**url_kwargs)
 
         except IndexError:
             raise Exception(
@@ -119,43 +222,24 @@ class AbstractBaseScraper(ABC, threading.Thread):
                 )
             )
 
-    @property
-    def default_identifiers(self) -> "dict[str: list]":
-        return self.__class__.DEFAULT_IDENTIFIERS
-
-    @property
-    def save_identifier_as(self) -> str:
-        return self.__class__.SAVE_IDENTIFIER_AS
-
-    @property
-    def refresh_rate(self) -> int:
-        return self.__class__.REFRESH_RATE
-
-    def get_identifiers(self) -> "list[str|tuple[str]]":
-        return self.default_identifiers
-
-    @property
-    def table(self) -> BaseTable:
-        return self.__class__.TABLE
-
     def run(self) -> None:
         consecutive_errors = 0
 
         self.RUNNING = True
         while self.RUNNING:
             try:
-                identifiers = self.get_identifiers()
+                query_set = self.get_query_set()
             except Exception as e:
                 self.logger.error(e)
                 self.kill_process()
 
-            if identifiers:
-                for identifier in identifiers:
+            if query_set:
+                for query in query_set:
                     if not self.RUNNING:
                         break
 
                     try:
-                        self.get_data(identifier=identifier)
+                        self.get_data(query=query)
                         time.sleep(0.1)
 
                         consecutive_errors = 0
@@ -163,7 +247,7 @@ class AbstractBaseScraper(ABC, threading.Thread):
                     except Exception as e:
                         consecutive_errors += 1
                         self.logger.error(
-                            f"Error occured in running thread for {self.__class__.__name__} ({consecutive_errors} in a row) ({identifier}): \n\n {traceback.format_exc()}.\n\n"
+                            f"Error occured in running thread for {self.__class__.__name__} ({consecutive_errors} in a row) ({query}): \n\n {traceback.format_exc()}.\n\n"
                         )
 
                         if consecutive_errors >= 10:
@@ -176,29 +260,38 @@ class AbstractBaseScraper(ABC, threading.Thread):
                 time.sleep(0.1)
 
     def kill_process(self, *args):
+        """
+        Kill the running thread and stop the scraper.
+        """
         self.RUNNING = False
         self.logger.critical(f"PROCESS KILLED FOR {self.__class__.__name__}.")
 
     def generate_exception_msg(self, *, exception_type: str) -> str:
+        """
+        Generate an exception message based on the exception type specified.
+        """
         return f"{self.__class__._exception_msgs.get(exception_type, self.__class__._DEFAULT_ERROR_MSG)}"
 
-    def get_data(self, *, identifier: str = None) -> None:
-        url_args: "list[str]" = (
-            self.format_url_args(identifier=identifier) if identifier else []
-        )
+    def get_data(self, *, query: dict[str, str] = {}) -> Optional[pd.DataFrame]:
+        """
+        Get data according to the search query.
+        """
+        # Download the data for the given url parameters
+        downloaded_dataset: Optional[pd.DataFrame] = self.download_data(query=query)
 
-        # Download the data
-        data = self.download_data(url_args=url_args)
-
-        if data.empty:
-            return
+        # If there is no data in the downloaded data, return None.
+        if downloaded_dataset is None or downloaded_dataset.empty:
+            return None
 
         # Remove any weird data that shouldn't be there
-        data: pd.DataFrame = self.clean(data=data)
+        data: pd.DataFrame = self.clean(data=downloaded_dataset)
 
-        # Add the identifier to the data if set:
-        if self.save_identifier_as:
-            data[self.save_identifier_as] = identifier
+        # Add any of the query arguments to the dataframe if desired.
+        for df_column, query_key in self.query_save_columns.items():
+            if query_key in query:
+                data[df_column] = query.get(query_key)
+            else:
+                self.logger.warning(f"Key {query_key} not found in the query: {query}.")
 
         # Configure the data
         data = self.configure_data(data=data)
@@ -208,7 +301,7 @@ class AbstractBaseScraper(ABC, threading.Thread):
 
         return data
 
-    def download_data(self, *, url_args: "list[str]" = []) -> pd.DataFrame:
+    def download_data(self, *, query: dict[str, str] = {}) -> Optional[pd.DataFrame]:
         """
         Download data from Html. Will retry on too many request error.
         """
@@ -223,12 +316,12 @@ class AbstractBaseScraper(ABC, threading.Thread):
             if wait:
                 time.sleep(wait)
 
-            url: str = self.get_download_url(url_args=url_args)
+            url: str = self.get_download_url(url_kwargs=query)
             http_response: str = format_pandas_http_request(url=url)
-            datasets: list[pd.DataFrame] = pd.read_html(http_response)
-            self.logger.info("Data download successful for %s", url_args)
-
+            datasets = self.scrape_data(url=http_response)
             self.last_download_time = time.time()
+
+            self.logger.info("Data download successful for %s", query)
 
         except HTTPError as http_error:
 
@@ -239,19 +332,35 @@ class AbstractBaseScraper(ABC, threading.Thread):
 
                 return None
 
-            if http_error.code == 429:
-                self.logger.error(
-                    f"{http_error}. Could not download data for {self.__class__.__name__} with args {url_args}."
-                )
-                time.sleep(45)
+            # if http_error.code == 429:
+            #     self.logger.error(
+            #         f"{http_error}. Could not download data for {self.__class__.__name__} with kwargs {query}. Trying again..."
+            #     )
+            #     time.sleep(45)
 
-                return self.download_data(url_args=url_args)
+            #     return self.download_data(query=query)
+
             else:
                 raise Exception(
                     self.generate_exception_msg(exception_type="download_data")
                 )
 
+        if not datasets:
+            return None
+
         return self.select_dataset_from_html_tables(datasets=datasets)
+
+    def scrape_data(self, *, url: str) -> Optional[list[pd.DataFrame]]:
+        """
+        Scrape data from URL to a datframe. Override this for non table based downloads.
+        """
+        try:
+            datasets: list[pd.DataFrame] = pd.read_html(url)
+        except ValueError as e:
+            self.logger.warning(f"{e} at url: {url}")
+            return None
+
+        return datasets
 
     def clean(self, *, data: pd.DataFrame) -> pd.DataFrame:
         """
@@ -266,6 +375,8 @@ class AbstractBaseScraper(ABC, threading.Thread):
         Save the dataset to the database.
         """
         self.logger.debug("Saving data to database.")
+
+        data = data.fillna(np.nan).replace([np.nan], [None])
 
         row_dicts = data.to_dict(orient="records")
         for row in row_dicts:
@@ -282,36 +393,42 @@ class AbstractBaseScraper(ABC, threading.Thread):
         self.logger.debug("Configuring data.")
 
         # Rename columns to desired names
-        data: pd.DataFrame = data.rename(columns=self.__class__.RENAME_COLUMNS)
-
-        # Drop unwanted columns
-        data: pd.DataFrame = data.drop(columns=self.__class__.DROP_COLUMNS)
+        data = data.rename(columns=self.__class__.RENAME_COLUMNS)
 
         # Replace row values with desired row values
-        data: pd.DataFrame = data.replace(self.__class__.REPLACE_VALUES)
+        data = data.replace(self.__class__.RENAME_VALUES)
 
         # Apply all transformations to the dataset
         for column, transformation in self.__class__.TRANSFORMATIONS.items():
-            data[column] = data[column].apply(transformation)
+            if type(column) == tuple:
+                from_column, to_column = column
+            else:
+                from_column = to_column = column
+
+            data[to_column] = data[from_column].apply(transformation)
 
         for transformation_function in self.__class__.DATA_TRANSFORMATIONS:
             data = transformation_function(dataset=data)
 
         # Convert the columns to the desired types
-        data: pd.DataFrame = data.astype(self.__class__.COLUMN_TYPES)
+        data = data.astype(self.column_types)
 
         # Convert datetime columns appropriately
         for key, dt_format in self.__class__.DATETIME_COLUMNS.items():
             data[key] = pd.to_datetime(data[key], format=dt_format)
 
         # Add additional columns to augment the dataset and clean the unnecessary ones out
-        data: pd.DataFrame = augment_dataframe(
+        data = augment_dataframe(
             dataframe=data, augmentations=self.__class__.STAT_AUGMENTATIONS
         )
 
         # Apply any filters to the dataset
-        data: pd.DataFrame = filter_dataframe(
-            dataframe=data, filters=self.__class__.FILTERS
+        data = filter_dataframe(dataframe=data, filters=self.__class__.FILTERS)
+
+        data = reorder_columns(
+            dataframe=data, column_order=self.__class__.COLUMN_ORDERING
         )
+
+        data = data[self.desired_columns]
 
         return data

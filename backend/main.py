@@ -7,7 +7,7 @@ from fastapi.logger import logger
 
 from data_scrape.career_stats import CareerStatsScraper
 from data_scrape.gamelog import GamelogScraper
-from data_scrape.lineups import LineupDataScraper
+from data_scrape.lineups2 import LineupScraper
 from data_scrape.player_props import PlayerPropsScraper
 
 import logging
@@ -29,8 +29,8 @@ main_logger.addHandler(main_stream_handler)
 
 
 # TODO: MASSIVE work needs to be done in keeping these scrapers asynchronous in case data is missing
-if config.DATA_SCRAPE.get("Lineups").get("status"):
-    lineup_scraper = LineupDataScraper()
+if config.DATA_SCRAPE.get("Lineups", {}).get("status"):
+    lineup_scraper = LineupScraper()
     lineup_scraper.start()
 
 if config.DATA_SCRAPE.get("CareerStats", {}).get("status"):
@@ -39,7 +39,7 @@ if config.DATA_SCRAPE.get("CareerStats", {}).get("status"):
     )
     career_stats_scraper.start()
 
-if config.DATA_SCRAPE.get("PlayerProps").get("status"):
+if config.DATA_SCRAPE.get("PlayerProps", {}).get("status"):
     player_props_scraper = PlayerPropsScraper()
     player_props_scraper.start()
 

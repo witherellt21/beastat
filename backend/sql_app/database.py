@@ -1,13 +1,4 @@
-from peewee import MySQLDatabase
 from peewee import PostgresqlDatabase
-
-# DB = MySQLDatabase(
-#     'nbastats',
-#     user='root',
-#     password='T@yl0r31lax',
-#     host='localhost',
-#     port=3306
-# )
 
 try:
     DB = PostgresqlDatabase(

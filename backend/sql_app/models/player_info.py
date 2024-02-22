@@ -1,5 +1,6 @@
-from peewee import *
+from peewee import CharField, DateField, DateTimeField, IntegerField, ForeignKeyField
 from sql_app.models.base import BaseModel
+
 
 class PlayerInfo(BaseModel):
     player_id = CharField(unique=True)
@@ -12,7 +13,7 @@ class PlayerInfo(BaseModel):
     birth_date = DateField()
     timestamp = DateTimeField()
 
+
 class College(BaseModel):
     name = CharField()
-    player_info = ForeignKeyField(PlayerInfo, to_field='player_id', backref='colleges')
-
+    player_info = ForeignKeyField(PlayerInfo, to_field="player_id", backref="colleges")

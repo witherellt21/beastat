@@ -1,9 +1,4 @@
-import urllib.request
-import requests
-import sys
-from lxml import etree
-
-def format_pandas_http_request(*, url:str) -> str:
+def format_pandas_http_request(*, url: str) -> str:
     # opener = urllib.request.build_opener()
     # opener.addheaders = [('User-agent', 'Mozilla/5.0')]
     # response = opener.open(url)

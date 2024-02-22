@@ -1,19 +1,11 @@
-from fastapi import Response, Request
-from fastapi import Depends, FastAPI, HTTPException, status
-from typing import List
-
+from fastapi import HTTPException, status
 from fastapi import APIRouter
 
 import pandas as pd
-
+from typing import Optional
 from helpers.db_helpers import get_matchup_gamelog_by_player_id
-from pydantic import TypeAdapter
 from sql_app.register.gamelog import Gamelogs
-from sql_app.serializers.gamelog import GamelogSerializer
 
-import datetime
-
-from typing import List
 import logging
 
 logger = logging.getLogger("main")
@@ -27,7 +19,7 @@ router = APIRouter()
 
 @router.get("/{id}")
 async def get_gamelog_by_player_id(
-    id: str, query: str, startyear: str = None, matchups_only: bool = False
+    id: str, query: str, startyear: Optional[str] = None, matchups_only: bool = False
 ):
     try:
         if matchups_only:

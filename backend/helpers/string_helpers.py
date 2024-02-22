@@ -4,6 +4,7 @@ import re
 from global_implementations import constants
 from fuzzywuzzy import process
 from unidecode import unidecode
+from typing import Optional, Sequence
 
 
 RENAME = {"Nenê": "Nenê Hilario", "Maxi Kleber": "Maxi Klebir"}
@@ -26,13 +27,13 @@ def get_player_id_from_name(*, player_name: str) -> str:
         raise Exception(f"Error getting player id for {player_name}. {e}")
 
 
-def convert_season_to_year(*, season: str) -> int:
+def convert_season_to_year(*, season: str) -> Optional[int]:
     try:
         # Split the year to fetch the millenium and year
         year_range = season.split("-")
 
         if len(year_range) != 2:
-            return season
+            return None
         else:
             start_year = year_range[0]
             end_year = year_range[1]
@@ -58,10 +59,12 @@ def construct_file_path(path: str) -> None:
 def find_closest_match(
     *,
     value: str,
-    search_list: "list[str]",
+    search_list: list[str],
     match_threshold: int = constants.DEFAULT_MATCH_THRESHOLD,
-) -> str:
-    matches: list[tuple[str, int]] = process.extract(value, search_list, limit=1)
+) -> Optional[str]:
+    matches: Sequence[tuple[str, int] | tuple[str, int, str]] = process.extract(
+        value, search_list, limit=1
+    )
     valid_matches: list[tuple[str, int]] = list(
         filter(lambda match: match[1] >= match_threshold, matches)
     )

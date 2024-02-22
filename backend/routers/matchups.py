@@ -1,21 +1,9 @@
-from fastapi import Response, Request
-from fastapi import Depends, FastAPI, HTTPException, status
-from datetime import datetime, timedelta
-from typing import List, Union, Optional
-
-import requests
+from fastapi import HTTPException, status
+from typing import List
 
 from fastapi import APIRouter
-import time
-import uuid
 
-
-import pandas as pd
-
-from global_implementations import constants
 from helpers.db_helpers import get_matchup_gamelog
-from routers import faker
-from sql_app.register.lineup import Lineups
 from sql_app.register.matchup import Matchups
 from sql_app.serializers.matchup import MatchupSerializer
 from sql_app.serializers.matchup import MatchupReadSerializer
@@ -47,7 +35,7 @@ async def list_matchups():
 
 @router.get("/{id}", response_model=MatchupSerializer)
 async def retrieve_matchup(id: str):
-    matchup: MatchupSerializer = Matchups.get_record(query={"id": id})
+    matchup = Matchups.get_record(query={"id": id})
 
     if matchup:
         return matchup

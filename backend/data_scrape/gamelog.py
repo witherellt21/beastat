@@ -1,20 +1,18 @@
 import logging
-import os
-
 import numpy as np
 import pandas as pd
 
-from data_scrape.abstract_base_scraper import AbstractBaseScraper
-from helpers.db_helpers import get_player_id
+from typing import Iterable, Unpack, Literal, TypedDict
+
+from data_scrape.abstract_base_scraper import AbstractBaseScraper, ScraperKwargs
+from exceptions import NoDataFoundException
 from helpers.db_helpers import get_player_active_seasons
 from sql_app.register.gamelog import Gamelogs
 from sql_app.register.matchup import Matchups
 from sql_app.register.player_info import PlayerInfos
 
-from exceptions import NoDataFoundException
 
-
-def convert_minutes_to_float(time: str):
+def convert_minutes_to_float(time: str) -> float:
     if not isinstance(time, str):
         return time
 
@@ -24,6 +22,9 @@ def convert_minutes_to_float(time: str):
 
 
 class GamelogScraper(AbstractBaseScraper):
+    class Kwargs(TypedDict, total=False):
+        identifier_source: Literal["matchups_only", "all"]
+
     RENAME_COLUMNS = {
         "Unnamed: 7": "streak",
         "FT%": "FT_perc",
@@ -33,120 +34,100 @@ class GamelogScraper(AbstractBaseScraper):
         "3P%": "THP_perc",
         "+/-": "plus_minus",
     }
-    DROP_COLUMNS: "list[str]" = ["Unnamed: 5"]
     TRANSFORMATIONS = {"MP": lambda x: convert_minutes_to_float(x)}
-    COLUMN_TYPES: "dict[str:str]" = {
-        "Tm": "str",
-        "Opp": "str",
-        "PTS": "float",
-        "GmSc": "float",
-        "G": "float",
-        "GS": "float",
-        "MP": "float",
-        "AST": "float",
-        "TRB": "float",
-        "FT": "float",
-        "THPA": "float",
-        "THP": "float",
-        "FGA": "float",
-        "FG": "float",
-        "STL": "float",
-        "FG_perc": "float",
-        "THP_perc": "float",
-        "plus_minus": "float",
-        "FTA": "float",
-        "FT_perc": "float",
-        "ORB": "float",
-        "DRB": "float",
-        "BLK": "float",
-        "TOV": "float",
-        "PF": "float",
-        "GmSc": "float",
-        "plus_minus": "float",
-    }
-    DATETIME_COLUMNS: "dict[str:str]" = {"Date": "%Y-%m-%d"}
-    STAT_AUGMENTATIONS: "dict[str:str]" = {
+    DATETIME_COLUMNS = {"Date": "%Y-%m-%d"}
+    STAT_AUGMENTATIONS = {
         "PA": "PTS+AST",
         "PR": "PTS+TRB",
         "RA": "TRB+AST",
         "PRA": "PTS+TRB+AST",
     }
+    QUERY_SAVE_COLUMNS = ["player_id"]
+    COLUMN_ORDERING = ["player_id"]
+
     TABLE = Gamelogs
     LOG_LEVEL = logging.DEBUG
-    IDENTIFIER_OPTIONS = {"player_ids": "all"}
+
+    def __init__(self, **kwargs: Unpack[Kwargs]):
+        super().__init__(**kwargs)
+
+        self.identifier_source: Literal["matchups_only", "all"] = kwargs.get(
+            "identifier_source", "matchups_only"
+        )
 
     @property
     def download_url(self):
-        return "http://www.basketball-reference.com/players/{}/{}/gamelog/{}"
-
-    def format_url_args(self, *, identifier: str) -> "list[str]":
-        player_id, year = identifier
-        return [player_id[0], player_id, year]
+        return "http://www.basketball-reference.com/players/{player_last_initial}/{player_id}/gamelog/{year}"
 
     def select_dataset_from_html_tables(
-        self, *, datasets: "list[pd.DataFrame]"
+        self, *, datasets: list[pd.DataFrame]
     ) -> pd.DataFrame:
         # TODO: This filter seems awfully presumptuous, maybe we should change it at some point
         return list(filter(lambda x: x.shape[1] == 30, datasets))[0]
 
-    def get_identifiers(self) -> "list[str|tuple[str]]":
+    def get_query_set(self) -> list[dict[str, str]]:
         # TODO: There has to be a faster way to do this. Without extend and iteration
+        # There should simply be a dataset for all active players playing tonight
+        player_ids: Iterable[str] = []
+
         if self.identifier_source == "matchups_only":
             matchups = Matchups.get_all_records(as_df=True)
 
-            players = np.concatenate(
+            player_ids = np.concatenate(
                 (
                     matchups["home_player_id"].unique(),
                     matchups["away_player_id"].unique(),
                 )
             )
+
         elif self.identifier_source == "all":
             all_players = PlayerInfos.get_all_records(as_df=True)
 
             if not all_players.empty:
-                players = list(all_players["player_id"].values)
+                player_ids = list(all_players["player_id"].values)
             else:
                 return []
 
-        identifiers = []
-        for player in players:
+        query_set: list[dict[str, str]] = []
+        for player_id in player_ids:
             try:
-                active_seasons = get_player_active_seasons(player_id=player)
+                active_seasons = get_player_active_seasons(player_id=player_id)
 
-                identifiers.extend(
-                    list(map(lambda year: (player, year), active_seasons))
+                query_set.extend(
+                    [
+                        {
+                            "player_last_initial": player_id[0],
+                            "player_id": player_id,
+                            "year": str(year),
+                        }
+                        for year in active_seasons
+                    ]
                 )
+
             except NoDataFoundException:
-                self.logger.error(f"Could not find active seasons for the {player}.")
+                self.logger.error(
+                    f"Could not find active seasons for player with id {player_id}."
+                )
                 continue
 
-        self.logger.debug(f"Getting gamelogs for {identifiers}")
+        self.logger.debug(f"Getting gamelogs for {query_set}")
 
-        return identifiers
+        return query_set
 
     def clean(self, *, data: pd.DataFrame) -> pd.DataFrame:
         # TODO: We can create class attributes for removing rows and setting the index
         # Remove extra column rows from dataset
-        data: pd.DataFrame = data[data["Rk"] != "Rk"]
+        data = data[data["Rk"] != "Rk"]
 
         # Reset the index to all games where player was rostered this season, including Inactive games
-        data: pd.DataFrame = data.set_index("Rk")
+        data = data.set_index("Rk")
 
         return super().clean(data=data)
-
-    def configure_data(self, *, data: pd.DataFrame) -> pd.DataFrame:
-        data = super().configure_data(data=data)
-        # TODO: Can probably move this to base
-        return data.fillna(np.nan).replace([np.nan], [None])
-
-    def download_data(self, *, url_args: "list[str]" = []) -> pd.DataFrame:
-        # TODO: we shouln't make augmentations here. So we will need to fix the SAVE_IDENTIFIER_AS attribute to a dict and support lists
-        data = super().download_data(url_args=url_args)
-        data["player_id"] = url_args[1]
-        return data
 
 
 if __name__ == "__main__":
 
-    gamelog = GamelogScraper()
-    gamelog.get_data(identifier=("jamesle01", 2023))
+    gamelog = GamelogScraper(identifier_source="matchups_only")
+    gamelog.get_data(
+        query={"player_last_initial": "j", "player_id": "jamesle01", "year": "2023"}
+    )

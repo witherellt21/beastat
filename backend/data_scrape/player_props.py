@@ -6,7 +6,7 @@ from helpers.db_helpers import get_player_id
 from sql_app.register.player_prop import PlayerProps
 from sql_app.register.player_prop import PropLines
 from sql_app.serializers.player_prop import PlayerPropSerializer
-from typing import Callable
+from typing import Callable, Optional
 import threading
 import traceback
 import logging
@@ -14,11 +14,12 @@ import time
 
 from pydantic_core import ValidationError
 
-plus_minus_match = re.compile("−|\+")
-minus_match = re.compile("−")
-plus_match = re.compile("\+")
+plus_minus_match = re.compile(r"−|\+")
+minus_match = re.compile(r"−")
+plus_match = re.compile(r"\+")
 
-line_split_match = re.compile("^[^\d]*")
+line_split_match = re.compile(r"^[^\d]*")
+line_split_match = r"^[^\d]*"
 
 
 def get_player_props(*, dataset: pd.DataFrame):
@@ -27,7 +28,7 @@ def get_player_props(*, dataset: pd.DataFrame):
         data: pd.DataFrame = data.dropna(subset=1)
 
         # favored_over_data[0] = favored_over_data[0].astype(str)
-        data[0] = data[0].str.split(line_split_match, expand=True)[1]
+        data[0] = data[0].str.split(line_split_match, expand=True, regex=True)[1]
 
         # Set column types
         data[0] = data[0].astype(float)
@@ -101,24 +102,19 @@ def get_player_props(*, dataset: pd.DataFrame):
     return full_data
 
 
-def set_player_id(*, dataset: pd.DataFrame) -> pd.DataFrame:
-    dataset["player_id"] = dataset["player_name"].map(
-        lambda name: get_player_id(player_name=name)
-    )
-    return dataset
-
-
 class PlayerPropsScraper(AbstractBaseScraper):
-    RENAME_COLUMNS: "dict[str:str]" = {"PLAYER": "player_name"}
-    REPLACE_VALUES = {
+    RENAME_COLUMNS = {"PLAYER": "player_name"}
+    RENAME_VALUES = {
         "points": "PTS",
         "assists": "AST",
         "threes": "THP",
         "rebounds": "TRB",
     }
-    DATA_TRANSFORMATIONS = [get_player_props, set_player_id]
+    TRANSFORMATIONS = {
+        ("player_name", "player_id"): lambda name: get_player_id(player_name=name)
+    }
+    DATA_TRANSFORMATIONS = [get_player_props]
 
-    DEFAULT_IDENTIFIERS: "dict[str:list]" = ["points", "assists", "threes", "rebounds"]
     SAVE_IDENTIFIER_AS: str = "stat"
 
     TABLE = PlayerProps
@@ -128,15 +124,20 @@ class PlayerPropsScraper(AbstractBaseScraper):
 
     @property
     def download_url(self):
-        return "http://sportsbook.draftkings.com/nba-player-props?category=player-{}&subcategory={}"
-
-    def format_url_args(self, identifier):
-        return [identifier, identifier]
+        return "http://sportsbook.draftkings.com/nba-player-props?category=player-{stat_category}&subcategory={stat_subcategory}"
 
     def select_dataset_from_html_tables(
         self, *, datasets: "list[pd.DataFrame]"
     ) -> pd.DataFrame:
         return pd.concat(datasets, ignore_index=True)
+
+    def get_query_set(self) -> list[dict[str, str]]:
+        return [
+            {"stat_category": "points", "stat_subcategory": "points"},
+            {"stat_category": "assists", "stat_subcategory": "assists"},
+            {"stat_category": "threes", "stat_subcategory": "threes"},
+            {"stat_category": "rebounds", "stat_subcategory": "rebounds"},
+        ]
 
     def cache_data(self, *, data: pd.DataFrame) -> None:
         """
@@ -144,6 +145,9 @@ class PlayerPropsScraper(AbstractBaseScraper):
         - Create or update the prop line on the player instance
         """
         self.logger.debug("Saving data to database.")
+
+        print(data)
+        return
 
         row_dicts = data.to_dict(orient="records")
         for row in row_dicts:
@@ -154,13 +158,14 @@ class PlayerPropsScraper(AbstractBaseScraper):
                 )
                 continue
 
-            player: PlayerPropSerializer = PlayerProps.get_or_create(
+            # TODO: Figure out how to make the typehint for this function dynamic to the child class
+            player: Optional[PlayerPropSerializer] = PlayerProps.get_or_create(
                 data={"player_id": row["player_id"], "name": row["player_name"]}
-            )
+            )  # type: ignore
 
             prop_line = PropLines.update_or_insert_record(
                 data={
-                    "player_id": player.id,
+                    "player_id": player.id,  # type: ignore
                     "stat": row["stat"],
                     "line": row["line"],
                     "over": row["odds_over"],
@@ -190,4 +195,8 @@ if __name__ == "__main__":
     # player_props_scraper.get_data(identifier="assists")
     # check = re.split(line_split_match, "O 3.5")
     # print(check)
-    test_scraper_thread()
+    # test_scraper_thread()
+    player_props = PlayerPropsScraper()
+    player_props.get_data(
+        query={"stat_category": "points", "stat_subcategory": "points"}
+    )

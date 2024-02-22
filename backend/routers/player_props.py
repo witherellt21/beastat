@@ -23,17 +23,13 @@ router = APIRouter()
 
 @router.get("/{player_id}")
 async def get_props_by_player_id(player_id: str):
-    player: ReadPlayerPropSerializer = PlayerProps.get_record(
-        query={"player_id": player_id}
-    )
+    player = PlayerProps.get_record(query={"player_id": player_id})
 
     if not player:
         print(f"No prop lines for player: {player_id}")
         return []
 
-    lines: list[ReadPropLineSerializer] = PropLines.filter_records(
-        query={"player_id": player.id}
-    )
+    lines = PropLines.filter_records(query={"player_id": player.id})  # type: ignore
 
     new_lines = {}
     for line in lines:
@@ -50,18 +46,14 @@ async def get_props_by_player_id(player_id: str):
 
 @router.get("/{player_id}/hitrates")
 async def get_player_hitrates(player_id: str):
-    player: ReadPlayerPropSerializer = PlayerProps.get_record(
-        query={"player_id": player_id}
-    )
+    player = PlayerProps.get_record(query={"player_id": player_id})
 
     if not player:
         print(f"No prop lines for player: {player_id}")
         return {}
 
     # Get the prop lines for the given player
-    lines: list[ReadPropLineSerializer] = PropLines.filter_records(
-        query={"player_id": player.id}
-    )
+    lines = PropLines.filter_records(query={"player_id": player.id})  # type: ignore
 
     # Get player career gamelog
     career_gamelog: pd.DataFrame = Gamelogs.filter_records(
