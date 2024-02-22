@@ -30,26 +30,26 @@ function Matchup() {
     }, [id]);
 
     useEffect(() => {
-        if (matchupLoaded) {
-            axios.get(`http://localhost:3001/player-props/${matchup.home_player_id}`)
-                .then((response) => {
-                    setHomePropLines(response.data)
-                })
-                .catch((error) => {
-                    console.log(error)
-                    return null;
-                });
-            axios.get(`http://localhost:3001/player-props/${matchup.away_player_id}`)
-                .then((response) => {
-                    setAwayPropLines(response.data)
-                })
-                .catch((error) => {
-                    console.log(error)
-                    return null;
-                });
-        }
 
-    }, [matchupLoaded])
+        axios.get(`http://localhost:3001/player-props/${matchup.home_player_id}`)
+            .then((response) => {
+                setHomePropLines(response.data)
+            })
+            .catch((error) => {
+                console.log(error)
+                return null;
+            });
+        axios.get(`http://localhost:3001/player-props/${matchup.away_player_id}`)
+            .then((response) => {
+                setAwayPropLines(response.data)
+            })
+            .catch((error) => {
+                console.log(error)
+                return null;
+            });
+
+
+    }, [matchup])
 
 
     return (

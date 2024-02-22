@@ -10,6 +10,7 @@ from sql_app.register.base import BaseTable
 class GamelogTable(BaseTable):
     MODEL_CLASS = Gamelog
     SERIALIZER_CLASS = GamelogSerializer
+    TABLE_ENTRY_SERIALIZER_CLASS = GamelogSerializer
     PKS = ["player_id", "Date"]
 
 

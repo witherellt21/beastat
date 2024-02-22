@@ -1,9 +1,9 @@
-import peewee
 from sql_app.models.player_info import College
 from sql_app.models.player_info import PlayerInfo
 from sql_app.serializers.player_info import CollegeSerializer
 from sql_app.serializers.player_info import PlayerInfoSerializer
 from sql_app.serializers.player_info import PlayerInfoReadSerializer
+from sql_app.serializers.player_info import PlayerInfoTableEntrySerializer
 
 from sql_app.database import DB
 from sql_app.register.base import BaseTable
@@ -13,6 +13,7 @@ class PlayerInfoTable(BaseTable):
     MODEL_CLASS = PlayerInfo
     SERIALIZER_CLASS = PlayerInfoSerializer
     READ_SERIALIZER_CLASS = PlayerInfoReadSerializer
+    TABLE_ENTRY_SERIALIZER_CLASS = PlayerInfoTableEntrySerializer
     PKS = ["player_id"]
 
 

@@ -7,19 +7,22 @@ from unidecode import unidecode
 from typing import Optional, Sequence
 
 
-RENAME = {"Nenê": "Nenê Hilario", "Maxi Kleber": "Maxi Klebir"}
+RENAME = {"Nene": "Nene Hilario", "Nene": "Nene Hilario", "Maxi Kleber": "Maxi Klebir"}
 
 
 def get_player_id_from_name(*, player_name: str) -> str:
+    player_name = unidecode(player_name)
     player_name = RENAME.get(player_name, player_name)
 
     try:
+
         name_components = player_name.split(" ")[:2]
 
         # remove all apostraphe's and normalize the odd characters
         normalized_components = map(
-            lambda name: re.sub("[^a-zA-Z0-9 -]", "", unidecode(name)), name_components
+            lambda name: re.sub("[^a-zA-Z0-9 -]", "", name), name_components
         )
+
         first_name, last_name = map(lambda x: x.lower(), normalized_components)
         player_id = f"{last_name[:5]}{first_name[:2]}"
         return player_id
@@ -33,7 +36,10 @@ def convert_season_to_year(*, season: str) -> Optional[int]:
         year_range = season.split("-")
 
         if len(year_range) != 2:
-            return None
+            try:
+                return int(float(season))
+            except ValueError:
+                return None
         else:
             start_year = year_range[0]
             end_year = year_range[1]
@@ -62,11 +68,29 @@ def find_closest_match(
     search_list: list[str],
     match_threshold: int = constants.DEFAULT_MATCH_THRESHOLD,
 ) -> Optional[str]:
+    def match_is_valid(match) -> bool:
+        match_name = match[0]
+        match_validity = match[1]
+
+        if type(match_name) != str or type(match_validity) != int:
+            return False
+
+        match_last_name = match_name.split(" ")
+        search_last_name = value.split(" ")
+
+        if len(match_last_name) >= 2 and len(search_last_name) >= 2:
+            return (
+                match_last_name[1] == search_last_name[1]
+                and match[1] >= match_threshold
+            )
+
+        return False
+
     matches: Sequence[tuple[str, int] | tuple[str, int, str]] = process.extract(
-        value, search_list, limit=1
+        value, search_list, limit=5
     )
-    valid_matches: list[tuple[str, int]] = list(
-        filter(lambda match: match[1] >= match_threshold, matches)
+    valid_matches: Sequence[tuple[str, int] | tuple[str, int, str]] = list(
+        filter(match_is_valid, matches)
     )
 
     if not valid_matches:

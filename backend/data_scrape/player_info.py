@@ -10,6 +10,8 @@ import logging
 from sql_app.register.player_info import PlayerInfos
 from string import ascii_lowercase
 
+from typing import Optional
+
 
 def get_player_ids(*, source_table: pd.DataFrame, id_from_column: str) -> pd.Series:
     source_table["player_id"] = source_table.apply(
@@ -68,15 +70,15 @@ class PlayerInfoScraper(AbstractBaseScraper):
         "Wt": "weight",
         "Birth Date": "birth_date",
     }
+
     TABLE = PlayerInfos
-    DEFAULT_IDENTIFIERS = list(ascii_lowercase)
     LOG_LEVEL = logging.INFO
 
     @property
     def download_url(self) -> str:
         return "http://www.basketball-reference.com/players/{player_last_initial}/"
 
-    def get_query_set(self) -> list[dict[str, str]]:
+    def get_query_set(self) -> Optional[list[dict[str, str]]]:
         return self.Constants.QUERY_SET
 
     def select_dataset_from_html_tables(

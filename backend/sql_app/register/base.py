@@ -15,12 +15,13 @@ import pandas as pd
 from typing import TypeVar
 
 # Serializer = TypeVar("Serializer", bound="BaseSerializer")
+from abc import abstractmethod
 
 
 class BaseTable:
-
     MODEL_CLASS: Type[BaseModel]
     SERIALIZER_CLASS: Type[BaseSerializer]
+    TABLE_ENTRY_SERIALIZER_CLASS: Type[BaseSerializer]
     READ_SERIALIZER_CLASS: Optional[Type[BaseSerializer]] = None
     PKS: list[str] = ["id"]
 
@@ -40,6 +41,10 @@ class BaseTable:
     @property
     def serializer_class(self) -> Type[BaseSerializer]:
         return self.__class__.SERIALIZER_CLASS
+
+    @property
+    def table_entry_serializer_class(self) -> Type[BaseSerializer]:
+        return self.__class__.TABLE_ENTRY_SERIALIZER_CLASS
 
     @property
     def read_serializer_class(self) -> Type[BaseSerializer]:
@@ -91,10 +96,16 @@ class BaseTable:
     def get_or_create(self, *, data: dict[str, str] = {}) -> Optional[BaseSerializer]:
         validated_data: BaseSerializer = self.serializer_class(**data)
 
-        result, created = self.model_class.get_or_create(**validated_data.model_dump())
+        try:
+            model = self.model_class.get(**validated_data.model_dump())
+        except peewee.DoesNotExist:
+            print(validated_data)
+            model, created = self.model_class.get_or_create(
+                **validated_data.model_dump()
+            )
 
-        if result:
-            return self.read_serializer_class(**model_to_dict(result))
+        if model:
+            return self.read_serializer_class(**model_to_dict(model))
         else:
             return None
 

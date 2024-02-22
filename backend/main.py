@@ -9,6 +9,7 @@ from data_scrape.career_stats import CareerStatsScraper
 from data_scrape.gamelog import GamelogScraper
 from data_scrape.lineups2 import LineupScraper
 from data_scrape.player_props import PlayerPropsScraper
+from data_scrape.player_info import PlayerInfoScraper
 
 import logging
 import threading
@@ -29,6 +30,10 @@ main_logger.addHandler(main_stream_handler)
 
 
 # TODO: MASSIVE work needs to be done in keeping these scrapers asynchronous in case data is missing
+if config.DATA_SCRAPE.get("PlayerInfo", {}).get("status"):
+    player_info_scraper = PlayerInfoScraper()
+    player_info_scraper.start()
+
 if config.DATA_SCRAPE.get("Lineups", {}).get("status"):
     lineup_scraper = LineupScraper()
     lineup_scraper.start()

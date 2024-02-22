@@ -25,6 +25,17 @@ class PlayerInfoReadSerializer(BaseSerializer):
     birth_date: datetime.date
 
 
+class PlayerInfoTableEntrySerializer(BaseSerializer):
+    player_id: str
+    name: str
+    active_from: int
+    active_to: int
+    position: str
+    height: int
+    weight: int
+    birth_date: datetime.date
+
+
 class CollegeSerializer(BaseSerializer):
     name: str
     player_info: str

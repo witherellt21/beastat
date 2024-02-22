@@ -38,6 +38,7 @@ function PlayerData({
         console.log(query)
 
         axios.get(`http://localhost:3001/player-props/${player_id}/hitrates`).then(async (response) => {
+            console.log(response.data)
             await setPlayerHitrates(response.data)
         }).catch((err) => {
             console.log(err);
@@ -45,8 +46,12 @@ function PlayerData({
         });
 
         axios.get(`http://localhost:3001/gamelogs/${player_id}?query=${query}&&startyear=${queryFilters.Date}&&matchups_only=${queryFilters.matchups_only}`).then(async (response) => {
+            console.log(response.data)
             await setGamelogData(response.data)
         });
+
+        console.log(playerHitrates)
+        console.log(gamelogData)
 
     }, [player_id, queryFilters])
 

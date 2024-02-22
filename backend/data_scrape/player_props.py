@@ -103,7 +103,8 @@ def get_player_props(*, dataset: pd.DataFrame):
 
 
 class PlayerPropsScraper(AbstractBaseScraper):
-    RENAME_COLUMNS = {"PLAYER": "player_name"}
+    # COLUMN_TYPES = {}
+    RENAME_COLUMNS = {"PLAYER": "name"}
     RENAME_VALUES = {
         "points": "PTS",
         "assists": "AST",
@@ -111,16 +112,22 @@ class PlayerPropsScraper(AbstractBaseScraper):
         "rebounds": "TRB",
     }
     TRANSFORMATIONS = {
-        ("player_name", "player_id"): lambda name: get_player_id(player_name=name)
+        ("name", "player_id"): lambda name: get_player_id(player_name=name)
     }
     DATA_TRANSFORMATIONS = [get_player_props]
-
-    SAVE_IDENTIFIER_AS: str = "stat"
+    QUERY_SAVE_COLUMNS = {"stat": "stat_category"}
 
     TABLE = PlayerProps
     REFRESH_RATE = 1
 
     LOG_LEVEL = logging.WARNING
+
+    # def __init__(self, **kwargs):
+    #     super().__init__(**kwargs)
+
+    #     self.desired_columns = [
+
+    #     ]
 
     @property
     def download_url(self):
@@ -131,7 +138,7 @@ class PlayerPropsScraper(AbstractBaseScraper):
     ) -> pd.DataFrame:
         return pd.concat(datasets, ignore_index=True)
 
-    def get_query_set(self) -> list[dict[str, str]]:
+    def get_query_set(self) -> Optional[list[dict[str, str]]]:
         return [
             {"stat_category": "points", "stat_subcategory": "points"},
             {"stat_category": "assists", "stat_subcategory": "assists"},
@@ -146,34 +153,40 @@ class PlayerPropsScraper(AbstractBaseScraper):
         """
         self.logger.debug("Saving data to database.")
 
-        print(data)
-        return
-
         row_dicts = data.to_dict(orient="records")
         for row in row_dicts:
 
-            if row["player_id"] == None:
-                self.logger.debug(
-                    f"Player's ID does not exist: player_name = {row.get('player_name')}. Congifure the player info scraper to get all active player's id's."
+            if row["player_id"] == "None":
+                self.logger.warning(
+                    f"Player's ID does not exist: player_name = {row.get('name')}. Congifure the player info scraper to get all active player's id's."
                 )
                 continue
 
             # TODO: Figure out how to make the typehint for this function dynamic to the child class
             player: Optional[PlayerPropSerializer] = PlayerProps.get_or_create(
-                data={"player_id": row["player_id"], "name": row["player_name"]}
+                data={"player_id": row["player_id"], "name": row["name"]}
             )  # type: ignore
 
-            prop_line = PropLines.update_or_insert_record(
-                data={
-                    "player_id": player.id,  # type: ignore
-                    "stat": row["stat"],
-                    "line": row["line"],
-                    "over": row["odds_over"],
-                    "under": row["odds_under"],
-                    "over_implied": row["implied_odds_over"],
-                    "under_implied": row["implied_odds_under"],
-                }
-            )
+            if not player:
+                self.logger.warning(
+                    f"Unable to save data for player: {row['player_id']} for prop: {row['stat']}."
+                )
+                return
+
+            try:
+                prop_line = PropLines.update_or_insert_record(
+                    data={
+                        "player_id": player.id,  # type: ignore
+                        "stat": row["stat"],
+                        "line": row["line"],
+                        "over": row["odds_over"],
+                        "under": row["odds_under"],
+                        "over_implied": row["implied_odds_over"],
+                        "under_implied": row["implied_odds_under"],
+                    }
+                )
+            except KeyError as e:
+                self.logger.error(f"Error in data save: {e}. \n Data: \n\n{row}")
 
         self.logger.debug(f"\n{data}")
 

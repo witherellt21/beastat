@@ -1,4 +1,4 @@
-FAKING = True
+FAKING = False
 
 FakeMatchup = {
     "id": "1",

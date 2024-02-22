@@ -15,26 +15,10 @@ from sql_app.register.career_stats import CareerStatss
 from sql_app.register.matchup import Matchups
 from sql_app.register.player_info import PlayerInfos
 
-from typing import Unpack, Literal, TypedDict, Iterable
+from typing import Unpack, Literal, TypedDict, Iterable, Optional
 
 
 IS_SEASON = re.compile(r"^\d{4}")
-
-
-# def convert_seasons_to_years(*, dataset: pd.DataFrame, id_from_column: str):
-#     for index, row in dataset.iterrows():
-#         season: str = row[id_from_column]
-#         if IS_SEASON.match(season):
-#             dataset.loc[index, id_from_column] = str(
-#                 convert_season_to_year(season=season)
-#             )
-
-#     return dataset[id_from_column]
-
-
-# def convert_season_to_years(*, season: str) -> str:
-#     if IS_SEASON.match(season):
-#         dataset.loc[index, id_from_column] = str(convert_season_to_year(season=season))
 
 
 class CareerStatsScraper(AbstractBaseScraper):
@@ -46,9 +30,6 @@ class CareerStatsScraper(AbstractBaseScraper):
         "PR": "PTS+TRB",
         "RA": "TRB+AST",
         "PRA": "PTS+TRB+AST",
-        # "Season": lambda dataset: convert_seasons_to_years(
-        #     dataset=dataset, id_from_column="Season"
-        # ),
     }
 
     TRANSFORMATIONS = {"Season": lambda season: convert_season_to_year(season=season)}
@@ -74,7 +55,7 @@ class CareerStatsScraper(AbstractBaseScraper):
 
     TABLE = CareerStatss
 
-    LOG_LEVEL = logging.INFO
+    LOG_LEVEL = logging.WARNING
 
     def __init__(self, **kwargs: Unpack[Kwargs]):
 
@@ -95,13 +76,25 @@ class CareerStatsScraper(AbstractBaseScraper):
         season_stat_datasets: list[pd.DataFrame] = list(
             filter(lambda dataset: "Season" in dataset.columns, datasets)
         )
-        return season_stat_datasets[0]
+        try:
+            return season_stat_datasets[0]
+        except IndexError:
+            self.logger.warning(
+                f"Could not find dataset with 'Seasons' column in \n {datasets}"
+            )
+            return pd.DataFrame()
 
-    def get_query_set(self) -> list[dict[str, str]]:
+    def get_query_set(self) -> Optional[list[dict[str, str]]]:
         player_ids: Iterable[str] = []
 
         if self.identifier_source == "matchups_only":
             matchups = Matchups.get_all_records(as_df=True)
+
+            home_players = matchups["home_player_id"].unique()
+            away_players = matchups["away_player_id"].unique()
+
+            if len(home_players) == 0 or len(away_players) == 0:
+                return []
 
             player_ids = np.concatenate(
                 (
@@ -132,9 +125,6 @@ class CareerStatsScraper(AbstractBaseScraper):
         data["Awards"] = data["Awards"].fillna("")
 
         return data
-
-    def cache_data(self, *, data: pd.DataFrame) -> None:
-        print(data)
 
 
 if __name__ == "__main__":

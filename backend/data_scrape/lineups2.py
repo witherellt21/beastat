@@ -1,4 +1,4 @@
-from abstract_base_scraper import AbstractBaseScraper
+from data_scrape.abstract_base_scraper import AbstractBaseScraper
 from helpers.db_helpers import get_player_id
 from sql_app.register.lineup import Lineups
 from sql_app.register.matchup import Matchups
@@ -8,6 +8,7 @@ import pandas as pd
 
 from bs4 import BeautifulSoup, element
 from typing import Optional
+import logging
 
 
 def get_team_lineup(*, lineup_div: element.Tag) -> dict[str, str]:
@@ -34,13 +35,14 @@ def get_team_lineup(*, lineup_div: element.Tag) -> dict[str, str]:
 class LineupScraper(AbstractBaseScraper):
 
     TABLE = Lineups
+    LOG_LEVEL = logging.WARNING
 
     @property
     def download_url(self) -> str:
         return "http://rotogrinders.com/lineups/nba"
 
-    def get_query_set(self) -> list[dict[str, str]]:
-        return []
+    def get_query_set(self) -> Optional[list[dict[str, str]]]:
+        return None
 
     def select_dataset_from_html_tables(
         self, *, datasets: list[pd.DataFrame]
@@ -79,7 +81,8 @@ class LineupScraper(AbstractBaseScraper):
             if not isinstance(away_team_lineup_div, element.Tag) or not isinstance(
                 home_team_lineup_div, element.Tag
             ):
-                return None
+                self.logger.warning("Could not find team lineups.")
+                continue
 
             # Get confirmation statuses
             # away_team_lineup_confirmed: bool = not bool(away_team_lineup_div.find("div", "show-unconfirmed-message"))
@@ -101,7 +104,12 @@ class LineupScraper(AbstractBaseScraper):
             }
             away_team_lineup = get_team_lineup(lineup_div=away_team_lineup_div)
             away_team_data.update(away_team_lineup)
-            Lineups.update_or_insert_record(data=away_team_data)
+
+            if away_team_data:
+                Lineups.update_or_insert_record(data=away_team_data)
+            else:
+                self.logger.warning("No home team lineup data found.")
+                continue
 
             # Repeat for the home team
             home_team_data: dict = {
@@ -113,9 +121,20 @@ class LineupScraper(AbstractBaseScraper):
             }
             home_team_lineup = get_team_lineup(lineup_div=home_team_lineup_div)
             home_team_data.update(home_team_lineup)
-            Lineups.update_or_insert_record(data=home_team_data)
+
+            if home_team_lineup:
+                Lineups.update_or_insert_record(data=home_team_data)
+            else:
+                self.logger.warning("No home team lineup data found.")
+                continue
 
             for key, value in home_team_lineup.items():
+                home_player_id = get_player_id(player_name=value)
+                away_player_id = get_player_id(player_name=away_team_lineup[key])
+
+                if not home_player_id or not away_player_id:
+                    continue
+
                 matchup = {
                     "game_id": game_id,
                     "position": key,

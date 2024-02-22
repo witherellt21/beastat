@@ -1,8 +1,9 @@
+import datetime
 import logging
 import numpy as np
 import pandas as pd
 
-from typing import Iterable, Unpack, Literal, TypedDict
+from typing import Iterable, Unpack, Literal, TypedDict, Optional
 
 from data_scrape.abstract_base_scraper import AbstractBaseScraper, ScraperKwargs
 from exceptions import NoDataFoundException
@@ -10,6 +11,9 @@ from helpers.db_helpers import get_player_active_seasons
 from sql_app.register.gamelog import Gamelogs
 from sql_app.register.matchup import Matchups
 from sql_app.register.player_info import PlayerInfos
+from global_implementations import constants
+
+import time
 
 
 def convert_minutes_to_float(time: str) -> float:
@@ -19,6 +23,12 @@ def convert_minutes_to_float(time: str) -> float:
     minutes, seconds = time.split(":")
     result = int(minutes) + round(int(seconds) / 60, ndigits=1)
     return result
+
+
+class QueryDictForm(TypedDict):
+    player_last_initial: str
+    player_id: str
+    year: int
 
 
 class GamelogScraper(AbstractBaseScraper):
@@ -44,9 +54,10 @@ class GamelogScraper(AbstractBaseScraper):
     }
     QUERY_SAVE_COLUMNS = ["player_id"]
     COLUMN_ORDERING = ["player_id"]
+    QUERY_DICT_FORM = QueryDictForm
 
     TABLE = Gamelogs
-    LOG_LEVEL = logging.DEBUG
+    LOG_LEVEL = logging.WARNING
 
     def __init__(self, **kwargs: Unpack[Kwargs]):
         super().__init__(**kwargs)
@@ -54,6 +65,7 @@ class GamelogScraper(AbstractBaseScraper):
         self.identifier_source: Literal["matchups_only", "all"] = kwargs.get(
             "identifier_source", "matchups_only"
         )
+        # self.query_dict_form = self.__class__.QUERY_DICT_FORM
 
     @property
     def download_url(self):
@@ -65,7 +77,30 @@ class GamelogScraper(AbstractBaseScraper):
         # TODO: This filter seems awfully presumptuous, maybe we should change it at some point
         return list(filter(lambda x: x.shape[1] == 30, datasets))[0]
 
-    def get_query_set(self) -> list[dict[str, str]]:
+    def is_cached(self, *, query: QueryDictForm) -> bool:
+        queried_season = query.get("year")
+        if queried_season and queried_season < constants.CURRENT_SEASON:
+            gamelogs = Gamelogs.filter_records(
+                query={"player_id": query.get("player_id")}, as_df=True
+            )
+
+            if gamelogs.empty:
+                return False
+
+            start = datetime.datetime(year=queried_season - 1, month=6, day=1)
+            end = datetime.datetime(year=queried_season, month=6, day=1)
+            # gamelogs_from_season = gamelogs[
+            #     gamelogs["Date"] < end and gamelogs["Date"] > start
+            # ]
+            gamelogs_from_season = gamelogs[gamelogs["Date"].between(start, end)]
+            if not gamelogs_from_season.empty:
+                self.logger.info(
+                    f"Skipping year {queried_season} for player {query.get('player_id')}. Already saved."
+                )
+                return True
+        return False
+
+    def get_query_set(self) -> Optional[list[QueryDictForm]]:
         # TODO: There has to be a faster way to do this. Without extend and iteration
         # There should simply be a dataset for all active players playing tonight
         player_ids: Iterable[str] = []
@@ -73,12 +108,14 @@ class GamelogScraper(AbstractBaseScraper):
         if self.identifier_source == "matchups_only":
             matchups = Matchups.get_all_records(as_df=True)
 
-            player_ids = np.concatenate(
-                (
-                    matchups["home_player_id"].unique(),
-                    matchups["away_player_id"].unique(),
-                )
-            )
+            home_players: list[str] = list(matchups["home_player_id"].unique())
+            away_players: list[str] = list(matchups["away_player_id"].unique())
+
+            if len(home_players) == 0 or len(away_players) == 0:
+                self.logger.warning("No player id's found in the matchup table.")
+                return []
+
+            player_ids = home_players + away_players
 
         elif self.identifier_source == "all":
             all_players = PlayerInfos.get_all_records(as_df=True)
@@ -86,26 +123,33 @@ class GamelogScraper(AbstractBaseScraper):
             if not all_players.empty:
                 player_ids = list(all_players["player_id"].values)
             else:
+                self.logger.warning("No player's found in the player info table.")
                 return []
 
-        query_set: list[dict[str, str]] = []
+        query_set: list[QueryDictForm] = []
         for player_id in player_ids:
+            if type(player_id) != str:
+                self.logger.warning(
+                    f"Could not get query for player with id {player_id}. 'player_id' not a string."
+                )
+                continue
+
             try:
                 active_seasons = get_player_active_seasons(player_id=player_id)
 
-                query_set.extend(
-                    [
-                        {
-                            "player_last_initial": player_id[0],
-                            "player_id": player_id,
-                            "year": str(year),
-                        }
-                        for year in active_seasons
-                    ]
-                )
+                queries: list[QueryDictForm] = [
+                    {
+                        "player_last_initial": player_id[0],
+                        "player_id": player_id,
+                        "year": year,
+                    }
+                    for year in active_seasons
+                ]
+
+                query_set.extend(queries)
 
             except NoDataFoundException:
-                self.logger.error(
+                self.logger.warning(
                     f"Could not find active seasons for player with id {player_id}."
                 )
                 continue

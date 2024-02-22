@@ -18,7 +18,7 @@ function Home() {
         <div className='flex flex-row flex-wrap justify-center'>
             {listOfMatchups.map((value, key) => {
                 return (
-                    <button key={key} className="flex flex-row justify-center items-center space-x-6 p-4 w-80 rounded-md bg-red-400 m-2" onClick={() => { navigate(`/matchup/${value.id}`) }}>
+                    <button key={key} className="flex flex-row justify-between items-center p-4 w-80 rounded-md bg-red-400 m-2" onClick={() => { navigate(`/matchup/${value.id}`) }}>
                         <img
                             src={'http://www.basketball-reference.com/req/202106291/images/headshots/' + `${value.home_player_id}` + '.jpg'}
                             width={55} height={60}

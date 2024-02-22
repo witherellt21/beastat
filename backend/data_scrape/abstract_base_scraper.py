@@ -44,7 +44,9 @@ STREAM_HANDLER.setFormatter(DEFAULT_LOG_FORMATTER)
 def get_column_types_for_table(
     *, table: BaseTable, ignore_columns: list[str]
 ) -> dict[str, Dtype]:
-    table_columns: dict[str, FieldInfo] = table.read_serializer_class.model_fields
+    table_columns: dict[str, FieldInfo] = (
+        table.table_entry_serializer_class.model_fields
+    )
     table_types: dict[str, Any] = {k: v.annotation for k, v in table_columns.items()}
 
     column_types: dict[str, Dtype] = {}
@@ -78,7 +80,7 @@ class AbstractBaseScraper(ABC, threading.Thread):
     - STAT_AUGMENTATIONS: "dict[str: str]" = {}
     - TRANSFORMATIONS: "dict[str: Callable]" = {}
     - DATA_TRANSFORMATIONS: "list[Callable]" = []
-    - QUERY_SAVE_COLUMNS: dict[str, str] | list[str]
+    - QUERY_SAVE_COLUMNS: dict[str, str] | list[str] -> save query parameter 'value' to the dataset in column 'key'
     - REFRESH_RATE: int = 5
     - LOG_LEVEL = logging.INFO
     """
@@ -90,7 +92,7 @@ class AbstractBaseScraper(ABC, threading.Thread):
     }
 
     # This could maybe come from the table itself, then overriden by this
-    COLUMN_TYPES: dict[str, Dtype] = {}
+    COLUMN_TYPES: Optional[dict[str, Dtype]] = None
     DATETIME_COLUMNS: dict[str, str] = {}
 
     # Adds column labled by key using a synctatic string or a callable function with argument that accepts the full dataset.
@@ -130,7 +132,7 @@ class AbstractBaseScraper(ABC, threading.Thread):
 
         self.table: BaseTable = table
 
-        self.column_types: dict[str, Dtype] = kwargs.get(
+        self.column_types: Optional[dict[str, Dtype]] = kwargs.get(
             "column_types", self.__class__.COLUMN_TYPES
         )
         self.datetime_columns: dict[str, str] = kwargs.get(
@@ -150,7 +152,7 @@ class AbstractBaseScraper(ABC, threading.Thread):
             self.query_save_columns = query_save_columns
 
         # If we still don't have column types, get them from the table
-        if not self.column_types:
+        if self.column_types is None:
             ignore_columns = list(self.__class__.STAT_AUGMENTATIONS.keys()) + list(
                 self.__class__.DATETIME_COLUMNS.keys()
             )
@@ -159,7 +161,12 @@ class AbstractBaseScraper(ABC, threading.Thread):
                 ignore_columns=ignore_columns,
             )
 
-        self.desired_columns = list(table.read_serializer_class.model_fields.keys())
+        # self.desired_columns = [
+        #     key for key in table.table_entry_serializer_class.model_fields.keys()
+        # ]
+        self.desired_columns = list(
+            table.table_entry_serializer_class.model_fields.keys()
+        )
 
         # Configure our logger
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -201,7 +208,7 @@ class AbstractBaseScraper(ABC, threading.Thread):
         )
 
     @abstractmethod
-    def get_query_set(self) -> list[dict[str, str]]:
+    def get_query_set(self) -> Optional[list[dict[str, str]]]:
         """
         Function returning a list of query parameters to add insert in the base download url for scraping.
         """
@@ -230,10 +237,15 @@ class AbstractBaseScraper(ABC, threading.Thread):
             try:
                 query_set = self.get_query_set()
             except Exception as e:
-                self.logger.error(e)
+                self.logger.error(traceback.format_exc())
                 self.kill_process()
+                break
 
-            if query_set:
+            if query_set == None:
+                self.get_data()
+                time.sleep(0.1)
+
+            else:
                 for query in query_set:
                     if not self.RUNNING:
                         break
@@ -255,9 +267,9 @@ class AbstractBaseScraper(ABC, threading.Thread):
 
                         continue
 
-            else:
-                self.get_data()
-                time.sleep(0.1)
+            # else:
+            #     self.get_data()
+            #     time.sleep(0.1)
 
     def kill_process(self, *args):
         """
@@ -276,6 +288,11 @@ class AbstractBaseScraper(ABC, threading.Thread):
         """
         Get data according to the search query.
         """
+        self.logger.debug(f"Getting data with query: {query}.")
+
+        if self.is_cached(query=query):
+            return None
+
         # Download the data for the given url parameters
         downloaded_dataset: Optional[pd.DataFrame] = self.download_data(query=query)
 
@@ -332,13 +349,13 @@ class AbstractBaseScraper(ABC, threading.Thread):
 
                 return None
 
-            # if http_error.code == 429:
-            #     self.logger.error(
-            #         f"{http_error}. Could not download data for {self.__class__.__name__} with kwargs {query}. Trying again..."
-            #     )
-            #     time.sleep(45)
+            if http_error.code == 429:
+                self.logger.error(
+                    f"{http_error}. Could not download data for {self.__class__.__name__} with kwargs {query}. Trying again..."
+                )
+                time.sleep(45)
 
-            #     return self.download_data(query=query)
+                return self.download_data(query=query)
 
             else:
                 raise Exception(
@@ -384,6 +401,9 @@ class AbstractBaseScraper(ABC, threading.Thread):
 
         self.logger.debug(f"\n{data}")
 
+    def is_cached(self, *, query: dict[str, str] = {}) -> bool:
+        return False
+
     def configure_data(self, *, data: pd.DataFrame) -> pd.DataFrame:
         """
         Manipulate the dataset column types, add columns, slice columns.
@@ -411,7 +431,11 @@ class AbstractBaseScraper(ABC, threading.Thread):
             data = transformation_function(dataset=data)
 
         # Convert the columns to the desired types
-        data = data.astype(self.column_types)
+        if self.column_types:
+            try:
+                data = data.astype(self.column_types)
+            except pd.errors.IntCastingNaNError:
+                self.logger.debug(data["weight"].value_counts())
 
         # Convert datetime columns appropriately
         for key, dt_format in self.__class__.DATETIME_COLUMNS.items():

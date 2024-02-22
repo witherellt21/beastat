@@ -14,15 +14,20 @@ class PlayerPropSerializer(BaseSerializer):
     # timestamp: datetime.datetime
 
 
+class PlayerPropTableEntrySerializer(BaseSerializer):
+    player_id: str
+    name: str
+    stat: str
+    line: float
+    odds_over: int
+    implied_odds_over: float
+    odds_under: int
+    implied_odds_under: float
+
+
 class OddsSerializer(BaseSerializer):
     odds: int | None = None
     implied_odds: float | None = None
-
-
-# class LineSerializer(BaseSerializer):
-#     line: float | None = None
-#     over: OddsSerializer = OddsSerializer()
-#     under: OddsSerializer = OddsSerializer()
 
 
 class PropLineSerializer(BaseSerializer):
