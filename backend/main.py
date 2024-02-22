@@ -7,7 +7,7 @@ from fastapi.logger import logger
 
 from data_scrape.career_stats import CareerStatsScraper
 from data_scrape.gamelog import GamelogScraper
-from data_scrape.lineups2 import LineupScraper
+from data_scrape.lineups import LineupScraper
 from data_scrape.player_props import PlayerPropsScraper
 from data_scrape.player_info import PlayerInfoScraper
 

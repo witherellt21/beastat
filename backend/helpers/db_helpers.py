@@ -130,10 +130,10 @@ def get_matchup_gamelog_by_player_id(*, player_id: str) -> pd.DataFrame:
     return matchup_data
 
 
-PLAYER_NICKNAMES: dict[str, str] = {
-    "Lu Dort": "Luguentz Dort",
-    "Nicolas Claxton": "Nic Claxton",
-}
+# PLAYER_NICKNAMES: dict[str, str] = {
+#     "Lu Dort": "Luguentz Dort",
+#     "Nicolas Claxton": "Nic Claxton",
+# }
 
 
 def get_player_id(*, player_name: str) -> Optional[str]:
@@ -142,7 +142,7 @@ def get_player_id(*, player_name: str) -> Optional[str]:
 
     # if no player found, try to get the closes match to their name
     if not player:
-        player_name = PLAYER_NICKNAMES.get(player_name, player_name)
+        # player_name = PLAYER_NICKNAMES.get(player_name, player_name)
 
         player_names: list[str] = PlayerInfos.get_column_values(column="name")
 
