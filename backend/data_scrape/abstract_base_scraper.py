@@ -338,6 +338,9 @@ class AbstractBaseScraper(ABC, threading.Thread):
             datasets = self.scrape_data(url=http_response)
             self.last_download_time = time.time()
 
+            if not datasets:
+                return None
+
             self.logger.info("Data download successful for %s", query)
 
         except HTTPError as http_error:
@@ -361,9 +364,6 @@ class AbstractBaseScraper(ABC, threading.Thread):
                 raise Exception(
                     self.generate_exception_msg(exception_type="download_data")
                 )
-
-        if not datasets:
-            return None
 
         return self.select_dataset_from_html_tables(datasets=datasets)
 

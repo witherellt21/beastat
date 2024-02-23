@@ -8,6 +8,10 @@ from sql_app.register.matchup import Matchups
 from sql_app.serializers.matchup import MatchupSerializer
 from sql_app.serializers.matchup import MatchupReadSerializer
 from sql_app.serializers.gamelog import GamelogSerializer
+from sql_app.serializers.lineup import LineupSerializer
+from sql_app.register.lineup import Lineups
+from sql_app.register.defense_ranking import DefenseRankings
+from sql_app.serializers.defense_ranking import DefenseRankingSerializer
 
 from typing import List
 import logging
@@ -23,9 +27,26 @@ router = APIRouter()
 ############################
 
 
-@router.get("/", response_model=List[MatchupReadSerializer])
+@router.get("/")
 async def list_matchups():
-    return Matchups.get_all_records()
+    matchups: List[MatchupReadSerializer] = Matchups.get_all_records()  # type: ignore
+
+    result = []
+    for matchup in matchups:
+        lineup: LineupSerializer = Lineups.get_record(query={"game_id": matchup.game_id, "home": True})  # type: ignore
+        home_defense_ranking: DefenseRankingSerializer = DefenseRankings.get_record(query={"team_abr": lineup.team, "stat": "OVR"})  # type: ignore
+        away_defense_ranking: DefenseRankingSerializer = DefenseRankings.get_record(query={"team_abr": lineup.opp, "stat": "OVR"})  # type: ignore
+
+        matchup_data = matchup.model_dump()
+        matchup_data["home_defense_ranking"] = getattr(
+            home_defense_ranking, matchup.position, None
+        )
+        matchup_data["away_defense_ranking"] = getattr(
+            away_defense_ranking, matchup.position, None
+        )
+        result.append(matchup_data)
+
+    return result
 
 
 ############################
@@ -33,9 +54,21 @@ async def list_matchups():
 ############################
 
 
-@router.get("/{id}", response_model=MatchupSerializer)
+@router.get("/{id}")
 async def retrieve_matchup(id: str):
-    matchup = Matchups.get_record(query={"id": id})
+    matchup: MatchupReadSerializer = Matchups.get_record(query={"id": id})  # type: ignore
+
+    # lineup: LineupSerialzer = Lineups.get_record(query={"game_id": matchup.game_id})  # type: ignore
+    # home_defense_ranking: DefenseRankingSerializer = DefenseRankings.get_record(query={"team_abr": lineup.team, "stat": "OVR"})  # type: ignore
+    # away_defense_ranking: DefenseRankingSerializer = DefenseRankings.get_record(query={"team_abr": lineup.opp, "stat": "OVR"})  # type: ignore
+
+    # matchup_data = matchup.model_dump()
+    # matchup_data["home_defense_ranking"] = getattr(
+    #     home_defense_ranking, matchup.position, None
+    # )
+    # matchup_data["away_defense_ranking"] = getattr(
+    #     away_defense_ranking, matchup.position, None
+    # )
 
     if matchup:
         return matchup

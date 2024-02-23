@@ -107,8 +107,8 @@ def get_matchup_gamelog_by_player_id(*, player_id: str) -> pd.DataFrame:
     ).dropna()
 
     # Get the original column names of the datasets that were not duplicated
-    all_column_headers = home_player_df.columns.to_list()
-    column_headers = all_column_headers.pop(all_column_headers.index("Date"))
+    column_headers = home_player_df.columns.to_list()
+    column_headers.pop(column_headers.index("Date"))
 
     # Create filters to separate the respective datasets for each player
     if home_player:

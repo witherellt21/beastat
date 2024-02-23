@@ -140,8 +140,8 @@ class LineupScraper(AbstractBaseScraper):
                     "position": key,
                     "home_player": value,
                     "away_player": away_team_lineup[key],
-                    "home_player_id": get_player_id(player_name=value),
-                    "away_player_id": get_player_id(player_name=away_team_lineup[key]),
+                    "home_player_id": home_player_id,
+                    "away_player_id": away_player_id,
                 }
 
                 try:

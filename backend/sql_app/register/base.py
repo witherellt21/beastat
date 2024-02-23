@@ -71,6 +71,9 @@ class BaseTable:
         self, *, query: dict, as_df: Literal[False]
     ) -> list[BaseSerializer]: ...
 
+    @overload
+    def filter_records(self, *, query: dict) -> list[BaseSerializer]: ...
+
     def get_all_records(self, *, as_df=False) -> list[BaseSerializer] | pd.DataFrame:
         records = []
         for record in self.model_class.select():
@@ -126,7 +129,7 @@ class BaseTable:
         serialized_objects = []
         for record in records:
             serialized = self.read_serializer_class(**model_to_dict(record))
-            serialized_objects.append(serialized.dict() if as_df else serialized)
+            serialized_objects.append(serialized.model_dump() if as_df else serialized)
 
         return pd.DataFrame(serialized_objects) if as_df else serialized_objects
 

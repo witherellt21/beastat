@@ -2,7 +2,7 @@ from pydantic import BaseModel as BaseSerializer
 from typing import Optional
 
 
-class LineupSerialzer(BaseSerializer):
+class LineupSerializer(BaseSerializer):
     game_id: int
     team: str
     opp: str

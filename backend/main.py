@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers import matchups
 from routers import gamelogs
 from routers import player_props
+from routers import defense_rankings
 from fastapi.logger import logger
 
 from data_scrape.career_stats import CareerStatsScraper
@@ -10,6 +11,7 @@ from data_scrape.gamelog import GamelogScraper
 from data_scrape.lineups import LineupScraper
 from data_scrape.player_props import PlayerPropsScraper
 from data_scrape.player_info import PlayerInfoScraper
+from data_scrape.defense_rankings_scraper import DefenseRankingsScraper
 
 import logging
 import threading
@@ -48,8 +50,10 @@ if config.DATA_SCRAPE.get("PlayerProps", {}).get("status"):
     player_props_scraper = PlayerPropsScraper()
     player_props_scraper.start()
 
-# # player_info_scraper = PlayerInfoScraper()
-# # player_info_scraper.start()
+if config.DATA_SCRAPE.get("DefenseRankings", {}).get("status"):
+    defense_rankings_scraper = DefenseRankingsScraper()
+    defense_rankings_scraper.start()
+
 if config.DATA_SCRAPE.get("Gamelogs", {}).get("status"):
     gamelog_scraper = GamelogScraper(
         **config.DATA_SCRAPE.get("Gamelogs", {}).get("options", {})
@@ -72,6 +76,9 @@ app.add_middleware(
 app.include_router(matchups.router, prefix="/matchups", tags=["matchups"])
 app.include_router(gamelogs.router, prefix="/gamelogs", tags=["gamelogs"])
 app.include_router(player_props.router, prefix="/player-props", tags=["player-props"])
+app.include_router(
+    defense_rankings.router, prefix="/defense-rankings", tags=["defense-rankings"]
+)
 
 
 @app.get("/")

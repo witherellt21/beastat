@@ -5,13 +5,15 @@ import FiltersMenu from './FiltersMenu';
 import axios from 'axios';
 
 function PlayerData({
-    player_id
+    player_id,
+    defense_rankings
 }) {
 
     const [showFiltersMenu, setShowFiltersMenu] = useState(false);
     const [displayFrame, setDisplayFrame] = useState(0)
     const [gamelogData, setGamelogData] = useState([]);
     const [playerHitrates, setPlayerHitrates] = useState({});
+    // const [defese]
     const [queryFilters, setQueryFilters] = useState({
         MP: '> 0',
         // Games: 'matchup',
@@ -35,9 +37,8 @@ function PlayerData({
             }
             i++
         }
-        console.log(query)
 
-        axios.get(`http://localhost:3001/player-props/${player_id}/hitrates`).then(async (response) => {
+        axios.get(`http://localhost:3001/player-props/${player_id}/hitrates?query=${query}&&startyear=${queryFilters.Date}&&matchups_only=${queryFilters.matchups_only}`).then(async (response) => {
             console.log(response.data)
             await setPlayerHitrates(response.data)
         }).catch((err) => {
@@ -46,12 +47,11 @@ function PlayerData({
         });
 
         axios.get(`http://localhost:3001/gamelogs/${player_id}?query=${query}&&startyear=${queryFilters.Date}&&matchups_only=${queryFilters.matchups_only}`).then(async (response) => {
-            console.log(response.data)
             await setGamelogData(response.data)
         });
 
-        console.log(playerHitrates)
-        console.log(gamelogData)
+        // console.log(playerHitrates)
+        // console.log(gamelogData)
 
     }, [player_id, queryFilters])
 
@@ -117,7 +117,7 @@ function PlayerData({
                     {displayFrame == 0
                         ? (
                             <div>
-                                < PlayerHitrates hitrates={playerHitrates} />
+                                < PlayerHitrates hitrates={playerHitrates} defense_rankings={defense_rankings} />
                             </div>
                         )
                         : (

@@ -14,6 +14,8 @@ function Matchup() {
     const [homeAwayToggle, setHomeAwayToggle] = useState(true);
     const [homePropLines, setHomePropLines] = useState([]);
     const [awayPropLines, setAwayPropLines] = useState([])
+    const [defenseRankings, setDefenseRankings] = useState({})
+
 
 
     useEffect(() => {
@@ -31,25 +33,36 @@ function Matchup() {
 
     useEffect(() => {
 
-        axios.get(`http://localhost:3001/player-props/${matchup.home_player_id}`)
-            .then((response) => {
-                setHomePropLines(response.data)
-            })
-            .catch((error) => {
-                console.log(error)
-                return null;
-            });
-        axios.get(`http://localhost:3001/player-props/${matchup.away_player_id}`)
-            .then((response) => {
-                setAwayPropLines(response.data)
-            })
-            .catch((error) => {
-                console.log(error)
-                return null;
-            });
+        if (matchupLoaded) {
+            axios.get(`http://localhost:3001/player-props/${matchup.home_player_id}`)
+                .then((response) => {
+                    setHomePropLines(response.data)
+                })
+                .catch((error) => {
+                    console.log(error)
+                    return null;
+                });
+            axios.get(`http://localhost:3001/player-props/${matchup.away_player_id}`)
+                .then((response) => {
+                    setAwayPropLines(response.data)
+                })
+                .catch((error) => {
+                    console.log(error)
+                    return null;
+                });
 
+            axios.get(`http://localhost:3001/defense-rankings/game/${matchup.game_id}/${matchup.position}`)
+                .then((response) => {
+                    setDefenseRankings(response.data)
+                })
+                .catch((error) => {
+                    console.log(error)
+                    return null;
+                });
+            console.log(defenseRankings)
+        }
 
-    }, [matchup])
+    }, [matchup, matchupLoaded])
 
 
     return (
@@ -72,8 +85,8 @@ function Matchup() {
                         }
                         }
                     >
-                        <div className='flex justify-center'>
-                            <div className='w-2/3 flex flex-row justify-center items-center'>
+                        <div className='flex justify-end'>
+                            <div className='w-3/5 flex flex-row justify-between items-center '>
                                 <img
                                     src={'http://www.basketball-reference.com/req/202106291/images/headshots/' + `${matchup.home_player_id}` + '.jpg'}
                                     width={66} height={60}
@@ -82,6 +95,12 @@ function Matchup() {
                                 </img>
                                 <div>
                                     {matchup.home_player}
+                                </div>
+                                <div className='flex pr-2'>
+                                    <div className='pr-2'>
+                                        Defense OVR Rank:
+                                    </div>
+                                    {defenseRankings.away?.OVR}
                                 </div>
                             </div>
                         </div>
@@ -100,14 +119,20 @@ function Matchup() {
                             }
                         }}
                     >
-                        <div className='flex justify-center'>
-                            <div className='w-2/3 flex flex-row justify-center items-center'>
+                        <div className='flex justify-left'>
+                            <div className='w-3/5 flex flex-row justify-between items-center'>
                                 <img
                                     src={'http://www.basketball-reference.com/req/202106291/images/headshots/' + `${matchup.away_player_id}` + '.jpg'}
                                     width={60} height={60}
-                                    className='absolute right-'
+                                    className='absolute right-10'
                                 >
                                 </img>
+                                <div className='flex pl-2'>
+                                    <div className='pr-2'>
+                                        Defense OVR Rank:
+                                    </div>
+                                    {defenseRankings.home?.OVR}
+                                </div>
                                 <div>
                                     {matchup.away_player}
                                 </div>
@@ -134,6 +159,7 @@ function Matchup() {
                                             <div className='flex flex-row justify-center '>
                                                 <PlayerData
                                                     player_id={matchup.home_player_id}
+                                                    defense_rankings={defenseRankings.away}
                                                 />
                                             </div>
                                         </div>
@@ -148,6 +174,7 @@ function Matchup() {
                                             <div className='flex flex-row justify-center'>
                                                 <PlayerData
                                                     player_id={matchup.away_player_id}
+                                                    defense_rankings={defenseRankings.home}
                                                 />
                                             </div>
                                         </div>
