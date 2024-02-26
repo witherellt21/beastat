@@ -230,6 +230,8 @@ class AbstractBaseScraper(ABC, threading.Thread):
             )
 
     def run(self) -> None:
+        self.logger.info(f"Starting thread for {self.__class__.__name__}")
+
         consecutive_errors = 0
 
         self.RUNNING = True
