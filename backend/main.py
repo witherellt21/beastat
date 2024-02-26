@@ -4,6 +4,8 @@ from routers import matchups
 from routers import gamelogs
 from routers import player_props
 from routers import defense_rankings
+from routers import career_stats
+from routers import lineups
 from fastapi.logger import logger
 
 from data_scrape.career_stats import CareerStatsScraper
@@ -79,6 +81,8 @@ app.include_router(player_props.router, prefix="/player-props", tags=["player-pr
 app.include_router(
     defense_rankings.router, prefix="/defense-rankings", tags=["defense-rankings"]
 )
+app.include_router(career_stats.router, prefix="/career-stats", tags=["career-stats"])
+app.include_router(lineups.router, prefix="/lineups", tags=["lineups"])
 
 
 @app.get("/")

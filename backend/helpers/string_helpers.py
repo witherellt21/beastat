@@ -7,7 +7,12 @@ from unidecode import unidecode
 from typing import Optional, Sequence
 
 
-RENAME = {"Nene": "Nene Hilario", "Nene": "Nene Hilario", "Maxi Kleber": "Maxi Klebir"}
+RENAME = {
+    "Nene": "Nene Hilario",
+    "Nene": "Nene Hilario",
+    "Maxi Kleber": "Maxi Klebir",
+    "Clint Capela": "Caint Capela",
+}
 
 
 def get_player_id_from_name(*, player_name: str) -> str:
@@ -106,6 +111,11 @@ if __name__ == "__main__":
 
     # save_path = f"saved_tables/player_data/gamelogs/p"
     # construct_file_path(save_path)
-    name = "Luka Dončić"
-    player_id = get_player_id_from_name(player_name=name)
-    print(player_id)
+    # name = "Luka Dončić"
+    # player_id = get_player_id_from_name(player_name="Nickeil Alexander-Walker")
+    # print(player_id)
+
+    matched = find_closest_match(
+        value="Walker Kessler", search_list=["Nickeil Alexander-Walker"]
+    )
+    print(matched)

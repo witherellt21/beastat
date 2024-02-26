@@ -9,6 +9,8 @@ import requests
 class DefenseRankingsScraper(AbstractBaseScraper):
     TABLE = DefenseRankings
 
+    TEAM_ABR_REMAPS = {"NOR": "NOP"}
+
     @property
     def download_url(self) -> str:
         return (
@@ -66,9 +68,13 @@ class DefenseRankingsScraper(AbstractBaseScraper):
                 row_cells = defense.find_all("td")
 
                 if len(row_cells) == 10:
+                    team_abr = self.__class__.TEAM_ABR_REMAPS.get(
+                        row_cells[0].span.text, row_cells[0].span.text
+                    )
+
                     data = {
                         "team": row_cells[0].contents[1],
-                        "team_abr": row_cells[0].span.text,
+                        "team_abr": team_abr,
                         "pos": position,
                         "PTS": float(row_cells[2].text),
                         "REB": float(row_cells[3].text),

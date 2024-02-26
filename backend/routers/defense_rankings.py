@@ -26,11 +26,7 @@ async def get_defense_rankings_by_team_and_position(team_abr: str, position: str
     stat_rankings = DefenseRankings.filter_records(
         query={"team_abr": team_abr}, as_df=True
     )
-    print(stat_rankings)
     stat_rankings = stat_rankings[["stat", position]]
-    print(stat_rankings)
-
-    # pivoted = stat_rankings.pivot(values="pos", index="stat", )
     stat_rankings = stat_rankings.set_index("stat").T
 
     return stat_rankings.to_dict(orient="records")

@@ -1,7 +1,7 @@
 import pandas as pd
 from fastapi import APIRouter
 
-from helpers.db_helpers import get_matchup_gamelog_by_player_id
+from helpers.db_helpers import get_matchup_gamelog_by_player_id, filter_gamelog
 from sql_app.serializers.player_prop import PlayerPropSerializer
 from sql_app.serializers.player_prop import ReadPlayerPropSerializer
 from sql_app.serializers.player_prop import ReadPropLineSerializer
@@ -9,6 +9,7 @@ from sql_app.register.player_prop import PlayerProps
 from sql_app.register.player_prop import PropLines
 from sql_app.register.gamelog import Gamelogs
 from typing import List, Optional
+from pydantic import BaseModel
 
 import logging
 
@@ -51,6 +52,7 @@ async def get_player_hitrates(
     query: str = "",
     startyear: Optional[str] = None,
     matchups_only: bool = False,
+    limit: Optional[int] = None,
 ):
     player = PlayerProps.get_record(query={"player_id": player_id})
 
@@ -61,42 +63,22 @@ async def get_player_hitrates(
     # Get the prop lines for the given player
     lines: list[ReadPropLineSerializer] = PropLines.filter_records(query={"player_id": player.id})  # type: ignore
 
-    # Filter gamelogs according to the matchup only query
-    if matchups_only:
-        gamelog: pd.DataFrame = get_matchup_gamelog_by_player_id(player_id=player_id)
-    else:
-        gamelog: pd.DataFrame = Gamelogs.filter_records(
-            query={"player_id": player_id}, as_df=True
-        )
-
-    print(gamelog)
+    gamelog = filter_gamelog(
+        player_id=player_id,
+        query=query,
+        startyear=startyear,
+        matchups_only=matchups_only,
+        limit=limit,
+    )
 
     if gamelog.empty:
         return {}
 
-    gamelog = gamelog.dropna(subset=["G"])
-
-    # average_minutes_played = career_gamelog["MP"].mean()
-
-    # career_gamelog = career_gamelog[
-    #     career_gamelog["MP"] >= average_minutes_played * 0.9
-    # ]
-    filtered_gamelog: pd.DataFrame = gamelog.query(query)
-    filtered_gamelog = filtered_gamelog.fillna("")
-
-    if startyear:
-        try:
-            filtered_gamelog = filtered_gamelog[
-                filtered_gamelog["Date"].dt.year >= int(startyear)
-            ]
-        except Exception as e:
-            print(e)
-
-    total_number_of_games = len(filtered_gamelog)
+    total_number_of_games = len(gamelog)
 
     hitrates = {}
     for line in lines:
-        stat_overs = filtered_gamelog[filtered_gamelog[line.stat] >= line.line]
+        stat_overs = gamelog[gamelog[line.stat] >= line.line]
         hitrates[line.stat] = round(
             len(stat_overs) / total_number_of_games * 100, ndigits=2
         )

@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import PropLines from './Components/tables/proplines/PropLines';
 import PlayerData from './Components/PlayerData';
+import PlayerCard from './Components/PlayerCard';
+import Lineup from './Components/Lineup';
 
 
 function Matchup() {
@@ -15,7 +17,9 @@ function Matchup() {
     const [homePropLines, setHomePropLines] = useState([]);
     const [awayPropLines, setAwayPropLines] = useState([])
     const [defenseRankings, setDefenseRankings] = useState({})
-
+    const [homePlayerSeasonAverages, setHomePlayerSeasonAverages] = useState({})
+    const [awayPlayerSeasonAverages, setAwayPlayerSeasonAverages] = useState({})
+    const [lineups, setLineups] = useState({})
 
 
     useEffect(() => {
@@ -59,7 +63,33 @@ function Matchup() {
                     console.log(error)
                     return null;
                 });
-            console.log(defenseRankings)
+
+            axios.get(`http://localhost:3001/career-stats/${matchup.home_player_id}/season/2024`)
+                .then((response) => {
+                    setHomePlayerSeasonAverages(response.data)
+                })
+                .catch((error) => {
+                    console.log(error)
+                    return null;
+                });
+            axios.get(`http://localhost:3001/career-stats/${matchup.away_player_id}/season/2024`)
+                .then((response) => {
+                    setAwayPlayerSeasonAverages(response.data)
+                })
+                .catch((error) => {
+                    console.log(error)
+                    return null;
+                });
+
+            axios.get(`http://localhost:3001/lineups/${matchup.game_id}`)
+                .then((response) => {
+                    setLineups(response.data)
+                })
+                .catch((error) => {
+                    console.log(error)
+                    return null;
+                });
+
         }
 
     }, [matchup, matchupLoaded])
@@ -144,6 +174,38 @@ function Matchup() {
                 This div contains the all data for the selected player.
                 It will only load after the matchup is successfully set.
                 */}
+                <div className='flex flex-row justify-center space-x-8'>
+                    {homeAwayToggle
+                        ? (
+                            <PlayerCard
+                                player_name={matchup.home_player}
+                                player_id={matchup.home_player_id}
+                                position={matchup.position}
+                                seasonAverages={homePlayerSeasonAverages}
+                            ></PlayerCard>
+                        ) : (
+                            <PlayerCard
+                                player_name={matchup.away_player}
+                                player_id={matchup.away_player_id}
+                                position={matchup.position}
+                                seasonAverages={awayPlayerSeasonAverages}
+                            ></PlayerCard>
+                        )
+                    }
+
+                    <Lineup
+                        lineup={lineups.home_lineup}
+                    ></Lineup>
+
+                    <Lineup
+                        lineup={lineups.away_lineup}
+                    ></Lineup>
+
+
+                </div>
+                {/* <div>
+                    <Lineup></Lineup>
+                </div> */}
                 {
                     matchupLoaded
                         ? (
@@ -189,13 +251,6 @@ function Matchup() {
                         )
                 }
                 {/* This div contains the matchup data for the selected player with the given filter selection. */}
-
-                {/* <img
-                    src='https://www.basketball-reference.com/req/202106291/images/headshots/jamesle01.jpg'
-                    width={60}
-                >
-                </img> */}
-
             </div >
         </div >
     )

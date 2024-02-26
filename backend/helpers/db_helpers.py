@@ -75,6 +75,50 @@ def get_matchup_gamelog(
     ]
 
 
+def filter_gamelog(
+    *,
+    player_id: str,
+    query: str = "",
+    startyear: Optional[str] = None,
+    matchups_only: bool = False,
+    limit: Optional[int] = None,
+) -> pd.DataFrame:
+    if matchups_only:
+        gamelog: pd.DataFrame = get_matchup_gamelog_by_player_id(player_id=player_id)
+    else:
+        gamelog: pd.DataFrame = Gamelogs.filter_records(
+            query={"player_id": player_id}, as_df=True
+        )
+
+    if gamelog.empty:
+        return gamelog
+
+    gamelog = gamelog.dropna(subset=["G"])
+
+    # average_minutes_played = career_gamelog["MP"].mean()
+
+    # career_gamelog = career_gamelog[
+    #     career_gamelog["MP"] >= average_minutes_played * 0.9
+    # ]
+    filtered_gamelog: pd.DataFrame = gamelog.query(query)
+    filtered_gamelog = filtered_gamelog.fillna("")
+
+    if startyear:
+        try:
+            filtered_gamelog = filtered_gamelog[
+                filtered_gamelog["Date"].dt.year >= int(startyear)
+            ]
+        except Exception as e:
+            print(e)
+
+    filtered_gamelog = filtered_gamelog.sort_values("Date")
+
+    if limit:
+        filtered_gamelog = filtered_gamelog.tail(limit)
+
+    return filtered_gamelog
+
+
 def get_matchup_gamelog_by_player_id(*, player_id: str) -> pd.DataFrame:
     matchup_if_home_player = Matchups.get_record(query={"home_player_id": player_id})
     matchup_if_away_player = Matchups.get_record(query={"away_player_id": player_id})
@@ -201,4 +245,4 @@ def get_player_active_seasons(*, player_id: str) -> list[int]:
 
 
 if __name__ == "__main__":
-    get_player_id(player_name="Luka Doncic")
+    get_player_id(player_name="Nickeil Alexander-Walker")

@@ -1,0 +1,6 @@
+Indicators to add:
+
+- Players out on team
+- FG% + FG taken per game against opponent: project points
+- Project minutes based on back to back game average etc.
+- Filter out high percentage games and low percentage games (FG%)

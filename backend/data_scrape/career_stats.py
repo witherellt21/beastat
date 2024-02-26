@@ -76,13 +76,13 @@ class CareerStatsScraper(AbstractBaseScraper):
         season_stat_datasets: list[pd.DataFrame] = list(
             filter(lambda dataset: "Season" in dataset.columns, datasets)
         )
-        try:
-            return season_stat_datasets[0]
-        except IndexError:
-            self.logger.warning(
+
+        if not season_stat_datasets:
+            raise Exception(
                 f"Could not find dataset with 'Seasons' column in \n {datasets}"
             )
-            return pd.DataFrame()
+
+        return season_stat_datasets[0]
 
     def get_query_set(self) -> Optional[list[dict[str, str]]]:
         player_ids: Iterable[str] = []

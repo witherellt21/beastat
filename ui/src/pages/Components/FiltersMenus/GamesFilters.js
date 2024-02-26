@@ -9,18 +9,24 @@ function GamesFilters({
 }) {
     const [matchupToggle, setMatchupToggle] = useState(currentQuery.matchups_only)
     const [seasonStart, setSeasonStart] = useState(currentQuery.Date)
+    const [resultLimit, setResultLimit] = useState(currentQuery.limit)
 
     useEffect(() => {
         setCurrentQuery({
             ...currentQuery,
             matchups_only: matchupToggle,
-            Date: seasonStart
+            Date: seasonStart,
+            limit: resultLimit
         });
 
-    }, [matchupToggle, seasonStart])
+    }, [matchupToggle, seasonStart, resultLimit])
 
     const handleSeasonStart = (e) => {
         setSeasonStart(e.target.value)
+    }
+
+    const handleResultLimit = (e) => {
+        setResultLimit(e.target.value)
     }
 
     const handleMatchupToggle = (e) => {
@@ -41,6 +47,17 @@ function GamesFilters({
                         className='w-12 mx-1 text-center border border-black rounded-md'
                     />
 
+                </div>
+                <div>
+                    <label htmlFor="result-limit">Limit Results: </label>
+                    <input
+                        id="result-limit"
+                        type="text"
+                        className='w-12 mx-1 text-center border border-black rounded-md'
+                        onChange={handleResultLimit}
+                        value={currentQuery.limit}
+                    >
+                    </input>
                 </div>
                 <div>
                     <label htmlFor="matchup-only-toggle" className="toggle-label text-sm">Current Matchup Only: </label>

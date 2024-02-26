@@ -18,7 +18,8 @@ function PlayerData({
         MP: '> 0',
         // Games: 'matchup',
         Date: '2000',
-        matchups_only: false
+        matchups_only: false,
+        limit: 100
     });
 
     useEffect(() => {
@@ -27,7 +28,7 @@ function PlayerData({
         let i = 0
         for (const [key, value] of Object.entries(queryFilters)) {
             console.log(`${key} ${value}`);
-            if (['Date', 'matchups_only'].includes(`${key}`)) {
+            if (['Date', 'matchups_only', 'limit'].includes(`${key}`)) {
                 continue
             }
             if (i == 0) {
@@ -38,7 +39,7 @@ function PlayerData({
             i++
         }
 
-        axios.get(`http://localhost:3001/player-props/${player_id}/hitrates?query=${query}&&startyear=${queryFilters.Date}&&matchups_only=${queryFilters.matchups_only}`).then(async (response) => {
+        axios.get(`http://localhost:3001/player-props/${player_id}/hitrates?query=${query}&&startyear=${queryFilters.Date}&&matchups_only=${queryFilters.matchups_only}&&limit=${queryFilters.limit}`).then(async (response) => {
             console.log(response.data)
             await setPlayerHitrates(response.data)
         }).catch((err) => {
@@ -46,12 +47,9 @@ function PlayerData({
             return null;
         });
 
-        axios.get(`http://localhost:3001/gamelogs/${player_id}?query=${query}&&startyear=${queryFilters.Date}&&matchups_only=${queryFilters.matchups_only}`).then(async (response) => {
+        axios.get(`http://localhost:3001/gamelogs/${player_id}?query=${query}&&startyear=${queryFilters.Date}&&matchups_only=${queryFilters.matchups_only}&&limit=${queryFilters.limit}`).then(async (response) => {
             await setGamelogData(response.data)
         });
-
-        // console.log(playerHitrates)
-        // console.log(gamelogData)
 
     }, [player_id, queryFilters])
 
@@ -75,14 +73,6 @@ function PlayerData({
                             />
                         </svg>
                     </button>
-                    {/* {showFiltersMenu &&
-                        <FiltersMenu
-                            show={showFiltersMenu}
-                            close={() => setShowFiltersMenu(false)}
-                            apply={setQueryFilters}
-                            queryFilters={queryFilters}
-                        />
-                    } */}
                 </div>
                 <div className='flex flex-col justify-center'>
                     <div className='h-10 mb-4 flex'>

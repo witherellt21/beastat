@@ -267,10 +267,6 @@ class AbstractBaseScraper(ABC, threading.Thread):
 
                         continue
 
-            # else:
-            #     self.get_data()
-            #     time.sleep(0.1)
-
     def kill_process(self, *args):
         """
         Kill the running thread and stop the scraper.
