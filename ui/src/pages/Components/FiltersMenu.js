@@ -7,7 +7,8 @@ function FiltersMenu({
     show,
     close,
     apply,
-    queryFilters
+    queryFilters,
+    team_lineup
 }) {
 
     const [selection, setSelection] = useState("games");
@@ -65,7 +66,7 @@ function FiltersMenu({
                         <div className='h-full w-96 bg-white'>
                             {showGamesMenu && <GamesFilters setCurrentQuery={setCurrentQuery} currentQuery={currentQuery} />}
                             {showMinutesMenu && <MinutesFilters setCurrentQuery={setCurrentQuery} currentQuery={currentQuery} />}
-                            {showLineupsMenu && <LineupFilters setCurrentQuery={setCurrentQuery} currentQuery={currentQuery} />}
+                            {showLineupsMenu && <LineupFilters setCurrentQuery={setCurrentQuery} currentQuery={currentQuery} team_lineup={team_lineup} />}
                         </div>
                     </div>
                     <div className='h-10 px-2 flex justify-between bg-gradient-to-b from-gray-300 to-gray-100 border-t border-gray-400 rounded-b-2xl'>

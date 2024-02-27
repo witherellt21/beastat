@@ -6,7 +6,7 @@ import pandas as pd
 from typing import Iterable, Unpack, Literal, TypedDict, Optional
 
 from data_scrape.abstract_base_scraper import AbstractBaseScraper, ScraperKwargs
-from exceptions import NoDataFoundException
+from exceptions import DBNotFoundException
 from helpers.db_helpers import get_player_active_seasons
 from sql_app.register.gamelog import Gamelogs
 from sql_app.register.matchup import Matchups
@@ -148,7 +148,7 @@ class GamelogScraper(AbstractBaseScraper):
 
                 query_set.extend(queries)
 
-            except NoDataFoundException:
+            except DBNotFoundException:
                 self.logger.warning(
                     f"Could not find active seasons for player with id {player_id}."
                 )

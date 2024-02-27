@@ -11,7 +11,7 @@ from sql_app.serializers.matchup import MatchupSerializer
 from sql_app.serializers.gamelog import GamelogSerializer
 from typing import Optional
 
-from exceptions import NoDataFoundException
+from exceptions import DBNotFoundException
 
 import logging
 import traceback
@@ -78,10 +78,12 @@ def get_matchup_gamelog(
 def filter_gamelog(
     *,
     player_id: str,
-    query: str = "",
-    startyear: Optional[str] = None,
+    query: Optional[str],
+    startyear: Optional[int] = None,
     matchups_only: bool = False,
     limit: Optional[int] = None,
+    without_teammates: list[str] = [],
+    with_teammates: list[str] = [],
 ) -> pd.DataFrame:
     if matchups_only:
         gamelog: pd.DataFrame = get_matchup_gamelog_by_player_id(player_id=player_id)
@@ -100,23 +102,61 @@ def filter_gamelog(
     # career_gamelog = career_gamelog[
     #     career_gamelog["MP"] >= average_minutes_played * 0.9
     # ]
-    filtered_gamelog: pd.DataFrame = gamelog.query(query)
-    filtered_gamelog = filtered_gamelog.fillna("")
+    if query:
+        gamelog: pd.DataFrame = gamelog.query(query)
+
+    gamelog = gamelog.fillna("")
 
     if startyear:
         try:
-            filtered_gamelog = filtered_gamelog[
-                filtered_gamelog["Date"].dt.year >= int(startyear)
-            ]
+            gamelog = gamelog[gamelog["Date"].dt.year >= startyear]
         except Exception as e:
             print(e)
 
-    filtered_gamelog = filtered_gamelog.sort_values("Date")
+    print(with_teammates)
+    # if without_teammates:
+    #     for teammate in without_teammates:
+    if with_teammates:
+        for teammate in with_teammates:
+            teammate_id = get_player_id(player_name=teammate)
+            print(teammate_id)
+
+            # TODO: move this inside of the get_player_id function
+            if not teammate_id:
+                raise DBNotFoundException(
+                    f"No player id found for teammate: {teammate}."
+                )
+
+            teammate_gamelogs = Gamelogs.filter_records(
+                query={"player_id": teammate_id}, as_df=True
+            )
+
+            if teammate_gamelogs.empty:
+                logger.debug(f"No gamelogs for teammate {teammate}.")
+                continue
+
+            overlapping_games = gamelog.merge(
+                teammate_gamelogs, on=["Date", "Tm"], suffixes=("", "_x")
+            )
+
+            if overlapping_games.empty:
+                logger.debug(f"No overlapping games with teammate {teammate}.")
+                continue
+
+            games_without_teammate = overlapping_games[
+                overlapping_games["G_x"].isnull()
+            ]
+
+            gamelog = games_without_teammate[gamelog.columns]
+
+            print(gamelog)
+
+    gamelog = gamelog.sort_values("Date")
 
     if limit:
-        filtered_gamelog = filtered_gamelog.tail(limit)
+        gamelog = gamelog.tail(limit)
 
-    return filtered_gamelog
+    return gamelog
 
 
 def get_matchup_gamelog_by_player_id(*, player_id: str) -> pd.DataFrame:
@@ -214,7 +254,7 @@ def get_player_active_seasons(*, player_id: str) -> list[int]:
     )
 
     if career_stats.empty:
-        raise NoDataFoundException(
+        raise DBNotFoundException(
             f"Could not find career stats for the given player: {player_id}"
         )
 

@@ -6,7 +6,8 @@ import axios from 'axios';
 
 function PlayerData({
     player_id,
-    defense_rankings
+    defense_rankings,
+    team_lineup
 }) {
 
     const [showFiltersMenu, setShowFiltersMenu] = useState(false);
@@ -19,7 +20,9 @@ function PlayerData({
         // Games: 'matchup',
         Date: '2000',
         matchups_only: false,
-        limit: 100
+        limit: 100,
+        withTeammates: [],
+        withoutTeammates: []
     });
 
     useEffect(() => {
@@ -27,8 +30,7 @@ function PlayerData({
 
         let i = 0
         for (const [key, value] of Object.entries(queryFilters)) {
-            console.log(`${key} ${value}`);
-            if (['Date', 'matchups_only', 'limit'].includes(`${key}`)) {
+            if (['Date', 'matchups_only', 'limit', 'withoutTeammates', 'withTeammates'].includes(`${key}`)) {
                 continue
             }
             if (i == 0) {
@@ -39,15 +41,25 @@ function PlayerData({
             i++
         }
 
+        let withoutTeammates_filter = ""
+        for (const teammate of queryFilters.withoutTeammates) {
+            withoutTeammates_filter = withoutTeammates_filter + "&&without_teammates=" + teammate
+        }
+
+        let withTeammates_filter = ""
+        for (const teammate of queryFilters.withTeammates) {
+            withTeammates_filter = withTeammates_filter + "&&with_teammates=" + teammate
+        }
+
+
         axios.get(`http://localhost:3001/player-props/${player_id}/hitrates?query=${query}&&startyear=${queryFilters.Date}&&matchups_only=${queryFilters.matchups_only}&&limit=${queryFilters.limit}`).then(async (response) => {
-            console.log(response.data)
             await setPlayerHitrates(response.data)
         }).catch((err) => {
             console.log(err);
             return null;
         });
 
-        axios.get(`http://localhost:3001/gamelogs/${player_id}?query=${query}&&startyear=${queryFilters.Date}&&matchups_only=${queryFilters.matchups_only}&&limit=${queryFilters.limit}`).then(async (response) => {
+        axios.get(`http://localhost:3001/gamelogs/${player_id}?query=${query}&&startyear=${queryFilters.Date}&&matchups_only=${queryFilters.matchups_only}&&limit=${queryFilters.limit}${withoutTeammates_filter}${withTeammates_filter}`).then(async (response) => {
             await setGamelogData(response.data)
         });
 
@@ -122,6 +134,7 @@ function PlayerData({
                     close={() => setShowFiltersMenu(false)}
                     apply={setQueryFilters}
                     queryFilters={queryFilters}
+                    team_lineup={team_lineup}
                 />
             }
         </div>

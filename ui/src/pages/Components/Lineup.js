@@ -4,8 +4,8 @@ function Lineup({
     lineup
 }) {
     return (
-        <div className='flex flex-col w-96 border border-black rounded-lg'>
-            <span className='bg-blue-200 rounded-t-lg'>{lineup.team}</span>
+        <div className='flex flex-col w-1/4 border border-black rounded-lg hover:overflow-x-scroll overflow-hidden'>
+            <span className='bg-blue-200 rounded-t-lg'>{lineup?.team}</span>
             <div className='w-full flex flex-row p-2'>
                 <div className='w-1/2 flex flex-col items-start bg-white'>
                     <div className='flex flex-row items-center'>
@@ -69,8 +69,35 @@ function Lineup({
 
                 </div>
                 <div className='w-1/2 pl-2 flex flex-col items-start bg-white'>
-                    Injured
+                    <span className='w-full text-xs text-left font-semibold underline'>Injury Report:</span>
+                    {/* Injured */}
+                    {lineup?.injuries.map((injured_player, key) => {
+                        return (
+                            <div key={key} className='flex flex-row items-center'>
+                                <div className='w-5 font-bold text-left'>
+                                    {injured_player?.position}
+                                </div>
+                                <div className='h-1/2 pl-1 border-r border-gray-400'></div>
+                                <div className='pl-2 text-left text-nowrap'>
+                                    {injured_player?.player_name}
+                                </div>
+                                <div className='pl-2 text-red-500'>
+                                    {injured_player?.status}
+                                </div>
+                            </div>
+                        )
+                    })}
                 </div>
+                {/* <button
+                    onClick={() => { console.log(lineup.injuries) }}
+                >
+                    Click me
+                </button>
+                {lineup?.injuries.map((key, injured_player) => {
+                    return (
+                        <div>{injured_player.player_name}</div>
+                    )
+                })} */}
             </div>
 
         </div>

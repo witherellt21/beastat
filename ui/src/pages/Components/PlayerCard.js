@@ -7,13 +7,13 @@ function PlayerCard({
     seasonAverages,
 }) {
     return (
-        <div className='relative w-48 min-h-44 p-2 border border-black rounded-lg' id='player_card'>
+        <div className='relative w-48 min-h-44 h-full p-2 border border-black rounded-lg' id='player_card'>
             <img
                 src={"https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/pho.png&h=180&w=180"}
                 className='absolute opacity-10 top-2 z-0'
             >
             </img>
-            <div className='absolute top-0 left-0 h-full w-full z-50'>
+            <div className='absolute top-0 left-0 h-full w-full z-10'>
                 <span className='absolute top-2 left-2 font-bold'>{position}</span>
                 <span className='font-bold'>
                     {player_name}
@@ -25,6 +25,14 @@ function PlayerCard({
                     >
                     </img>
                     <div className='w-full flex flex-row space-x-1 p-2 py-1rounded-b-lg'>
+                        <div className='basis-full text-xs border border-black'>
+                            <div className='w-full'>
+                                MP
+                            </div>
+                            <div className='w-full'>
+                                {seasonAverages?.MP}
+                            </div>
+                        </div>
                         <div className='basis-full text-xs border border-black'>
                             <div className='w-full'>
                                 PTS

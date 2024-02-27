@@ -14,8 +14,6 @@ function Home() {
             setGames(response.data);
         });
         setIsLoading(false)
-        console.log(listOfGames)
-
     }, [])
 
 

@@ -37,8 +37,8 @@ function Matchup() {
 
     useEffect(() => {
 
-        if (matchupLoaded) {
-            axios.get(`http://localhost:3001/player-props/${matchup.home_player_id}`)
+        if (matchupLoaded && matchup != {}) {
+            axios.get(`http://localhost:3001/player-props/${matchup?.home_player_id}`)
                 .then((response) => {
                     setHomePropLines(response.data)
                 })
@@ -46,7 +46,7 @@ function Matchup() {
                     console.log(error)
                     return null;
                 });
-            axios.get(`http://localhost:3001/player-props/${matchup.away_player_id}`)
+            axios.get(`http://localhost:3001/player-props/${matchup?.away_player_id}`)
                 .then((response) => {
                     setAwayPropLines(response.data)
                 })
@@ -55,7 +55,7 @@ function Matchup() {
                     return null;
                 });
 
-            axios.get(`http://localhost:3001/defense-rankings/game/${matchup.game_id}/${matchup.position}`)
+            axios.get(`http://localhost:3001/defense-rankings/game/${matchup?.game_id}/${matchup?.position}`)
                 .then((response) => {
                     setDefenseRankings(response.data)
                 })
@@ -64,7 +64,7 @@ function Matchup() {
                     return null;
                 });
 
-            axios.get(`http://localhost:3001/career-stats/${matchup.home_player_id}/season/2024`)
+            axios.get(`http://localhost:3001/career-stats/${matchup?.home_player_id}/season/2024`)
                 .then((response) => {
                     setHomePlayerSeasonAverages(response.data)
                 })
@@ -72,7 +72,7 @@ function Matchup() {
                     console.log(error)
                     return null;
                 });
-            axios.get(`http://localhost:3001/career-stats/${matchup.away_player_id}/season/2024`)
+            axios.get(`http://localhost:3001/career-stats/${matchup?.away_player_id}/season/2024`)
                 .then((response) => {
                     setAwayPlayerSeasonAverages(response.data)
                 })
@@ -81,7 +81,7 @@ function Matchup() {
                     return null;
                 });
 
-            axios.get(`http://localhost:3001/lineups/${matchup.game_id}`)
+            axios.get(`http://localhost:3001/lineups/${matchup?.game_id}`)
                 .then((response) => {
                     setLineups(response.data)
                 })
@@ -164,7 +164,7 @@ function Matchup() {
                                     {defenseRankings.home?.OVR}
                                 </div>
                                 <div>
-                                    {matchup.away_player}
+                                    {matchup?.away_player}
                                 </div>
                             </div>
                         </div>
@@ -174,7 +174,7 @@ function Matchup() {
                 This div contains the all data for the selected player.
                 It will only load after the matchup is successfully set.
                 */}
-                <div className='flex flex-row justify-center space-x-8'>
+                <div className='min-h-44 mb-8 flex flex-row justify-center space-x-8'>
                     {homeAwayToggle
                         ? (
                             <PlayerCard
@@ -222,6 +222,7 @@ function Matchup() {
                                                 <PlayerData
                                                     player_id={matchup.home_player_id}
                                                     defense_rankings={defenseRankings.away}
+                                                    team_lineup={lineups.home_lineup}
                                                 />
                                             </div>
                                         </div>
@@ -237,6 +238,7 @@ function Matchup() {
                                                 <PlayerData
                                                     player_id={matchup.away_player_id}
                                                     defense_rankings={defenseRankings.home}
+                                                    team_lineup={lineups.away_lineup}
                                                 />
                                             </div>
                                         </div>

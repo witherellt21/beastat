@@ -55,7 +55,7 @@ class CareerStatsScraper(AbstractBaseScraper):
 
     TABLE = CareerStatss
 
-    LOG_LEVEL = logging.WARNING
+    LOG_LEVEL = logging.INFO
 
     def __init__(self, **kwargs: Unpack[Kwargs]):
 
@@ -125,6 +125,21 @@ class CareerStatsScraper(AbstractBaseScraper):
         data["Awards"] = data["Awards"].fillna("")
 
         return data
+
+    def is_cached(self, *, query: dict[str, str]) -> bool:
+        player_id = query.get("player_id")
+        player_info = PlayerInfos.get_record(query={"player_id": player_id})
+        start_year = player_info.active_from  # type: ignore
+        end_year = player_info.active_to  # type: ignore
+        for year in range(start_year, end_year):
+            existing_data = CareerStatss.get_record(
+                query={"player_id": player_id, "Season": year}
+            )
+
+            if not existing_data:
+                return False
+
+        return True
 
 
 if __name__ == "__main__":

@@ -269,6 +269,8 @@ class AbstractBaseScraper(ABC, threading.Thread):
 
                         continue
 
+                self.logger.info("Complete full iteration of query set.")
+
     def kill_process(self, *args):
         """
         Kill the running thread and stop the scraper.
@@ -289,6 +291,7 @@ class AbstractBaseScraper(ABC, threading.Thread):
         self.logger.debug(f"Getting data with query: {query}.")
 
         if self.is_cached(query=query):
+            self.logger.info(f"Skipping download for {query}. Already cached.")
             return None
 
         # Download the data for the given url parameters
