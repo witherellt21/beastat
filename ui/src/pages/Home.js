@@ -44,7 +44,9 @@ function Home() {
             {!isLoading && listOfGames?.map((game, key) => {
                 return (
                     <div key={key} className='py-4 space-x-2 flex flex-row flex-wrap justify-center'>
+                        {/* <span className='flex flex-col justify-center'>{game.time}</span> */}
                         <div className='w-40 pr-4 flex flex-col space-y-2 justify-center items-end bg-gradient-to-l from-blue-200 via-gray-100 to-white'>
+                            <span className='w-full '>{game.time}</span>
                             <div className='flex flex-row justify-center items-center space-x-2 text-2xl'>
                                 <span>
                                     {game.home}

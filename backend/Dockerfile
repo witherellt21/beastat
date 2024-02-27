@@ -4,6 +4,7 @@ FROM python:3.11-slim-bookworm as base
 
 ENV ENV=dev
 ENV PORT ""
+ENV TZ=America/New_York
 
 WORKDIR /app/backend
 

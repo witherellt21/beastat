@@ -1,10 +1,11 @@
 from peewee import CharField
 from peewee import IntegerField
+from peewee import UUIDField
 from sql_app.models.base import BaseModel
 
 
 class Matchup(BaseModel):
-    game_id = IntegerField()
+    game_id = UUIDField()
     position = CharField()
     home_player = CharField()
     away_player = CharField()
