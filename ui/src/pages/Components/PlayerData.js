@@ -3,16 +3,19 @@ import Gamelog from './Gamelog';
 import PlayerHitrates from './PlayerHitrates';
 import FiltersMenu from './FiltersMenu';
 import axios from 'axios';
+import StatAveragesTable from './tables/stat_averages/StatAveragesTable'
+
 
 function PlayerData({
     player_id,
     defense_rankings,
-    team_lineup
+    team_lineup,
+    season_averages
 }) {
 
     const [showFiltersMenu, setShowFiltersMenu] = useState(false);
     const [displayFrame, setDisplayFrame] = useState(0)
-    const [gamelogData, setGamelogData] = useState([]);
+    const [gamelogData, setGamelogData] = useState({ "gamelog": [], "averages": [] });
     const [playerHitrates, setPlayerHitrates] = useState({});
     // const [defese]
     const [queryFilters, setQueryFilters] = useState({
@@ -68,6 +71,9 @@ function PlayerData({
     return (
         <div className='w-full flex justify-center'>
             <div className='p-8 w-5/6 '>
+                <div className='flex flex-col justify-center'>
+                    <StatAveragesTable statAveragesData={gamelogData?.averages} />
+                </div>
                 <div className='p-2 flex justify-end'>
                     <button className='p-2 flex border border-black rounded-xl' onClick={() => {
                         setShowFiltersMenu(!showFiltersMenu);
@@ -112,7 +118,7 @@ function PlayerData({
                     </div>
                     {displayFrame == 1
                         ? < div >
-                            <Gamelog gamelogData={gamelogData} />
+                            <Gamelog gamelogData={gamelogData?.gamelog} />
                         </div>
                         : <div />
                     }

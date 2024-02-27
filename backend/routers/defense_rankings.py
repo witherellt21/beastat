@@ -38,6 +38,9 @@ async def get_defense_rankings_by_team_and_position(team_abr: str, position: str
 async def get_defense_rankings_for_game(game_id: str, position: str):
     game: GameSerializer = Games.get_record(query={"id": game_id})  # type: ignore
 
+    if not game:
+        return {}
+
     home_stat_rankings = DefenseRankings.filter_records(
         query={"team_abr": game.home}, as_df=True
     )

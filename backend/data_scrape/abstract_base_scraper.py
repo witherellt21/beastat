@@ -248,7 +248,12 @@ class AbstractBaseScraper(ABC, threading.Thread):
                 time.sleep(0.1)
 
             else:
+                i = 0
+                n = len(query_set)
                 for query in query_set:
+                    self.logger.warning(f"{round(i / n * 100, ndigits=1)}% done.")
+                    i += 1
+
                     if not self.RUNNING:
                         break
 
@@ -269,7 +274,7 @@ class AbstractBaseScraper(ABC, threading.Thread):
 
                         continue
 
-                self.logger.info("Complete full iteration of query set.")
+                self.logger.warning("Completed full iteration of query set.")
 
     def kill_process(self, *args):
         """
@@ -293,6 +298,8 @@ class AbstractBaseScraper(ABC, threading.Thread):
         if self.is_cached(query=query):
             self.logger.info(f"Skipping download for {query}. Already cached.")
             return None
+
+        self.logger.warning(f"Getting data with query: {query}.")
 
         # Download the data for the given url parameters
         downloaded_dataset: Optional[pd.DataFrame] = self.download_data(query=query)

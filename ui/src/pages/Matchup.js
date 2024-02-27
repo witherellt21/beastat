@@ -217,12 +217,14 @@ function Matchup() {
                                             <div className='flex flex-none justify-center '>
                                                 < PropLines propData={homePropLines} />
                                             </div>
+                                            {/* <StatAveragesTable statAveragesData={}/> */}
                                             {/* This div represents the second row of the player data column. */}
                                             <div className='flex flex-row justify-center '>
                                                 <PlayerData
                                                     player_id={matchup.home_player_id}
                                                     defense_rankings={defenseRankings.away}
                                                     team_lineup={lineups.home_lineup}
+                                                    season_averages={homePlayerSeasonAverages}
                                                 />
                                             </div>
                                         </div>

@@ -55,7 +55,7 @@ class CareerStatsScraper(AbstractBaseScraper):
 
     TABLE = CareerStatss
 
-    LOG_LEVEL = logging.INFO
+    LOG_LEVEL = logging.WARNING
 
     def __init__(self, **kwargs: Unpack[Kwargs]):
 
@@ -131,12 +131,16 @@ class CareerStatsScraper(AbstractBaseScraper):
         player_info = PlayerInfos.get_record(query={"player_id": player_id})
         start_year = player_info.active_from  # type: ignore
         end_year = player_info.active_to  # type: ignore
-        for year in range(start_year, end_year):
+
+        for year in range(start_year, end_year + 1):
             existing_data = CareerStatss.get_record(
-                query={"player_id": player_id, "Season": year}
+                query={"player_id": player_id, "Season": float(year)}
+            )
+            existing_as_int = CareerStatss.get_record(
+                query={"player_id": player_id, "Season": int(year)}
             )
 
-            if not existing_data:
+            if not existing_data or existing_as_int:
                 return False
 
         return True
@@ -145,7 +149,7 @@ class CareerStatsScraper(AbstractBaseScraper):
 if __name__ == "__main__":
     player_info: CareerStatsScraper = CareerStatsScraper()
     data = player_info.get_data(
-        query={"player_id": "jamesle01", "player_last_initial": "j"}
+        query={"player_id": "bogdabo01", "player_last_initial": "b"}
     )
     # print(data)
     # test_scraper_thread(scraper_class=CareerStatsScraper)

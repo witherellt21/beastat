@@ -79,7 +79,8 @@ class GamelogScraper(AbstractBaseScraper):
 
     def is_cached(self, *, query: QueryDictForm) -> bool:
         queried_season = query.get("year")
-        if queried_season and queried_season < constants.CURRENT_SEASON:
+        # TODO: Switch to less than to always update the current season
+        if queried_season and queried_season <= constants.CURRENT_SEASON:
             gamelogs = Gamelogs.filter_records(
                 query={"player_id": query.get("player_id")}, as_df=True
             )

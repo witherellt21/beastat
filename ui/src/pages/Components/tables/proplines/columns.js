@@ -2,30 +2,8 @@ import { createColumnHelper } from '@tanstack/react-table';
 
 const columnHelper = createColumnHelper();
 
-// let points_sum = 0
-// for (let i = 0; i <= data.length; i++) {
-//     points_sum += data[i].age
-// }
 
 export const propLinesColumns = [
-    // columnHelper.group({
-    //     header: 'PTS',
-    //     footer: props => props.column.id,
-    //     columns: [
-    //         // Accessor Column
-    //         columnHelper.accessor('PTS.line', {
-    //             cell: info => info.getValue(),
-    //             header: () => <span>Line</span>,
-    //             // footer: props => props.column.id,
-    //         }),
-    //         // Accessor Column
-    //         columnHelper.accessor('PTS.odds', {
-    //             cell: info => info.getValue(),
-    //             header: () => <span>Odds</span>,
-    //             // footer: props => props.column.id,
-    //         }),
-    //     ],
-    // }),
     columnHelper.group({
         header: 'Points',
         footer: props => props.column.id,

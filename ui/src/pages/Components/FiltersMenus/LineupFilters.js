@@ -55,55 +55,55 @@ function LineupFilters({
                                 type='checkbox'
                                 id='PG_included'
                                 onChange={(e) => {
-                                    toggleTeammateIncluded(team_lineup.PG)
+                                    toggleTeammateIncluded(team_lineup?.PG)
                                 }}
-                                checked={withTeammates.includes(team_lineup.PG)}
+                                checked={withTeammates.includes(team_lineup?.PG)}
                             ></input>
-                            <label className="pl-2" htmlFor='PG_included'>{team_lineup.PG}</label>
+                            <label className="pl-2" htmlFor='PG_included'>{team_lineup?.PG}</label>
                         </div>
                         <div>
                             <input
                                 type='checkbox'
                                 id='SG_included'
                                 onChange={(e) => {
-                                    toggleTeammateIncluded(team_lineup.SG)
+                                    toggleTeammateIncluded(team_lineup?.SG)
                                 }}
-                                checked={withTeammates.includes(team_lineup.SG)}
+                                checked={withTeammates.includes(team_lineup?.SG)}
                             ></input>
-                            <label className="pl-2" htmlFor='SG_included'>{team_lineup.SG}</label>
+                            <label className="pl-2" htmlFor='SG_included'>{team_lineup?.SG}</label>
                         </div>
                         <div>
                             <input
                                 type='checkbox'
                                 id='SF_included'
                                 onChange={(e) => {
-                                    toggleTeammateIncluded(team_lineup.SF)
+                                    toggleTeammateIncluded(team_lineup?.SF)
                                 }}
-                                checked={withTeammates.includes(team_lineup.SF)}
+                                checked={withTeammates.includes(team_lineup?.SF)}
                             ></input>
-                            <label className="pl-2" htmlFor='SF_included'>{team_lineup.SF}</label>
+                            <label className="pl-2" htmlFor='SF_included'>{team_lineup?.SF}</label>
                         </div>
                         <div>
                             <input
                                 type='checkbox'
                                 id='PF_included'
                                 onChange={(e) => {
-                                    toggleTeammateIncluded(team_lineup.PF)
+                                    toggleTeammateIncluded(team_lineup?.PF)
                                 }}
-                                checked={withTeammates.includes(team_lineup.PF)}
+                                checked={withTeammates.includes(team_lineup?.PF)}
                             ></input>
-                            <label className="pl-2" htmlFor='PF_included'>{team_lineup.PF}</label>
+                            <label className="pl-2" htmlFor='PF_included'>{team_lineup?.PF}</label>
                         </div>
                         <div>
                             <input
                                 type='checkbox'
                                 id='C_included'
                                 onChange={(e) => {
-                                    toggleTeammateIncluded(team_lineup.C)
+                                    toggleTeammateIncluded(team_lineup?.C)
                                 }}
-                                checked={withTeammates.includes(team_lineup.C)}
+                                checked={withTeammates.includes(team_lineup?.C)}
                             ></input>
-                            <label className="pl-2" htmlFor='C_included'>{team_lineup.C}</label>
+                            <label className="pl-2" htmlFor='C_included'>{team_lineup?.C}</label>
                         </div>
                     </div>
                 </div>
@@ -111,7 +111,7 @@ function LineupFilters({
                 <span className='w-full py-1 border-t border-gray-300'></span>
                 <div className='flex flex-row justify-center'>
                     <div className='flex flex-col items-start'>
-                        {team_lineup.injuries.map((injured_player, key) => {
+                        {team_lineup?.injuries.map((injured_player, key) => {
                             return (
                                 <div key={key}>
                                     <input

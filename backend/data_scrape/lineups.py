@@ -35,6 +35,8 @@ def get_team_lineup(
     )
 
     lineup: dict[str, str | list[dict[str, str | None]]] = {"injuries": []}
+
+    player_idx = 0
     for player in team_players:
         if player.div and player.a:
             player_link = player.a["href"]
@@ -47,6 +49,9 @@ def get_team_lineup(
             else:
                 player_name = player.a.text.split("\n")[-1]
 
+            if player_idx <= 4:
+                lineup[player.div.text] = player_name
+
             if "has-injury-status" in player["class"]:
                 lineup["injuries"].append(  # type: ignore
                     {
@@ -55,8 +60,11 @@ def get_team_lineup(
                         "status": player.span.text if player.span else None,
                     }
                 )
-            else:
-                lineup[player.div.text] = player_name
+            # else:
+
+        player_idx += 1
+        # else:
+        #     lineup[player.div.text] = None
 
     return lineup
 
@@ -85,7 +93,7 @@ def get_team_abbr(*, team_div: element.Tag) -> str:
 class LineupScraper(AbstractBaseScraper):
 
     TABLE = Lineups
-    LOG_LEVEL = logging.WARNING
+    LOG_LEVEL = logging.INFO
 
     @property
     def download_url(self) -> str:
@@ -122,7 +130,7 @@ class LineupScraper(AbstractBaseScraper):
 
         # Get all the matchup cards
         game_divs: element.ResultSet[element.Tag] = soup.find_all(
-            "div", class_="lineup"
+            "div", class_="lineup is-nba"
         )
 
         game_entries = []
@@ -131,7 +139,12 @@ class LineupScraper(AbstractBaseScraper):
                 continue
 
             # Get the tipoff time for the game
-            game_time = get_game_time(game_div=game_div)
+            try:
+                game_time = get_game_time(game_div=game_div)
+            except AttributeError as e:
+                self.logger.error(game_div)
+                continue
+
             game_date_time = datetime.datetime.combine(date=game_date, time=game_time)
 
             # Get the home and away team names (abbreviations)
@@ -154,6 +167,18 @@ class LineupScraper(AbstractBaseScraper):
                 "home": home_team_abbr,
                 "away": away_team_abbr,
             }
+
+            game_line_divs = game_div.findAll("div", class_="lineup__odds-item")
+
+            for game_line_div in game_line_divs:
+                label = game_line_div.b.text.strip(" ").lower()
+
+                if "o/u" in label:
+                    label = "over_under"
+
+                line = game_line_div.find("span", class_="composite").text
+
+                game_entry[label] = line
 
             game: GameSerializer = Games.update_or_insert_record(data=game_entry)  # type: ignore
 

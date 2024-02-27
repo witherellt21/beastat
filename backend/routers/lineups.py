@@ -15,12 +15,20 @@ router = APIRouter()
 def get_lineups_by_game_id(game_id: str):
     game: GameSerializer = Games.get_record(query={"id": game_id})  # type: ignore
 
+    print(game)
+
+    if not game:
+        return {}
+
     home_lineup = Lineups.get_record(
         query={"game_id": game_id, "team": game.home.upper()}
     )
     away_lineup = Lineups.get_record(
         query={"game_id": game_id, "team": game.away.upper()}
     )
+
+    print(home_lineup)
+    print(away_lineup)
 
     if home_lineup and away_lineup:
         return {
