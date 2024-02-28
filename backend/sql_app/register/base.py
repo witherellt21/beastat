@@ -82,8 +82,11 @@ class BaseTable:
     def get_all_records(self, *, as_df=False) -> list[BaseSerializer] | pd.DataFrame:
         records = []
         for record in self.model_class.select():
-            serialized = self.read_serializer_class(**model_to_dict(record))
-            records.append(serialized.model_dump() if as_df else serialized)
+            if as_df:
+                records.append(model_to_dict(record, recurse=False))
+            else:
+                serialized = self.read_serializer_class(**model_to_dict(record))
+                records.append(serialized)
 
         return pd.DataFrame(records) if as_df else records
 
@@ -198,7 +201,7 @@ class BaseTable:
 
         if existing_row:
             return self.update_record(
-                data={"id": existing_row.id, **data}, id_fields=id_fields  # type: ignore
+                data={**data, "id": existing_row.id}, id_fields=id_fields  # type: ignore
             )
 
         else:

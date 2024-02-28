@@ -6,6 +6,10 @@ from fuzzywuzzy import process, fuzz
 from unidecode import unidecode
 from typing import Optional, Sequence
 
+import logging
+
+logger = logging.getLogger("main")
+
 
 RENAME = {
     "Nene": "Nene Hilario",
@@ -80,8 +84,12 @@ def find_closest_match(
         if type(match_name) != str or type(match_validity) != int:
             return False
 
-        match_last_name = match_name.split(" ", 1)[1].lower()
-        search_last_name = value.split(" ", 1)[1].lower()
+        try:
+            match_last_name = match_name.split(" ", 1)[1].lower()
+            search_last_name = value.split(" ", 1)[1].lower()
+        except IndexError as e:
+            logger.error(f"{e}. {match_name} and {value}")
+            return False
 
         match_last_name = re.sub(
             r"[\.\s]*(jr|sr|I|II|III|IV|V)[\.]*", "", search_last_name
@@ -123,5 +131,7 @@ if __name__ == "__main__":
     # player_id = get_player_id_from_name(player_name="Nickeil Alexander-Walker")
     # print(player_id)
 
-    matched = find_closest_match(value="Jabari Smith", search_list=["Jabari Smith Jr."])
+    matched = find_closest_match(
+        value="Donte Divincenzo", search_list=["Donte DiVincenzo"]
+    )
     print(matched)

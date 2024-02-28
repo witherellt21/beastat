@@ -10,7 +10,7 @@ from exceptions import DBNotFoundException
 from helpers.db_helpers import get_player_active_seasons
 from sql_app.register.gamelog import Gamelogs
 from sql_app.register.matchup import Matchups
-from sql_app.register.player_info import PlayerInfos
+from sql_app.register.player_info import PlayerInfos, Players
 from global_implementations import constants
 
 import time
@@ -109,25 +109,27 @@ class GamelogScraper(AbstractBaseScraper):
         if self.identifier_source == "matchups_only":
             matchups = Matchups.get_all_records(as_df=True)
 
-            home_players: list[str] = list(matchups["home_player_id"].unique())
-            away_players: list[str] = list(matchups["away_player_id"].unique())
+            home_players = matchups["home_player"].unique()
+            away_players = matchups["away_player"].unique()
 
             if len(home_players) == 0 or len(away_players) == 0:
-                self.logger.warning("No player id's found in the matchup table.")
-                return []
+                raise Exception("No active matchups set.")
 
-            player_ids = home_players + away_players
+            player_ids = np.concatenate(
+                (
+                    home_players,
+                    away_players,
+                )
+            )
 
         elif self.identifier_source == "all":
-            all_players = PlayerInfos.get_all_records(as_df=True)
+            all_players = Players.get_all_records(as_df=True)
 
             if not all_players.empty:
-                player_ids = list(all_players["player_id"].values)
+                player_ids = list(all_players["id"].values)
             else:
-                self.logger.warning("No player's found in the player info table.")
-                return []
+                raise Exception("No player's found in the player info table.")
 
-        # player_ids = ["simmobe01"]
         query_set: list[QueryDictForm] = []
         for player_id in player_ids:
             if type(player_id) != str:

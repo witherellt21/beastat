@@ -13,7 +13,7 @@ from data_scrape.test.main_tester_functions import test_scraper_thread
 from helpers.string_helpers import convert_season_to_year
 from sql_app.register.career_stats import CareerStatss
 from sql_app.register.matchup import Matchups
-from sql_app.register.player_info import PlayerInfos
+from sql_app.register.player_info import PlayerInfos, Players
 
 from typing import Unpack, Literal, TypedDict, Iterable, Optional
 
@@ -55,7 +55,7 @@ class CareerStatsScraper(AbstractBaseScraper):
 
     TABLE = CareerStatss
 
-    LOG_LEVEL = logging.DEBUG
+    LOG_LEVEL = logging.WARNING
 
     def __init__(self, **kwargs: Unpack[Kwargs]):
 
@@ -90,26 +90,26 @@ class CareerStatsScraper(AbstractBaseScraper):
         if self.identifier_source == "matchups_only":
             matchups = Matchups.get_all_records(as_df=True)
 
-            home_players = matchups["home_player_id"].unique()
-            away_players = matchups["away_player_id"].unique()
+            home_players = matchups["home_player"].unique()
+            away_players = matchups["away_player"].unique()
 
             if len(home_players) == 0 or len(away_players) == 0:
-                return []
+                raise Exception("No active matchups set.")
 
             player_ids = np.concatenate(
                 (
-                    matchups["home_player_id"].unique(),
-                    matchups["away_player_id"].unique(),
+                    home_players,
+                    away_players,
                 )
             )
 
         elif self.identifier_source == "all":
-            all_players = PlayerInfos.get_all_records(as_df=True)
+            all_players = Players.get_all_records(as_df=True)
 
             if not all_players.empty:
-                player_ids = list(all_players["player_id"].values)
+                player_ids = list(all_players["id"].values)
             else:
-                return []
+                raise Exception("No player's found in the player info table.")
 
         return [
             {"player_last_initial": player_id[0], "player_id": player_id}
@@ -128,7 +128,7 @@ class CareerStatsScraper(AbstractBaseScraper):
 
     def is_cached(self, *, query: dict[str, str]) -> bool:
         player_id = query.get("player_id")
-        player_info = PlayerInfos.get_record(query={"player_id": player_id})
+        player_info = Players.get_record(query={"id": player_id})
         start_year = player_info.active_from  # type: ignore
         end_year = player_info.active_to  # type: ignore
 

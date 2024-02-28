@@ -409,6 +409,8 @@ class AbstractBaseScraper(ABC, threading.Thread):
         for index, row in data.iterrows():
             row_data = row.to_dict()
             row_data["id"] = index
+            if index == None:
+                self.logger.warning(row)
             self.table.update_or_insert_record(data=row_data)
 
         self.logger.debug(f"\n{data}")
@@ -449,6 +451,8 @@ class AbstractBaseScraper(ABC, threading.Thread):
 
         for transformation_function in self.__class__.DATA_TRANSFORMATIONS:
             data = transformation_function(dataset=data)
+
+        # data["weight"] = data["weight"].replace(to_replace="", value=0)
 
         # Convert the columns to the desired types
         if self.column_types:

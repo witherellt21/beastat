@@ -21,11 +21,12 @@ import string
 
 date_regex = r"(?:%s)\s\d\d,\s\d{4}" % "|".join(calendar.month_name)
 TZ_INFOS = {"ET": gettz("America/New York"), "EST": gettz("America/New York")}
+logger = logging.getLogger("main")
 
 
 def get_team_lineup(
     *, lineup_div: element.Tag
-) -> dict[str, str | list[dict[str, str | None]]]:
+) -> Optional[dict[str, str | list[dict[str, str | None]]]]:
     """
     Parse the lineup div to get an object containing the lineup information
     """
@@ -50,7 +51,15 @@ def get_team_lineup(
                 player_name = player.a.text.split("\n")[-1]
 
             if player_idx <= 4:
-                lineup[player.div.text] = player_name
+                player_id = get_player_id(player_name=player_name)
+
+                if not player_id:
+                    logger.error(
+                        f"Could not get lineup because there was an error getting the player id for {player_name}"
+                    )
+                    return None
+
+                lineup[f"{player.div.text}_id"] = player_id
 
             elif "has-injury-status" in player["class"]:
                 lineup["injuries"].append(  # type: ignore
@@ -91,9 +100,11 @@ def get_team_abbr(*, team_div: element.Tag) -> str:
 
 
 class LineupScraper(AbstractBaseScraper):
-
+    TRANSFORMATIONS = {
+        ("name", "id"): lambda x: uuid.uuid4(),
+    }
     TABLE = Lineups
-    LOG_LEVEL = logging.WARNING
+    LOG_LEVEL = logging.INFO
 
     @property
     def download_url(self) -> str:
@@ -204,39 +215,52 @@ class LineupScraper(AbstractBaseScraper):
             else:
                 continue
 
-            home_team_data: dict = {
-                "game_id": game.id,
-                "team": home_team_abbr,
-                "status": home_lineup_status,
-                **home_team_lineup,
-            }
-            away_team_data: dict = {
-                "game_id": game.id,
-                "team": away_team_abbr,
-                "status": away_lineup_status,
-                **away_team_lineup,
-            }
+            if home_team_lineup:
+                home_team_data: dict = {
+                    "id": uuid.uuid4(),
+                    "game_id": game.id,
+                    "team": home_team_abbr,
+                    "status": home_lineup_status,
+                    **home_team_lineup,
+                }
 
-            home_lineup = Lineups.update_or_insert_record(data=home_team_data)
-            away_lineup = Lineups.update_or_insert_record(data=away_team_data)
+                Lineups.update_or_insert_record(data=home_team_data)
 
-            for position, player_name in home_team_lineup.items():
-                if position == "injuries" or type(player_name) != str:
+            if away_team_lineup:
+                away_team_data: dict = {
+                    "id": uuid.uuid4(),
+                    "game_id": game.id,
+                    "team": away_team_abbr,
+                    "status": away_lineup_status,
+                    **away_team_lineup,
+                }
+
+                Lineups.update_or_insert_record(data=away_team_data)
+
+            if not home_team_lineup or not away_team_lineup:
+                return
+
+            # home_lineup = Lineups.update_or_insert_record(data=home_team_data)
+            # away_lineup = Lineups.update_or_insert_record(data=away_team_data)
+
+            for position, player_id in home_team_lineup.items():
+                if position == "injuries" or type(player_id) != str:
                     continue
 
-                home_player_id = get_player_id(player_name=player_name)
-                away_player_id = get_player_id(player_name=away_team_lineup[position])  # type: ignore # TODO: use a pydantic model for the dict instead
+                # home_player_id = get_player_id(player_name=player_name)
+                # away_player_id = get_player_id(player_name=away_team_lineup[position])  # type: ignore # TODO: use a pydantic model for the dict instead
 
                 # if not home_player_id or not away_player_id:
                 #     continue
 
                 matchup = {
+                    "id": uuid.uuid4(),
                     "game_id": game.id,
                     "position": position,
-                    "home_player": player_name,
-                    "away_player": away_team_lineup[position],
-                    "home_player_id": home_player_id,
-                    "away_player_id": away_player_id,
+                    "home_player_id": player_id,
+                    "away_player_id": away_team_lineup[position],
+                    # "home_player_id": home_player_id,
+                    # "away_player_id": away_player_id,
                 }
 
                 try:

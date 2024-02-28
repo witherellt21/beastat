@@ -1,10 +1,15 @@
 from peewee import CharField
 from peewee import DateField
 from peewee import FloatField
+from peewee import ForeignKeyField
+from peewee import UUIDField
 from sql_app.models.base import BaseModel
+from sql_app.models.player_info import Player
+
 
 class Gamelog(BaseModel):
-    player_id = CharField()
+    id = UUIDField(primary_key=True, unique=True)
+    player = ForeignKeyField(Player, backref="gamelogs")
     G = FloatField(null=True)
     Date = DateField()
     Age = CharField()
