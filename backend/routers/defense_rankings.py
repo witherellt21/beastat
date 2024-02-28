@@ -41,11 +41,14 @@ async def get_defense_rankings_for_game(game_id: str, position: str):
     if not game:
         return {}
 
+    # TODO: Temporary solution to team_abr problems
+    team_abr = {"UTA": "UTH"}
+
     home_stat_rankings = DefenseRankings.filter_records(
-        query={"team_abr": game.home}, as_df=True
+        query={"team_abr": team_abr.get(game.home, game.home)}, as_df=True
     )
     away_stat_rankings = DefenseRankings.filter_records(
-        query={"team_abr": game.away}, as_df=True
+        query={"team_abr": team_abr.get(game.away, game.away)}, as_df=True
     )
 
     home_stat_rankings = home_stat_rankings[["stat", position]]

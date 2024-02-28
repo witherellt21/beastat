@@ -4,8 +4,11 @@ function Lineup({
     lineup
 }) {
     return (
-        <div className='flex flex-col w-1/4 border border-black rounded-lg hover:overflow-x-scroll overflow-hidden'>
-            <span className='bg-blue-200 rounded-t-lg'>{lineup?.team}</span>
+        <div className='flex flex-col w-1/4 border border-black rounded-lg hover:overflow-scroll overflow-hidden'>
+            <div className='relative bg-blue-200'>
+                <span>{lineup?.team}</span>
+                <span className='absolute top-2 right-1 text-xs'>{lineup?.status}</span>
+            </div>
             <div className='w-full flex flex-row p-2'>
                 <div className='w-1/2 flex flex-col items-start bg-white'>
                     <div className='flex flex-row items-center'>

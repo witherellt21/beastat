@@ -55,7 +55,7 @@ function PlayerData({
         }
 
 
-        axios.get(`http://localhost:3001/player-props/${player_id}/hitrates?query=${query}&&startyear=${queryFilters.Date}&&matchups_only=${queryFilters.matchups_only}&&limit=${queryFilters.limit}`).then(async (response) => {
+        axios.get(`http://localhost:3001/player-props/${player_id}/hitrates?query=${query}&&startyear=${queryFilters.Date}&&matchups_only=${queryFilters.matchups_only}&&limit=${queryFilters.limit}${withoutTeammates_filter}${withTeammates_filter}`).then(async (response) => {
             await setPlayerHitrates(response.data)
         }).catch((err) => {
             console.log(err);

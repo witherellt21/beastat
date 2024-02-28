@@ -11,6 +11,7 @@ import threading
 import traceback
 import logging
 import time
+import uuid
 
 from pydantic_core import ValidationError
 
@@ -99,12 +100,22 @@ def get_player_props(*, dataset: pd.DataFrame):
 
     # Drop the old over/under data and return
     full_data = full_data.drop(columns=["OVER", "UNDER"])
+    full_data: pd.DataFrame = full_data.rename(
+        columns={
+            "odds_over": "over",
+            "odds_under": "under",
+            "implied_odds_over": "over_implied",
+            "implied_odds_under": "under_implied",
+        }
+    )
     return full_data
 
 
 class PlayerPropsScraper(AbstractBaseScraper):
     # COLUMN_TYPES = {}
-    RENAME_COLUMNS = {"PLAYER": "name"}
+    RENAME_COLUMNS = {
+        "PLAYER": "name",
+    }
     RENAME_VALUES = {
         "points": "PTS",
         "assists": "AST",
@@ -112,22 +123,18 @@ class PlayerPropsScraper(AbstractBaseScraper):
         "rebounds": "TRB",
     }
     TRANSFORMATIONS = {
-        ("name", "player_id"): lambda name: get_player_id(player_name=name)
+        ("name", "player_id"): lambda name: get_player_id(player_name=name),
+        ("name", "id"): lambda x: uuid.uuid4(),
     }
+    # STAT_AUGMENTATIONS =
     DATA_TRANSFORMATIONS = [get_player_props]
     QUERY_SAVE_COLUMNS = {"stat": "stat_category"}
+    REQUIRED_COLUMNS = ["player_id"]
 
-    TABLE = PlayerProps
+    TABLE = PropLines
     REFRESH_RATE = 1
 
     LOG_LEVEL = logging.WARNING
-
-    # def __init__(self, **kwargs):
-    #     super().__init__(**kwargs)
-
-    #     self.desired_columns = [
-
-    #     ]
 
     @property
     def download_url(self):
@@ -145,50 +152,6 @@ class PlayerPropsScraper(AbstractBaseScraper):
             {"stat_category": "threes", "stat_subcategory": "threes"},
             {"stat_category": "rebounds", "stat_subcategory": "rebounds"},
         ]
-
-    def cache_data(self, *, data: pd.DataFrame) -> None:
-        """
-        - Get or create the player props instance
-        - Create or update the prop line on the player instance
-        """
-        self.logger.debug("Saving data to database.")
-
-        row_dicts = data.to_dict(orient="records")
-        for row in row_dicts:
-
-            if row["player_id"] == "None":
-                self.logger.warning(
-                    f"Player's ID does not exist: player_name = {row.get('name')}. Congifure the player info scraper to get all active player's id's."
-                )
-                continue
-
-            # TODO: Figure out how to make the typehint for this function dynamic to the child class
-            player: Optional[PlayerPropSerializer] = PlayerProps.get_or_create(
-                data={"player_id": row["player_id"], "name": row["name"]}
-            )  # type: ignore
-
-            if not player:
-                self.logger.warning(
-                    f"Unable to save data for player: {row['player_id']} for prop: {row['stat']}."
-                )
-                return
-
-            try:
-                prop_line = PropLines.update_or_insert_record(
-                    data={
-                        "player_id": player.id,  # type: ignore
-                        "stat": row["stat"],
-                        "line": row["line"],
-                        "over": row["odds_over"],
-                        "under": row["odds_under"],
-                        "over_implied": row["implied_odds_over"],
-                        "under_implied": row["implied_odds_under"],
-                    }
-                )
-            except KeyError as e:
-                self.logger.error(f"Error in data save: {e}. \n Data: \n\n{row}")
-
-        self.logger.debug(f"\n{data}")
 
 
 def test_scraper_thread():

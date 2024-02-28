@@ -52,7 +52,7 @@ def get_team_lineup(
             if player_idx <= 4:
                 lineup[player.div.text] = player_name
 
-            if "has-injury-status" in player["class"]:
+            elif "has-injury-status" in player["class"]:
                 lineup["injuries"].append(  # type: ignore
                     {
                         "position": player.div.text,
@@ -93,7 +93,7 @@ def get_team_abbr(*, team_div: element.Tag) -> str:
 class LineupScraper(AbstractBaseScraper):
 
     TABLE = Lineups
-    LOG_LEVEL = logging.INFO
+    LOG_LEVEL = logging.WARNING
 
     @property
     def download_url(self) -> str:

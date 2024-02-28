@@ -2,7 +2,7 @@ import os
 import re
 
 from global_implementations import constants
-from fuzzywuzzy import process
+from fuzzywuzzy import process, fuzz
 from unidecode import unidecode
 from typing import Optional, Sequence
 
@@ -80,12 +80,20 @@ def find_closest_match(
         if type(match_name) != str or type(match_validity) != int:
             return False
 
-        match_last_name = match_name.split(" ")
-        search_last_name = value.split(" ")
+        match_last_name = match_name.split(" ", 1)[1].lower()
+        search_last_name = value.split(" ", 1)[1].lower()
+
+        match_last_name = re.sub(
+            r"[\.\s]*(jr|sr|I|II|III|IV|V)[\.]*", "", search_last_name
+        )
+        search_last_name = re.sub(
+            r"[\.\s]*(jr|sr|I|II|III|IV|V)[\.]*", "", search_last_name
+        )
 
         if len(match_last_name) >= 2 and len(search_last_name) >= 2:
             return (
-                match_last_name[1] == search_last_name[1]
+                fuzz.ratio(match_last_name, search_last_name)
+                > constants.DEFAULT_MATCH_THRESHOLD
                 and match[1] >= match_threshold
             )
 
@@ -115,7 +123,5 @@ if __name__ == "__main__":
     # player_id = get_player_id_from_name(player_name="Nickeil Alexander-Walker")
     # print(player_id)
 
-    matched = find_closest_match(
-        value="Walker Kessler", search_list=["Nickeil Alexander-Walker"]
-    )
+    matched = find_closest_match(value="Jabari Smith", search_list=["Jabari Smith Jr."])
     print(matched)

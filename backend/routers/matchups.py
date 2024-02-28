@@ -108,9 +108,8 @@ async def list_matchups():
 @router.get("/byGame")
 async def list_matchups_by_game():
     games: pd.DataFrame = Games.get_all_records(as_df=True)
-    # todays_games = games[games["date_time"].dt.date == datetime.today().date()]
-    # todays_games = todays_games.sort_values("date_time", ascending=True)
-    todays_games = games
+    todays_games = games[games["date_time"].dt.date == datetime.today().date()]
+    todays_games = todays_games.sort_values("date_time", ascending=True)
 
     result = []
     for index, game in todays_games.iterrows():
@@ -118,12 +117,15 @@ async def list_matchups_by_game():
 
         matchup_result = []
         for matchup in matchups:
+            # TODO: temporary fix
+            team_abr = {"UTA": "UTH"}
+
             home_defense_rank_summary = get_defensive_rank_summary_by_position(
-                team=game.home, position=matchup.position
+                team=team_abr.get(game.home, game.home), position=matchup.position
             )
 
             away_defense_rank_summary = get_defensive_rank_summary_by_position(
-                team=game.away, position=matchup.position
+                team=team_abr.get(game.away, game.away), position=matchup.position
             )
 
             matchup_data = matchup.model_dump()

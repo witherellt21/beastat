@@ -38,7 +38,6 @@ async def get_gamelog_by_player_id(
     without_teammates: list[str] = Query(None),
     with_teammates: list[str] = Query(None),
 ):
-    print(with_teammates)
     try:
         gamelog = filter_gamelog(
             player_id=player_id,
@@ -51,7 +50,7 @@ async def get_gamelog_by_player_id(
         )
 
         if gamelog.empty:
-            return []
+            return {"gamelog": [], "averages": []}
 
         last_30 = gamelog.tail(30)
         last_30_avg = last_30.mean(numeric_only=True).round(1).to_dict()
@@ -77,9 +76,10 @@ async def get_gamelog_by_player_id(
         )
 
         career_averages = career_averages.model_dump() if career_averages else {}
+        gamelogs = gamelog.to_dict(orient="records") if not gamelog.empty else []
 
         return {
-            "gamelog": gamelog.to_dict(orient="records"),
+            "gamelog": gamelogs,
             "averages": [last_30_avg, last_10_avg, last_3_avg, career_averages],
         }
 

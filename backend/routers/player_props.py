@@ -1,5 +1,5 @@
 import pandas as pd
-from fastapi import APIRouter
+from fastapi import APIRouter, Query, Depends
 
 from helpers.db_helpers import get_matchup_gamelog_by_player_id, filter_gamelog
 from sql_app.serializers.player_prop import PlayerPropSerializer
@@ -46,13 +46,19 @@ async def get_props_by_player_id(player_id: str):
     return [new_lines]
 
 
+class GamelogQuery(BaseModel):
+    query: Optional[str] = None
+    limit: int = 50
+    matchups_only: bool = False
+    startyear: int = 2024
+
+
 @router.get("/{player_id}/hitrates")
 async def get_player_hitrates(
     player_id: str,
-    query: str = "",
-    startyear: Optional[str] = None,
-    matchups_only: bool = False,
-    limit: Optional[int] = None,
+    query: GamelogQuery = Depends(),
+    without_teammates: list[str] = Query(None),
+    with_teammates: list[str] = Query(None),
 ):
     player = PlayerProps.get_record(query={"player_id": player_id})
 
@@ -65,10 +71,12 @@ async def get_player_hitrates(
 
     gamelog = filter_gamelog(
         player_id=player_id,
-        query=query,
-        startyear=startyear,
-        matchups_only=matchups_only,
-        limit=limit,
+        query=query.query,
+        startyear=query.startyear,
+        matchups_only=query.matchups_only,
+        limit=query.limit,
+        without_teammates=without_teammates,
+        with_teammates=with_teammates,
     )
 
     if gamelog.empty:

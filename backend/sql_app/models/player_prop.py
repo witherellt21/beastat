@@ -1,14 +1,22 @@
-from peewee import CharField, AutoField, FloatField, IntegerField, ForeignKeyField
+from peewee import (
+    CharField,
+    AutoField,
+    FloatField,
+    IntegerField,
+    ForeignKeyField,
+    UUIDField,
+)
 from sql_app.models.base import BaseModel
+from sql_app.models.player_info import Player
 
 
-class Player(BaseModel):
+class PlayerBet(BaseModel):
     player_id = CharField(unique=True)
     name = CharField()
 
 
 class PropLine(BaseModel):
-    id = AutoField(unique=True)
+    id = UUIDField(primary_key=True, unique=True)
     stat = CharField()
     line = FloatField()
     over = IntegerField()

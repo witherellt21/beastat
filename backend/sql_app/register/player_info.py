@@ -1,7 +1,11 @@
 from sql_app.models.player_info import College
-from sql_app.models.player_info import PlayerInfo
+from sql_app.models.player_info import PlayerInfo, Player
 from sql_app.serializers.player_info import CollegeSerializer
-from sql_app.serializers.player_info import PlayerInfoSerializer
+from sql_app.serializers.player_info import (
+    PlayerInfoSerializer,
+    PlayerSerializer,
+    PlayerTableEntrySerializer,
+)
 from sql_app.serializers.player_info import PlayerInfoReadSerializer
 from sql_app.serializers.player_info import PlayerInfoTableEntrySerializer
 
@@ -17,6 +21,14 @@ class PlayerInfoTable(BaseTable):
     PKS = ["player_id"]
 
 
+class PlayerTable(BaseTable):
+    MODEL_CLASS = Player
+    SERIALIZER_CLASS = PlayerSerializer
+    # READ_SERIALIZER_CLASS = PlayerInfoReadSerializer
+    TABLE_ENTRY_SERIALIZER_CLASS = PlayerTableEntrySerializer
+    PKS = ["id"]
+
+
 class CollegeTable(BaseTable):
     MODEL_CLASS = College
     SERIALIZER_CLASS = CollegeSerializer
@@ -25,6 +37,7 @@ class CollegeTable(BaseTable):
 
 
 PlayerInfos = PlayerInfoTable(DB)
+Players = PlayerTable(DB)
 Colleges = CollegeTable(DB)
 
 

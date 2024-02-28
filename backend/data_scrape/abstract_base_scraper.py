@@ -110,10 +110,11 @@ class AbstractBaseScraper(ABC, threading.Thread):
     # A function to tranform a specific column (key) on a dataset by a callable function (value) uses apply method
     TRANSFORMATIONS: dict[str | tuple[str, str], Callable[[Any], Any]] = {}
     DATA_TRANSFORMATIONS: list[Callable] = []
-
     QUERY_SAVE_COLUMNS: dict[str, str] | list[str] = []
-
     COLUMN_ORDERING: list[str] = []
+
+    HREF_SAVE_MAP: dict[str, str] = {}
+    REQUIRED_COLUMNS: list[str] = []
 
     REFRESH_RATE: int = 5
     LOG_LEVEL = logging.INFO
@@ -131,6 +132,7 @@ class AbstractBaseScraper(ABC, threading.Thread):
             )
 
         self.table: BaseTable = table
+        self.primary_key: str = self.table.model_class._meta.primary_key.name  # type: ignore
 
         self.column_types: Optional[dict[str, Dtype]] = kwargs.get(
             "column_types", self.__class__.COLUMN_TYPES
@@ -153,8 +155,10 @@ class AbstractBaseScraper(ABC, threading.Thread):
 
         # If we still don't have column types, get them from the table
         if self.column_types is None:
-            ignore_columns = list(self.__class__.STAT_AUGMENTATIONS.keys()) + list(
-                self.__class__.DATETIME_COLUMNS.keys()
+            ignore_columns = (
+                list(self.__class__.STAT_AUGMENTATIONS.keys())
+                + list(self.__class__.DATETIME_COLUMNS.keys())
+                + [self.primary_key]
             )
             self.column_types = get_column_types_for_table(
                 table=self.table,
@@ -251,7 +255,7 @@ class AbstractBaseScraper(ABC, threading.Thread):
                 i = 0
                 n = len(query_set)
                 for query in query_set:
-                    self.logger.warning(f"{round(i / n * 100, ndigits=1)}% done.")
+                    self.logger.info(f"{round(i / n * 100, ndigits=1)}% done.")
                     i += 1
 
                     if not self.RUNNING:
@@ -293,13 +297,12 @@ class AbstractBaseScraper(ABC, threading.Thread):
         """
         Get data according to the search query.
         """
-        self.logger.debug(f"Getting data with query: {query}.")
 
         if self.is_cached(query=query):
             self.logger.info(f"Skipping download for {query}. Already cached.")
             return None
 
-        self.logger.warning(f"Getting data with query: {query}.")
+        self.logger.debug(f"Getting data with query: {query}.")
 
         # Download the data for the given url parameters
         downloaded_dataset: Optional[pd.DataFrame] = self.download_data(query=query)
@@ -403,9 +406,10 @@ class AbstractBaseScraper(ABC, threading.Thread):
 
         data = data.fillna(np.nan).replace([np.nan], [None])
 
-        row_dicts = data.to_dict(orient="records")
-        for row in row_dicts:
-            self.table.update_or_insert_record(data=row)
+        for index, row in data.iterrows():
+            row_data = row.to_dict()
+            row_data["id"] = index
+            self.table.update_or_insert_record(data=row_data)
 
         self.logger.debug(f"\n{data}")
 
@@ -419,6 +423,14 @@ class AbstractBaseScraper(ABC, threading.Thread):
         **Override this for anything you want to be done to the dataset AFTER saving.
         """
         self.logger.debug("Configuring data.")
+
+        if self.__class__.HREF_SAVE_MAP:
+            for column in data.columns:
+                if column in self.__class__.HREF_SAVE_MAP:
+                    data[self.__class__.HREF_SAVE_MAP[column]] = data[column].apply(
+                        lambda x: x[1]
+                    )
+                data[column] = data[column].apply(lambda x: x[0])
 
         # Rename columns to desired names
         data = data.rename(columns=self.__class__.RENAME_COLUMNS)
@@ -442,8 +454,8 @@ class AbstractBaseScraper(ABC, threading.Thread):
         if self.column_types:
             try:
                 data = data.astype(self.column_types)
-            except pd.errors.IntCastingNaNError:
-                self.logger.debug(data["weight"].value_counts())
+            except pd.errors.IntCastingNaNError as e:
+                self.logger.warning(e)
 
         # Convert datetime columns appropriately
         for key, dt_format in self.__class__.DATETIME_COLUMNS.items():
@@ -462,5 +474,12 @@ class AbstractBaseScraper(ABC, threading.Thread):
         )
 
         data = data[self.desired_columns]
+
+        data = data.replace(to_replace="None", value=np.nan).dropna(
+            subset=self.__class__.REQUIRED_COLUMNS
+        )
+
+        if self.primary_key in list(data.columns):
+            data = data.set_index(self.primary_key)
 
         return data

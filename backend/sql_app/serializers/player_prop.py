@@ -1,5 +1,7 @@
 from pydantic import BaseModel as BaseSerializer
 import datetime
+from typing import Optional
+from pydantic import UUID4
 
 
 class PlayerPropSerializer(BaseSerializer):
@@ -15,6 +17,7 @@ class PlayerPropSerializer(BaseSerializer):
 
 
 class PlayerPropTableEntrySerializer(BaseSerializer):
+    id: UUID4
     player_id: str
     name: str
     stat: str
@@ -31,13 +34,14 @@ class OddsSerializer(BaseSerializer):
 
 
 class PropLineSerializer(BaseSerializer):
-    line: float | None = None
+    id: UUID4
     stat: str
+    line: float
     over: int
-    under: int
     over_implied: float
+    under: int
     under_implied: float
-    player_id: int
+    player_id: str
 
 
 class ReadPropLineSerializer(BaseSerializer):
@@ -47,7 +51,7 @@ class ReadPropLineSerializer(BaseSerializer):
     under: int
     over_implied: float
     under_implied: float
-    player: PlayerPropSerializer
+    # player: Optional[PlayerPropSerializer]
 
 
 class ReadPlayerPropSerializer(BaseSerializer):

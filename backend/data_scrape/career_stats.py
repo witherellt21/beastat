@@ -55,7 +55,7 @@ class CareerStatsScraper(AbstractBaseScraper):
 
     TABLE = CareerStatss
 
-    LOG_LEVEL = logging.WARNING
+    LOG_LEVEL = logging.DEBUG
 
     def __init__(self, **kwargs: Unpack[Kwargs]):
 

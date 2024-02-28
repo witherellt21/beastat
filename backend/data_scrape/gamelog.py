@@ -127,6 +127,7 @@ class GamelogScraper(AbstractBaseScraper):
                 self.logger.warning("No player's found in the player info table.")
                 return []
 
+        # player_ids = ["simmobe01"]
         query_set: list[QueryDictForm] = []
         for player_id in player_ids:
             if type(player_id) != str:

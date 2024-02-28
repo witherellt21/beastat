@@ -43,7 +43,7 @@ function LineupFilters({
     }
 
     return (
-        <div>
+        <div className='relative'>
             <MenuTitle title="Filter By Lineup" />
             <div className='flex flex-col'>
                 <span className='pl-2 text-left text-sm'>Games With Teammates:</span>
