@@ -2,30 +2,8 @@ import { createColumnHelper } from '@tanstack/react-table';
 
 const columnHelper = createColumnHelper();
 
-// let points_sum = 0
-// for (let i = 0; i <= data.length; i++) {
-//     points_sum += data[i].age
-// }
 
 export const propLinesColumns = [
-    // columnHelper.group({
-    //     header: 'PTS',
-    //     footer: props => props.column.id,
-    //     columns: [
-    //         // Accessor Column
-    //         columnHelper.accessor('PTS.line', {
-    //             cell: info => info.getValue(),
-    //             header: () => <span>Line</span>,
-    //             // footer: props => props.column.id,
-    //         }),
-    //         // Accessor Column
-    //         columnHelper.accessor('PTS.odds', {
-    //             cell: info => info.getValue(),
-    //             header: () => <span>Odds</span>,
-    //             // footer: props => props.column.id,
-    //         }),
-    //     ],
-    // }),
     columnHelper.group({
         header: 'Points',
         footer: props => props.column.id,
@@ -40,7 +18,7 @@ export const propLinesColumns = [
                 header: () => <span>Over</span>,
             }),
             columnHelper.accessor('PTS.over_implied', {
-                cell: info => info.getValue() + "%",
+                cell: info => info.getValue() ? info.getValue() + "%" : "",
                 header: () => <span>Over</span>,
             }),
             columnHelper.accessor('PTS.under', {
@@ -48,7 +26,7 @@ export const propLinesColumns = [
                 header: () => <span>Under</span>,
             }),
             columnHelper.accessor('PTS.under_implied', {
-                cell: info => info.getValue() + "%",
+                cell: info => info.getValue() ? info.getValue() + "%" : "",
                 header: () => <span>Under</span>,
             }),
         ],
@@ -67,7 +45,7 @@ export const propLinesColumns = [
                 header: () => <span>Over</span>,
             }),
             columnHelper.accessor('AST.over_implied', {
-                cell: info => info.getValue() + "%",
+                cell: info => info.getValue() ? info.getValue() + "%" : "",
                 header: () => <span>Over</span>,
             }),
             columnHelper.accessor('AST.under', {
@@ -75,7 +53,7 @@ export const propLinesColumns = [
                 header: () => <span>Under</span>,
             }),
             columnHelper.accessor('AST.under_implied', {
-                cell: info => info.getValue() + "%",
+                cell: info => info.getValue() ? info.getValue() + "%" : "",
                 header: () => <span>Under</span>,
             }),
         ],
@@ -94,7 +72,7 @@ export const propLinesColumns = [
                 header: () => <span>Over</span>,
             }),
             columnHelper.accessor('TRB.over_implied', {
-                cell: info => info.getValue() + "%",
+                cell: info => info.getValue() ? info.getValue() + "%" : "",
                 header: () => <span>Over</span>,
             }),
             columnHelper.accessor('TRB.under', {
@@ -102,7 +80,7 @@ export const propLinesColumns = [
                 header: () => <span>Under</span>,
             }),
             columnHelper.accessor('TRB.under_implied', {
-                cell: info => info.getValue() + "%",
+                cell: info => info.getValue() ? info.getValue() + "%" : "",
                 header: () => <span>Under</span>,
             }),
         ],
@@ -121,7 +99,7 @@ export const propLinesColumns = [
                 header: () => <span>Over</span>,
             }),
             columnHelper.accessor('THP.over_implied', {
-                cell: info => info.getValue() + "%",
+                cell: info => info.getValue() ? info.getValue() + "%" : "",
                 header: () => <span>Over</span>,
             }),
             columnHelper.accessor('THP.under', {
@@ -129,7 +107,115 @@ export const propLinesColumns = [
                 header: () => <span>Under</span>,
             }),
             columnHelper.accessor('THP.under_implied', {
-                cell: info => info.getValue() + "%",
+                cell: info => info.getValue() ? info.getValue() + "%" : "",
+                header: () => <span>Under</span>,
+            }),
+        ],
+    }),
+    columnHelper.group({
+        header: 'PRA',
+        footer: props => props.column.id,
+        columns: [
+            // Accessor Column
+            columnHelper.accessor('PRA.line', {
+                cell: info => info.getValue(),
+                header: () => <span>Line</span>,
+            }),
+            columnHelper.accessor('PRA.over', {
+                cell: info => info.getValue(),
+                header: () => <span>Over</span>,
+            }),
+            columnHelper.accessor('PRA.over_implied', {
+                cell: info => info.getValue() ? info.getValue() + "%" : "",
+                header: () => <span>Over</span>,
+            }),
+            columnHelper.accessor('PRA.under', {
+                cell: info => info.getValue(),
+                header: () => <span>Under</span>,
+            }),
+            columnHelper.accessor('PRA.under_implied', {
+                cell: info => info.getValue() ? info.getValue() + "%" : "",
+                header: () => <span>Under</span>,
+            }),
+        ],
+    }),
+    columnHelper.group({
+        header: 'PA',
+        footer: props => props.column.id,
+        columns: [
+            // Accessor Column
+            columnHelper.accessor('PA.line', {
+                cell: info => info.getValue(),
+                header: () => <span>Line</span>,
+            }),
+            columnHelper.accessor('PA.over', {
+                cell: info => info.getValue(),
+                header: () => <span>Over</span>,
+            }),
+            columnHelper.accessor('PA.over_implied', {
+                cell: info => info.getValue() ? info.getValue() + "%" : "",
+                header: () => <span>Over</span>,
+            }),
+            columnHelper.accessor('PA.under', {
+                cell: info => info.getValue(),
+                header: () => <span>Under</span>,
+            }),
+            columnHelper.accessor('PA.under_implied', {
+                cell: info => info.getValue() ? info.getValue() + "%" : "",
+                header: () => <span>Under</span>,
+            }),
+        ],
+    }),
+    columnHelper.group({
+        header: 'PR',
+        footer: props => props.column.id,
+        columns: [
+            // Accessor Column
+            columnHelper.accessor('PR.line', {
+                cell: info => info.getValue(),
+                header: () => <span>Line</span>,
+            }),
+            columnHelper.accessor('PR.over', {
+                cell: info => info.getValue(),
+                header: () => <span>Over</span>,
+            }),
+            columnHelper.accessor('PR.over_implied', {
+                cell: info => info.getValue() ? info.getValue() + "%" : "",
+                header: () => <span>Over</span>,
+            }),
+            columnHelper.accessor('PR.under', {
+                cell: info => info.getValue(),
+                header: () => <span>Under</span>,
+            }),
+            columnHelper.accessor('PR.under_implied', {
+                cell: info => info.getValue() ? info.getValue() + "%" : "",
+                header: () => <span>Under</span>,
+            }),
+        ],
+    }),
+    columnHelper.group({
+        header: 'RA',
+        footer: props => props.column.id,
+        columns: [
+            // Accessor Column
+            columnHelper.accessor('RA.line', {
+                cell: info => info.getValue(),
+                header: () => <span>Line</span>,
+            }),
+            columnHelper.accessor('RA.over', {
+                cell: info => info.getValue(),
+                header: () => <span>Over</span>,
+            }),
+            columnHelper.accessor('RA.over_implied', {
+                cell: info => info.getValue() ? info.getValue() + "%" : "",
+                header: () => <span>Over</span>,
+            }),
+            columnHelper.accessor('RA.under', {
+                cell: info => info.getValue(),
+                header: () => <span>Under</span>,
+            }),
+            columnHelper.accessor('RA.under_implied', {
+                cell: info => info.getValue() ? info.getValue() + "%" : "",
                 header: () => <span>Under</span>,
             }),
         ],

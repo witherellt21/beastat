@@ -1,5 +1,5 @@
 import pandas as pd
-from typing import Callable, Mapping
+from typing import Any, Callable, Mapping, Optional
 
 MATHEMATICAL_OPERATORS = ["+", "-"]
 
@@ -81,6 +81,25 @@ def get_operation(formula: str):
         operation_list.append(current_var)
 
     return operation_list
+
+
+def filter_with_bounds(
+    dataset: pd.DataFrame, column: str, bounds: tuple[Any, Any]
+) -> pd.DataFrame:
+    _min, _max = bounds
+    if _min is not None and _max is not None:
+        if _min < _max:
+            dataset = dataset[dataset[column].between(_min, _max)]
+        elif _min > _max:
+            dataset = dataset[~dataset[column].between(_min, _max)]
+        else:
+            dataset = dataset[dataset[column] == _min]
+    elif _min is not None:
+        dataset = dataset[dataset[column] >= _min]
+    elif _max is not None:
+        dataset = dataset[dataset[column] <= _max]
+
+    return dataset
 
 
 if __name__ == "__main__":

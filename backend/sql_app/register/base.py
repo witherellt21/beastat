@@ -1,4 +1,5 @@
 import peewee
+import logging
 
 from datetime import datetime
 from playhouse.shortcuts import model_to_dict
@@ -18,9 +19,13 @@ from typing import TypeVar
 from abc import abstractmethod
 
 
+logger = logging.getLogger("main")
+
+
 class BaseTable:
     MODEL_CLASS: Type[BaseModel]
     SERIALIZER_CLASS: Type[BaseSerializer]
+    UPDATE_SERIALIZER_CLASS: Type[BaseSerializer]
     TABLE_ENTRY_SERIALIZER_CLASS: Type[BaseSerializer]
     READ_SERIALIZER_CLASS: Optional[Type[BaseSerializer]] = None
     PKS: list[str] = ["id"]
@@ -45,6 +50,10 @@ class BaseTable:
     @property
     def table_entry_serializer_class(self) -> Type[BaseSerializer]:
         return self.__class__.TABLE_ENTRY_SERIALIZER_CLASS
+
+    @property
+    def update_serializer_class(self) -> Type[BaseSerializer]:
+        return self.__class__.UPDATE_SERIALIZER_CLASS
 
     @property
     def read_serializer_class(self) -> Type[BaseSerializer]:
@@ -77,8 +86,11 @@ class BaseTable:
     def get_all_records(self, *, as_df=False) -> list[BaseSerializer] | pd.DataFrame:
         records = []
         for record in self.model_class.select():
-            serialized = self.read_serializer_class(**model_to_dict(record))
-            records.append(serialized.model_dump() if as_df else serialized)
+            if as_df:
+                records.append(model_to_dict(record, recurse=False))
+            else:
+                serialized = self.read_serializer_class(**model_to_dict(record))
+                records.append(serialized)
 
         return pd.DataFrame(records) if as_df else records
 
@@ -128,6 +140,9 @@ class BaseTable:
         # Serialize rows and convert to desired output type
         serialized_objects = []
         for record in records:
+            # if as_df:
+            # serialized_objects.append(model_to_dict(record, recurse=False))
+            # else:
             serialized = self.read_serializer_class(**model_to_dict(record))
             serialized_objects.append(serialized.model_dump() if as_df else serialized)
 
@@ -192,7 +207,9 @@ class BaseTable:
             existing_row = None
 
         if existing_row:
-            return self.update_record(data=data, id_fields=id_fields)
+            return self.update_record(
+                data={**data, "id": existing_row.id}, id_fields=id_fields  # type: ignore
+            )
 
         else:
             return self.insert_record(data=data)

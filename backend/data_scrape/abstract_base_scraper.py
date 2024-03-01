@@ -1,5 +1,5 @@
 import time
-from typing import Optional
+from typing import Literal, Optional
 from typing import TypedDict
 from typing import Unpack
 from typing import Type
@@ -66,6 +66,9 @@ class ScraperKwargs(TypedDict, total=False):
     datetime_columns: dict[str, str]
     query_save_columns: dict[str, str] | list[str]
     refresh_rate: int
+    # log_level: Literal[
+    #     logging.NOTSET, logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR
+    # ]
 
 
 class AbstractBaseScraper(ABC, threading.Thread):
@@ -109,14 +112,15 @@ class AbstractBaseScraper(ABC, threading.Thread):
 
     # A function to tranform a specific column (key) on a dataset by a callable function (value) uses apply method
     TRANSFORMATIONS: dict[str | tuple[str, str], Callable[[Any], Any]] = {}
-    DATA_TRANSFORMATIONS: list[Callable] = []
-
+    DATA_TRANSFORMATIONS: list[Callable[[pd.DataFrame], pd.DataFrame]] = []
     QUERY_SAVE_COLUMNS: dict[str, str] | list[str] = []
-
     COLUMN_ORDERING: list[str] = []
 
+    HREF_SAVE_MAP: dict[str, str] = {}
+    REQUIRED_COLUMNS: list[str] = []
+
     REFRESH_RATE: int = 5
-    LOG_LEVEL = logging.INFO
+    LOG_LEVEL = logging.WARNING
 
     def __init__(self, **kwargs: Unpack[ScraperKwargs]):
         threading.Thread.__init__(self, name=self.__class__.__name__)
@@ -131,6 +135,7 @@ class AbstractBaseScraper(ABC, threading.Thread):
             )
 
         self.table: BaseTable = table
+        self.primary_key: str = self.table.model_class._meta.primary_key.name  # type: ignore
 
         self.column_types: Optional[dict[str, Dtype]] = kwargs.get(
             "column_types", self.__class__.COLUMN_TYPES
@@ -153,8 +158,10 @@ class AbstractBaseScraper(ABC, threading.Thread):
 
         # If we still don't have column types, get them from the table
         if self.column_types is None:
-            ignore_columns = list(self.__class__.STAT_AUGMENTATIONS.keys()) + list(
-                self.__class__.DATETIME_COLUMNS.keys()
+            ignore_columns = (
+                list(self.__class__.STAT_AUGMENTATIONS.keys())
+                + list(self.__class__.DATETIME_COLUMNS.keys())
+                + [self.primary_key]
             )
             self.column_types = get_column_types_for_table(
                 table=self.table,
@@ -230,6 +237,8 @@ class AbstractBaseScraper(ABC, threading.Thread):
             )
 
     def run(self) -> None:
+        self.logger.info(f"Starting thread for {self.__class__.__name__}")
+
         consecutive_errors = 0
 
         self.RUNNING = True
@@ -246,7 +255,12 @@ class AbstractBaseScraper(ABC, threading.Thread):
                 time.sleep(0.1)
 
             else:
+                i = 0
+                n = len(query_set)
                 for query in query_set:
+                    self.logger.info(f"{round(i / n * 100, ndigits=1)}% done.")
+                    i += 1
+
                     if not self.RUNNING:
                         break
 
@@ -267,6 +281,8 @@ class AbstractBaseScraper(ABC, threading.Thread):
 
                         continue
 
+                self.logger.warning("Completed full iteration of query set.")
+
     def kill_process(self, *args):
         """
         Kill the running thread and stop the scraper.
@@ -284,10 +300,12 @@ class AbstractBaseScraper(ABC, threading.Thread):
         """
         Get data according to the search query.
         """
-        self.logger.debug(f"Getting data with query: {query}.")
 
         if self.is_cached(query=query):
+            self.logger.info(f"Skipping download for {query}. Already cached.")
             return None
+
+        self.logger.debug(f"Getting data with query: {query}.")
 
         # Download the data for the given url parameters
         downloaded_dataset: Optional[pd.DataFrame] = self.download_data(query=query)
@@ -391,9 +409,12 @@ class AbstractBaseScraper(ABC, threading.Thread):
 
         data = data.fillna(np.nan).replace([np.nan], [None])
 
-        row_dicts = data.to_dict(orient="records")
-        for row in row_dicts:
-            self.table.update_or_insert_record(data=row)
+        for index, row in data.iterrows():
+            row_data = row.to_dict()
+            row_data["id"] = index
+            if index == None:
+                self.logger.warning(row)
+            self.table.update_or_insert_record(data=row_data)
 
         self.logger.debug(f"\n{data}")
 
@@ -407,6 +428,14 @@ class AbstractBaseScraper(ABC, threading.Thread):
         **Override this for anything you want to be done to the dataset AFTER saving.
         """
         self.logger.debug("Configuring data.")
+
+        if self.__class__.HREF_SAVE_MAP:
+            for column in data.columns:
+                if column in self.__class__.HREF_SAVE_MAP:
+                    data[self.__class__.HREF_SAVE_MAP[column]] = data[column].apply(
+                        lambda x: x[1]
+                    )
+                data[column] = data[column].apply(lambda x: x[0])
 
         # Rename columns to desired names
         data = data.rename(columns=self.__class__.RENAME_COLUMNS)
@@ -426,12 +455,14 @@ class AbstractBaseScraper(ABC, threading.Thread):
         for transformation_function in self.__class__.DATA_TRANSFORMATIONS:
             data = transformation_function(dataset=data)
 
+        # data["weight"] = data["weight"].replace(to_replace="", value=0)
+
         # Convert the columns to the desired types
         if self.column_types:
             try:
                 data = data.astype(self.column_types)
-            except pd.errors.IntCastingNaNError:
-                self.logger.debug(data["weight"].value_counts())
+            except pd.errors.IntCastingNaNError as e:
+                self.logger.warning(e)
 
         # Convert datetime columns appropriately
         for key, dt_format in self.__class__.DATETIME_COLUMNS.items():
@@ -442,6 +473,12 @@ class AbstractBaseScraper(ABC, threading.Thread):
             dataframe=data, augmentations=self.__class__.STAT_AUGMENTATIONS
         )
 
+        # self.logger.warning(data.columns)
+        # if "days_rest" in data.columns:
+        #     self.logger.warning(data["days_rest"])
+        # else:
+        #     self.logger.warning(data)
+
         # Apply any filters to the dataset
         data = filter_dataframe(dataframe=data, filters=self.__class__.FILTERS)
 
@@ -450,5 +487,12 @@ class AbstractBaseScraper(ABC, threading.Thread):
         )
 
         data = data[self.desired_columns]
+
+        data = data.replace(to_replace="None", value=np.nan).dropna(
+            subset=self.__class__.REQUIRED_COLUMNS
+        )
+
+        if self.primary_key in list(data.columns):
+            data = data.set_index(self.primary_key)
 
         return data

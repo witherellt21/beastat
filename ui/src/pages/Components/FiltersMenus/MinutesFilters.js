@@ -1,5 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import MenuTitle from './MenuTitle';
+import Input from '../common/Input.tsx';
+import BoundedQueryParam from '../common/BoundedQueryParam.tsx';
 
 function MinutesFilters({
     setCurrentQuery,
@@ -7,11 +9,10 @@ function MinutesFilters({
 }) {
     const [minutesPlayed, setMinutesPlayed] = useState(currentQuery.minutes_played);
 
-    const handleChange = (new_value) => {
-        // setSelectedMinutes(new_value);
+    useEffect(() => {
         setCurrentQuery({
-            // MP: "> " + new_value.toString()
-            MP: new_value
+            ...currentQuery,
+            minutes_played: minutesPlayed
         });
 
     }, [minutesPlayed])

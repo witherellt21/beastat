@@ -8,9 +8,12 @@ from unidecode import unidecode
 import logging
 
 from sql_app.register.player_info import PlayerInfos
+from sql_app.register.player_info import Players
 from string import ascii_lowercase
 
 from typing import Optional
+import requests
+from bs4 import BeautifulSoup, element, ResultSet
 
 
 def get_player_ids(*, source_table: pd.DataFrame, id_from_column: str) -> pd.Series:
@@ -49,14 +52,15 @@ class PlayerInfoScraper(AbstractBaseScraper):
         QUERY_SET = [{"player_last_initial": letter} for letter in ascii_lowercase]
 
     # TODO: Lets see if we can speed up how a lot of the post download logic is done
-    STAT_AUGMENTATIONS = {
-        "player_id": lambda dataset: get_player_ids(
-            source_table=dataset, id_from_column="name"
-        )
-    }
+    # STAT_AUGMENTATIONS = {
+    #     "player_id": lambda dataset: get_player_ids(
+    #         source_table=dataset, id_from_column="name"
+    #     )
+    # }
     TRANSFORMATIONS = {
         "name": lambda name: unidecode(name),
         "height": lambda height: convert_height_to_inches(height=height),
+        ("player_link", "id"): lambda link: link.rsplit("/", 1)[1].split(".")[0],
     }
 
     FILTERS = [lambda dataframe: dataframe["active_to"] == constants.CURRENT_SEASON]
@@ -70,9 +74,11 @@ class PlayerInfoScraper(AbstractBaseScraper):
         "Wt": "weight",
         "Birth Date": "birth_date",
     }
+    # RENAME_VALUES = {"": "0"}
+    HREF_SAVE_MAP = {"Player": "player_link"}
 
-    TABLE = PlayerInfos
-    LOG_LEVEL = logging.INFO
+    TABLE = Players
+    LOG_LEVEL = logging.WARNING
 
     @property
     def download_url(self) -> str:

@@ -1,16 +1,17 @@
 import datetime
 import logging
+import uuid
 import numpy as np
 import pandas as pd
 
 from typing import Iterable, Unpack, Literal, TypedDict, Optional
 
 from data_scrape.abstract_base_scraper import AbstractBaseScraper, ScraperKwargs
-from exceptions import NoDataFoundException
+from exceptions import DBNotFoundException
 from helpers.db_helpers import get_player_active_seasons
 from sql_app.register.gamelog import Gamelogs
 from sql_app.register.matchup import Matchups
-from sql_app.register.player_info import PlayerInfos
+from sql_app.register.player_info import PlayerInfos, Players
 from global_implementations import constants
 
 import time
@@ -25,6 +26,38 @@ def convert_minutes_to_float(time: str) -> float:
     return result
 
 
+def get_days_rest(dataset: pd.DataFrame) -> pd.Series:
+    def get_closest_game(date, data: pd.DataFrame) -> Optional[int]:
+        # Drop games where the player did not play
+        data = data.dropna(subset="G")
+
+        # Get the closest last game the player played in
+        date_differences: pd.Series[datetime.timedelta] = (
+            date - data[data["Date"] < date]["Date"]
+        )
+
+        sorted_dates = date_differences.sort_values()
+
+        if not sorted_dates.empty:
+            return sorted_dates[0].days
+        else:
+            return None
+
+    return dataset["Date"].apply(lambda date: get_closest_game(date, dataset))
+
+
+def get_result_and_margin(dataset: pd.DataFrame) -> pd.DataFrame:
+    """
+    Split the result column into win/loss and margin of victory.
+    """
+    result_split = dataset["Unnamed: 7"].str.split(r"\s\(\+*", expand=True, regex=True)
+    result_split[1] = result_split[1].str.strip(")")
+    dataset["result"] = result_split[0]
+    dataset["margin"] = result_split[1]
+
+    return dataset
+
+
 class QueryDictForm(TypedDict):
     player_last_initial: str
     player_id: str
@@ -36,7 +69,6 @@ class GamelogScraper(AbstractBaseScraper):
         identifier_source: Literal["matchups_only", "all"]
 
     RENAME_COLUMNS = {
-        "Unnamed: 7": "streak",
         "FT%": "FT_perc",
         "FG%": "FG_perc",
         "3P": "THP",
@@ -44,13 +76,19 @@ class GamelogScraper(AbstractBaseScraper):
         "3P%": "THP_perc",
         "+/-": "plus_minus",
     }
-    TRANSFORMATIONS = {"MP": lambda x: convert_minutes_to_float(x)}
+    TRANSFORMATIONS = {
+        "MP": lambda x: convert_minutes_to_float(x),
+        ("PTS", "id"): lambda x: uuid.uuid4(),
+        ("Unnamed: 5", "home"): lambda cell: cell != "@",
+    }
+    DATA_TRANSFORMATIONS = [get_result_and_margin]
     DATETIME_COLUMNS = {"Date": "%Y-%m-%d"}
     STAT_AUGMENTATIONS = {
         "PA": "PTS+AST",
         "PR": "PTS+TRB",
         "RA": "TRB+AST",
         "PRA": "PTS+TRB+AST",
+        "days_rest": get_days_rest,
     }
     QUERY_SAVE_COLUMNS = ["player_id"]
     COLUMN_ORDERING = ["player_id"]
@@ -65,7 +103,6 @@ class GamelogScraper(AbstractBaseScraper):
         self.identifier_source: Literal["matchups_only", "all"] = kwargs.get(
             "identifier_source", "matchups_only"
         )
-        # self.query_dict_form = self.__class__.QUERY_DICT_FORM
 
     @property
     def download_url(self):
@@ -79,7 +116,8 @@ class GamelogScraper(AbstractBaseScraper):
 
     def is_cached(self, *, query: QueryDictForm) -> bool:
         queried_season = query.get("year")
-        if queried_season and queried_season < constants.CURRENT_SEASON:
+        # TODO: Switch to less than to always update the current season
+        if queried_season and queried_season <= constants.CURRENT_SEASON:
             gamelogs = Gamelogs.filter_records(
                 query={"player_id": query.get("player_id")}, as_df=True
             )
@@ -89,9 +127,7 @@ class GamelogScraper(AbstractBaseScraper):
 
             start = datetime.datetime(year=queried_season - 1, month=6, day=1)
             end = datetime.datetime(year=queried_season, month=6, day=1)
-            # gamelogs_from_season = gamelogs[
-            #     gamelogs["Date"] < end and gamelogs["Date"] > start
-            # ]
+
             gamelogs_from_season = gamelogs[gamelogs["Date"].between(start, end)]
             if not gamelogs_from_season.empty:
                 self.logger.info(
@@ -108,23 +144,26 @@ class GamelogScraper(AbstractBaseScraper):
         if self.identifier_source == "matchups_only":
             matchups = Matchups.get_all_records(as_df=True)
 
-            home_players: list[str] = list(matchups["home_player_id"].unique())
-            away_players: list[str] = list(matchups["away_player_id"].unique())
+            home_players = matchups["home_player"].unique()
+            away_players = matchups["away_player"].unique()
 
             if len(home_players) == 0 or len(away_players) == 0:
-                self.logger.warning("No player id's found in the matchup table.")
-                return []
+                raise Exception("No active matchups set.")
 
-            player_ids = home_players + away_players
+            player_ids = np.concatenate(
+                (
+                    home_players,
+                    away_players,
+                )
+            )
 
         elif self.identifier_source == "all":
-            all_players = PlayerInfos.get_all_records(as_df=True)
+            all_players = Players.get_all_records(as_df=True)
 
             if not all_players.empty:
-                player_ids = list(all_players["player_id"].values)
+                player_ids = list(all_players["id"].values)
             else:
-                self.logger.warning("No player's found in the player info table.")
-                return []
+                raise Exception("No player's found in the player info table.")
 
         query_set: list[QueryDictForm] = []
         for player_id in player_ids:
@@ -148,7 +187,7 @@ class GamelogScraper(AbstractBaseScraper):
 
                 query_set.extend(queries)
 
-            except NoDataFoundException:
+            except DBNotFoundException:
                 self.logger.warning(
                     f"Could not find active seasons for player with id {player_id}."
                 )
@@ -173,5 +212,5 @@ if __name__ == "__main__":
 
     gamelog = GamelogScraper(identifier_source="matchups_only")
     gamelog.get_data(
-        query={"player_last_initial": "j", "player_id": "jamesle01", "year": "2023"}
+        query={"player_last_initial": "j", "player_id": "jamesle01", "year": 2024}
     )

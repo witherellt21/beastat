@@ -3,52 +3,73 @@ import Gamelog from './Gamelog';
 import PlayerHitrates from './PlayerHitrates';
 import FiltersMenu from './FiltersMenu';
 import axios from 'axios';
+import StatAveragesTable from './tables/stat_averages/StatAveragesTable'
+
 
 function PlayerData({
     player_id,
-    defense_rankings
+    defense_rankings,
+    team_lineup,
+    season_averages
 }) {
 
     const [showFiltersMenu, setShowFiltersMenu] = useState(false);
     const [displayFrame, setDisplayFrame] = useState(0)
-    const [gamelogData, setGamelogData] = useState([]);
+    const [gamelogData, setGamelogData] = useState({ "gamelog": [], "averages": [] });
     const [playerHitrates, setPlayerHitrates] = useState({});
-    // const [defese]
     const [queryFilters, setQueryFilters] = useState({
-        MP: '> 0',
-        // Games: 'matchup',
-        Date: '2000',
         matchups_only: false,
-        limit: 100
+        limit: 100,
+        withTeammates: [],
+        withoutTeammates: [],
+        gameLocation: null,
+        inStartingLineup: null,
+        minutes_played: {
+            min: 0,
+            max: null,
+        },
+        date: {
+            min: 2000,
+            max: null,
+        },
+        margin: {
+            min: null,
+            max: null,
+        },
+        daysRest: {
+            min: null,
+            max: null,
+        },
+
     });
 
     useEffect(() => {
-        let query = ''
 
-        let i = 0
-        for (const [key, value] of Object.entries(queryFilters)) {
-            console.log(`${key} ${value}`);
-            if (['Date', 'matchups_only', 'limit'].includes(`${key}`)) {
-                continue
-            }
-            if (i == 0) {
-                query = query + `${key} ${value}`
-            } else {
-                query = query + ` & ${key} ${value}`
-            }
-            i++
+        console.log(queryFilters)
+
+        let withoutTeammates_filter = ""
+        for (const teammate of queryFilters.withoutTeammates) {
+            withoutTeammates_filter = withoutTeammates_filter + "&&without_teammates=" + teammate
         }
 
-        axios.get(`http://localhost:3001/player-props/${player_id}/hitrates?query=${query}&&startyear=${queryFilters.Date}&&matchups_only=${queryFilters.matchups_only}&&limit=${queryFilters.limit}`).then(async (response) => {
-            console.log(response.data)
+        let withTeammates_filter = ""
+        for (const teammate of queryFilters.withTeammates) {
+            withTeammates_filter = withTeammates_filter + "&&with_teammates=" + teammate
+        }
+
+        axios.post(`http://localhost:3001/player-props/${player_id}/hitrates`, queryFilters).then(async (response) => {
             await setPlayerHitrates(response.data)
+            console.log(response.data)
         }).catch((err) => {
             console.log(err);
             return null;
         });
 
-        axios.get(`http://localhost:3001/gamelogs/${player_id}?query=${query}&&startyear=${queryFilters.Date}&&matchups_only=${queryFilters.matchups_only}&&limit=${queryFilters.limit}`).then(async (response) => {
+        axios.post(`http://localhost:3001/gamelogs/${player_id}`, queryFilters).then(async (response) => {
             await setGamelogData(response.data)
+        }).catch((err) => {
+            console.log(err);
+            return null;
         });
 
     }, [player_id, queryFilters])
@@ -56,6 +77,9 @@ function PlayerData({
     return (
         <div className='w-full flex justify-center'>
             <div className='p-8 w-5/6 '>
+                <div className='flex flex-col justify-center'>
+                    <StatAveragesTable statAveragesData={gamelogData?.averages} />
+                </div>
                 <div className='p-2 flex justify-end'>
                     <button className='p-2 flex border border-black rounded-xl' onClick={() => {
                         setShowFiltersMenu(!showFiltersMenu);
@@ -100,14 +124,36 @@ function PlayerData({
                     </div>
                     {displayFrame == 1
                         ? < div >
-                            <Gamelog gamelogData={gamelogData} />
+                            <Gamelog gamelogData={gamelogData?.gamelog} />
                         </div>
                         : <div />
                     }
                     {displayFrame == 0
                         ? (
-                            <div>
-                                < PlayerHitrates hitrates={playerHitrates} defense_rankings={defense_rankings} />
+                            <div className='flex flex-col items-center'>
+                                <div>
+                                    <div className='flex flex-row justify-end items-center space-x-2'>
+                                        <label className='text-xl font-bold'>All</label>
+                                        < PlayerHitrates hitrates={playerHitrates?.last_30} defense_rankings={defense_rankings} />
+                                    </div>
+                                    <div className='flex flex-row justify-end items-center space-x-2'>
+                                        <label className='text-xl font-bold'>Last 30</label>
+                                        < PlayerHitrates hitrates={playerHitrates?.last_30} defense_rankings={defense_rankings} />
+                                    </div>
+                                    <div className='flex flex-row justify-end items-center space-x-2'>
+                                        <label className='text-xl font-bold'>Last 20</label>
+                                        < PlayerHitrates hitrates={playerHitrates?.last_20} defense_rankings={defense_rankings} />
+                                    </div>
+                                    <div className='flex flex-row justify-end items-center space-x-2'>
+                                        <label className='text-xl font-bold'>Last 10</label>
+                                        < PlayerHitrates hitrates={playerHitrates?.last_10} defense_rankings={defense_rankings} />
+                                    </div>
+                                    <div className='flex flex-row justify-end items-center space-x-2'>
+                                        <label className='text-xl font-bold'>Last 5</label>
+                                        < PlayerHitrates hitrates={playerHitrates?.last_5} defense_rankings={defense_rankings} />
+                                    </div>
+
+                                </div>
                             </div>
                         )
                         : (
@@ -116,12 +162,25 @@ function PlayerData({
                     }
                 </div>
             </div>
+            {/* {Object.entries(queryFilters).map((key, value) => {
+                if (!typeof value === 'object') {
+                    return (
+                        <div>{value} {key}</div>
+                    )
+                }
+                // return (
+                //     <div>{value} {key}</div>
+                // )
+                // <div>{value} {key}</div>
+                // <div>{key}</div>
+            })} */}
             {showFiltersMenu &&
                 <FiltersMenu
                     show={showFiltersMenu}
                     close={() => setShowFiltersMenu(false)}
                     apply={setQueryFilters}
                     queryFilters={queryFilters}
+                    team_lineup={team_lineup}
                 />
             }
         </div>

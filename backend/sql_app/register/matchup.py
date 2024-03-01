@@ -10,7 +10,7 @@ class MatchupTable(BaseTable):
     MODEL_CLASS = Matchup
     SERIALIZER_CLASS = MatchupSerializer
     READ_SERIALIZER_CLASS = MatchupReadSerializer
-    PKS = ["id"]
+    PKS = ["game_id", "position"]
 
 
 Matchups = MatchupTable(DB)

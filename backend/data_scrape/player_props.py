@@ -1,16 +1,18 @@
+from datetime import datetime
 import pandas as pd
 import re
 
 from data_scrape.abstract_base_scraper import AbstractBaseScraper
 from helpers.db_helpers import get_player_id
-from sql_app.register.player_prop import PlayerProps
 from sql_app.register.player_prop import PropLines
-from sql_app.serializers.player_prop import PlayerPropSerializer
+from sql_app.register import Games
+from sql_app.register.player_info import Players
 from typing import Callable, Optional
 import threading
 import traceback
 import logging
 import time
+import uuid
 
 from pydantic_core import ValidationError
 
@@ -18,11 +20,13 @@ plus_minus_match = re.compile(r"−|\+")
 minus_match = re.compile(r"−")
 plus_match = re.compile(r"\+")
 
-line_split_match = re.compile(r"^[^\d]*")
+# line_split_match = re.compile(r"^[^\d]*")
 line_split_match = r"^[^\d]*"
 
+logger = logging.getLogger("main")
 
-def get_player_props(*, dataset: pd.DataFrame):
+
+def get_player_props(dataset: pd.DataFrame) -> pd.DataFrame:
     def split_line_column_by_regex(column, regex):
         data: pd.DataFrame = dataset[column].str.split(regex, expand=True)
         data: pd.DataFrame = data.dropna(subset=1)
@@ -99,6 +103,14 @@ def get_player_props(*, dataset: pd.DataFrame):
 
     # Drop the old over/under data and return
     full_data = full_data.drop(columns=["OVER", "UNDER"])
+    full_data: pd.DataFrame = full_data.rename(
+        columns={
+            "odds_over": "over",
+            "odds_under": "under",
+            "implied_odds_over": "over_implied",
+            "implied_odds_under": "under_implied",
+        }
+    )
     return full_data
 
 
@@ -112,24 +124,24 @@ class PlayerPropsScraper(AbstractBaseScraper):
         "assists": "AST",
         "threes": "THP",
         "rebounds": "TRB",
+        "pts-+-reb-+-ast": "PRA",
+        "pts-+-reb": "PR",
+        "pts-+-ast": "PA",
+        "ast-+-reb": "RA",
     }
     TRANSFORMATIONS = {
-        ("name", "player_id"): lambda name: get_player_id(player_name=name)
+        ("name", "player_id"): lambda name: get_player_id(player_name=name),
+        ("name", "id"): lambda x: uuid.uuid4(),
     }
+    # STAT_AUGMENTATIONS =
     DATA_TRANSFORMATIONS = [get_player_props]
-    QUERY_SAVE_COLUMNS = {"stat": "stat_category"}
+    QUERY_SAVE_COLUMNS = {"stat": "stat_subcategory"}
+    REQUIRED_COLUMNS = ["player_id"]
 
-    TABLE = PlayerProps
+    TABLE = PropLines
     REFRESH_RATE = 1
 
     LOG_LEVEL = logging.WARNING
-
-    # def __init__(self, **kwargs):
-    #     super().__init__(**kwargs)
-
-    #     self.desired_columns = [
-
-    #     ]
 
     @property
     def download_url(self):
@@ -146,6 +158,10 @@ class PlayerPropsScraper(AbstractBaseScraper):
             {"stat_category": "assists", "stat_subcategory": "assists"},
             {"stat_category": "threes", "stat_subcategory": "threes"},
             {"stat_category": "rebounds", "stat_subcategory": "rebounds"},
+            {"stat_category": "combos", "stat_subcategory": "pts-+-reb-+-ast"},
+            {"stat_category": "combos", "stat_subcategory": "pts-+-reb"},
+            {"stat_category": "combos", "stat_subcategory": "pts-+-ast"},
+            {"stat_category": "combos", "stat_subcategory": "ast-+-reb"},
         ]
 
 
@@ -169,5 +185,5 @@ if __name__ == "__main__":
     # test_scraper_thread()
     player_props = PlayerPropsScraper()
     player_props.get_data(
-        query={"stat_category": "points", "stat_subcategory": "points"}
+        query={"stat_category": "combos", "stat_subcategory": "pts-%2B-reb"}
     )
