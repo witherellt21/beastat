@@ -1,3 +1,4 @@
+from datetime import datetime
 import pandas as pd
 import re
 
@@ -5,6 +6,8 @@ from data_scrape.abstract_base_scraper import AbstractBaseScraper
 from helpers.db_helpers import get_player_id
 from sql_app.register.player_prop import PlayerProps
 from sql_app.register.player_prop import PropLines
+from sql_app.register import Games
+from sql_app.register.player_info import Players
 from sql_app.serializers.player_prop import PlayerPropSerializer
 from typing import Callable, Optional
 import threading
@@ -19,11 +22,13 @@ plus_minus_match = re.compile(r"−|\+")
 minus_match = re.compile(r"−")
 plus_match = re.compile(r"\+")
 
-line_split_match = re.compile(r"^[^\d]*")
+# line_split_match = re.compile(r"^[^\d]*")
 line_split_match = r"^[^\d]*"
 
+logger = logging.getLogger("main")
 
-def get_player_props(*, dataset: pd.DataFrame):
+
+def get_player_props(dataset: pd.DataFrame) -> pd.DataFrame:
     def split_line_column_by_regex(column, regex):
         data: pd.DataFrame = dataset[column].str.split(regex, expand=True)
         data: pd.DataFrame = data.dropna(subset=1)
@@ -112,6 +117,7 @@ def get_player_props(*, dataset: pd.DataFrame):
 
 
 class PlayerPropsScraper(AbstractBaseScraper):
+
     # COLUMN_TYPES = {}
     RENAME_COLUMNS = {
         "PLAYER": "name",
@@ -152,6 +158,10 @@ class PlayerPropsScraper(AbstractBaseScraper):
             {"stat_category": "threes", "stat_subcategory": "threes"},
             {"stat_category": "rebounds", "stat_subcategory": "rebounds"},
         ]
+
+    def configure_data(self, *, data: pd.DataFrame) -> pd.DataFrame:
+        self.logger.debug(data)
+        return super().configure_data(data=data)
 
 
 def test_scraper_thread():

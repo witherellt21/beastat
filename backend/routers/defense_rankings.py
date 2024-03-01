@@ -42,7 +42,7 @@ async def get_defense_rankings_for_game(game_id: str, position: str):
         return {}
 
     # TODO: Temporary solution to team_abr problems
-    team_abr = {"UTA": "UTH"}
+    team_abr = {"UTA": "UTH", "PHX": "PHO"}
 
     home_stat_rankings = DefenseRankings.filter_records(
         query={"team_abr": team_abr.get(game.home, game.home)}, as_df=True

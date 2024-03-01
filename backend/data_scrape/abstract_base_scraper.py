@@ -109,7 +109,7 @@ class AbstractBaseScraper(ABC, threading.Thread):
 
     # A function to tranform a specific column (key) on a dataset by a callable function (value) uses apply method
     TRANSFORMATIONS: dict[str | tuple[str, str], Callable[[Any], Any]] = {}
-    DATA_TRANSFORMATIONS: list[Callable] = []
+    DATA_TRANSFORMATIONS: list[Callable[[pd.DataFrame], pd.DataFrame]] = []
     QUERY_SAVE_COLUMNS: dict[str, str] | list[str] = []
     COLUMN_ORDERING: list[str] = []
 
@@ -117,7 +117,7 @@ class AbstractBaseScraper(ABC, threading.Thread):
     REQUIRED_COLUMNS: list[str] = []
 
     REFRESH_RATE: int = 5
-    LOG_LEVEL = logging.INFO
+    LOG_LEVEL = logging.WARNING
 
     def __init__(self, **kwargs: Unpack[ScraperKwargs]):
         threading.Thread.__init__(self, name=self.__class__.__name__)

@@ -4,12 +4,13 @@ from sql_app.register.defense_ranking import DefenseRankings
 
 from bs4 import BeautifulSoup, ResultSet, element
 import requests
+import logging
 
 
 class DefenseRankingsScraper(AbstractBaseScraper):
     TABLE = DefenseRankings
-
     TEAM_ABR_REMAPS = {"NOR": "NOP"}
+    LOG_LEVEL = logging.WARNING
 
     @property
     def download_url(self) -> str:

@@ -1,4 +1,5 @@
 import peewee
+import logging
 
 from datetime import datetime
 from playhouse.shortcuts import model_to_dict
@@ -16,6 +17,9 @@ from typing import TypeVar
 
 # Serializer = TypeVar("Serializer", bound="BaseSerializer")
 from abc import abstractmethod
+
+
+logger = logging.getLogger("main")
 
 
 class BaseTable:
@@ -136,8 +140,11 @@ class BaseTable:
         # Serialize rows and convert to desired output type
         serialized_objects = []
         for record in records:
-            serialized = self.read_serializer_class(**model_to_dict(record))
-            serialized_objects.append(serialized.model_dump() if as_df else serialized)
+            if as_df:
+                serialized_objects.append(model_to_dict(record, recurse=False))
+            else:
+                serialized = self.read_serializer_class(**model_to_dict(record))
+                serialized_objects.append(serialized)
 
         return pd.DataFrame(serialized_objects) if as_df else serialized_objects
 

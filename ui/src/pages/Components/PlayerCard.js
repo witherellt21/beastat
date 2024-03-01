@@ -1,8 +1,7 @@
 import React from 'react'
 
 function PlayerCard({
-    player_name,
-    player_id,
+    player,
     position,
     seasonAverages,
 }) {
@@ -16,11 +15,11 @@ function PlayerCard({
             <div className='absolute top-0 left-0 h-full w-full z-10'>
                 <span className='absolute top-2 left-2 font-bold'>{position}</span>
                 <span className='font-bold'>
-                    {player_name}
+                    {player?.name}
                 </span>
                 <div className='static pt-2 flex flex-col items-center'>
                     <img
-                        src={'http://www.basketball-reference.com/req/202106291/images/headshots/' + `${player_id}` + '.jpg'}
+                        src={'http://www.basketball-reference.com/req/202106291/images/headshots/' + `${player?.id}` + '.jpg'}
                         width={66} height={66}
                     >
                     </img>

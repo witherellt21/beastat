@@ -18,6 +18,36 @@ logger = logging.getLogger("main")
 
 router = APIRouter()
 
+
+############################
+# ListAllActiveProps
+############################
+
+
+@router.get("/", response_model=list[ReadPropLineSerializer])
+async def list_all_active_props():
+    player_props = PropLines.get_all_records()
+    return player_props
+
+    # if not player_props:
+    #     print(f"No prop lines for player: {player_id}")
+    #     return []
+
+    # lines: list[ReadPropLineSerializer] = PropLines.filter_records(query={"player_id": player.id})  # type: ignore
+
+    # new_lines = {}
+    # for line in lines:
+    #     new_lines[line.stat] = {
+    #         "line": line.line,
+    #         "over": line.over,
+    #         "under": line.under,
+    #         "over_implied": line.over_implied,
+    #         "under_implied": line.under_implied,
+    #     }
+
+    # return [new_lines]
+
+
 ############################
 # GetPropsByPlayerID
 ############################
@@ -25,13 +55,7 @@ router = APIRouter()
 
 @router.get("/{player_id}")
 async def get_props_by_player_id(player_id: str):
-    player = PlayerProps.get_record(query={"player_id": player_id})
-
-    if not player:
-        print(f"No prop lines for player: {player_id}")
-        return []
-
-    lines: list[ReadPropLineSerializer] = PropLines.filter_records(query={"player_id": player.id})  # type: ignore
+    lines: list[ReadPropLineSerializer] = PropLines.filter_records(query={"player_id": player_id})  # type: ignore
 
     new_lines = {}
     for line in lines:

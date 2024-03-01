@@ -17,7 +17,7 @@ function Lineup({
                         </div>
                         <div className='h-1/2 pl-1 border-r border-gray-400'></div>
                         <div className='pl-2 text-left text-nowrap'>
-                            {lineup?.PG}
+                            {lineup?.PG?.name}
                         </div>
                     </div>
                     <div className='flex flex-row items-center'>
@@ -26,7 +26,7 @@ function Lineup({
                         </div>
                         <div className='h-1/2 pl-1 border-r border-gray-400'></div>
                         <div className='pl-2 text-left text-nowrap'>
-                            {lineup?.SG}
+                            {lineup?.SG?.name}
                         </div>
                     </div>
                     <div className='flex flex-row items-center'>
@@ -35,7 +35,7 @@ function Lineup({
                         </div>
                         <div className='h-1/2 pl-1 border-r border-gray-400'></div>
                         <div className='pl-2 text-left text-nowrap'>
-                            {lineup?.SF}
+                            {lineup?.SF?.name}
                         </div>
                     </div>
                     <div className='flex flex-row items-center'>
@@ -44,7 +44,7 @@ function Lineup({
                         </div>
                         <div className='h-1/2 pl-1 border-r border-gray-400'></div>
                         <div className='pl-2 text-left text-nowrap'>
-                            {lineup?.PF}
+                            {lineup?.PF?.name}
                         </div>
                     </div>
                     <div className='flex flex-row items-center'>
@@ -53,7 +53,7 @@ function Lineup({
                         </div>
                         <div className='h-1/2 pl-1 border-r border-gray-400'></div>
                         <div className='pl-2 text-left text-nowrap'>
-                            {lineup?.C}
+                            {lineup?.C?.name}
                         </div>
                     </div>
                     {/* for (const [key, value] of Object.entries(queryFilters)) {

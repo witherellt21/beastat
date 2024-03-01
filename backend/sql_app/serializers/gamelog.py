@@ -13,7 +13,8 @@ class GamelogSerializer(BaseSerializer):
     Age: str
     Tm: str
     Opp: str
-    streak: str
+    result: str
+    margin: int
     GS: Optional[float]
     MP: Optional[float]
     FG: Optional[float]
@@ -39,6 +40,7 @@ class GamelogSerializer(BaseSerializer):
     PR: Optional[float]
     RA: Optional[float]
     PRA: Optional[float]
+    days_rest: Optional[float]
 
 
 class GamelogReadSerializer(BaseSerializer):
@@ -49,7 +51,8 @@ class GamelogReadSerializer(BaseSerializer):
     Age: str
     Tm: str
     Opp: str
-    streak: str
+    result: str
+    margin: int
     GS: Optional[float]
     MP: Optional[float]
     FG: Optional[float]
@@ -75,3 +78,4 @@ class GamelogReadSerializer(BaseSerializer):
     PR: Optional[float]
     RA: Optional[float]
     PRA: Optional[float]
+    days_rest: Optional[float]

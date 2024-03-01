@@ -1,4 +1,5 @@
 # Aliases
+import uuid
 import numpy as np
 import pandas as pd
 
@@ -32,7 +33,10 @@ class CareerStatsScraper(AbstractBaseScraper):
         "PRA": "PTS+TRB+AST",
     }
 
-    TRANSFORMATIONS = {"Season": lambda season: convert_season_to_year(season=season)}
+    TRANSFORMATIONS = {
+        "Season": lambda season: convert_season_to_year(season=season),
+        ("PTS", "id"): lambda x: uuid.uuid4(),
+    }
 
     _exception_msgs = {
         "load_data": f"Error reading saved player overview from csv.",

@@ -1,5 +1,6 @@
 import datetime
 import logging
+import uuid
 import numpy as np
 import pandas as pd
 
@@ -25,6 +26,40 @@ def convert_minutes_to_float(time: str) -> float:
     return result
 
 
+def get_days_rest(dataset: pd.DataFrame) -> pd.Series:
+    def get_closest_game(date, data: pd.DataFrame) -> Optional[int]:
+        # Drop games where the player did not play
+        data = data.dropna(subset="G")
+
+        # Get the closest last game the player played in
+        date_differences: pd.Series[datetime.timedelta] = (
+            date - data[data["Date"] < date]["Date"]
+        )
+
+        sorted_dates = date_differences.sort_values()
+
+        if not sorted_dates.empty:
+            return sorted_dates[0].days
+        else:
+            return None
+
+    return dataset["Date"].apply(lambda date: get_closest_game(date, dataset))
+
+    # return dataset
+
+
+def get_result_and_margin(dataset: pd.DataFrame) -> pd.DataFrame:
+    """
+    Split the result column into win/loss and margin of victory.
+    """
+    result_split = dataset["Unnamed: 7"].str.split(r"\s\(\+*", expand=True, regex=True)
+    result_split[1] = result_split[1].str.strip(")")
+    dataset["result"] = result_split[0]
+    dataset["margin"] = result_split[1]
+
+    return dataset
+
+
 class QueryDictForm(TypedDict):
     player_last_initial: str
     player_id: str
@@ -36,7 +71,6 @@ class GamelogScraper(AbstractBaseScraper):
         identifier_source: Literal["matchups_only", "all"]
 
     RENAME_COLUMNS = {
-        "Unnamed: 7": "streak",
         "FT%": "FT_perc",
         "FG%": "FG_perc",
         "3P": "THP",
@@ -44,13 +78,18 @@ class GamelogScraper(AbstractBaseScraper):
         "3P%": "THP_perc",
         "+/-": "plus_minus",
     }
-    TRANSFORMATIONS = {"MP": lambda x: convert_minutes_to_float(x)}
+    TRANSFORMATIONS = {
+        "MP": lambda x: convert_minutes_to_float(x),
+        ("PTS", "id"): lambda x: uuid.uuid4(),
+    }
+    DATA_TRANSFORMATIONS = [get_result_and_margin]
     DATETIME_COLUMNS = {"Date": "%Y-%m-%d"}
     STAT_AUGMENTATIONS = {
         "PA": "PTS+AST",
         "PR": "PTS+TRB",
         "RA": "TRB+AST",
         "PRA": "PTS+TRB+AST",
+        "days_rest": get_days_rest,
     }
     QUERY_SAVE_COLUMNS = ["player_id"]
     COLUMN_ORDERING = ["player_id"]
@@ -65,7 +104,6 @@ class GamelogScraper(AbstractBaseScraper):
         self.identifier_source: Literal["matchups_only", "all"] = kwargs.get(
             "identifier_source", "matchups_only"
         )
-        # self.query_dict_form = self.__class__.QUERY_DICT_FORM
 
     @property
     def download_url(self):
@@ -88,11 +126,9 @@ class GamelogScraper(AbstractBaseScraper):
             if gamelogs.empty:
                 return False
 
-            start = datetime.datetime(year=queried_season - 1, month=6, day=1)
-            end = datetime.datetime(year=queried_season, month=6, day=1)
-            # gamelogs_from_season = gamelogs[
-            #     gamelogs["Date"] < end and gamelogs["Date"] > start
-            # ]
+            start = datetime.date(year=queried_season - 1, month=6, day=1)
+            end = datetime.date(year=queried_season, month=6, day=1)
+
             gamelogs_from_season = gamelogs[gamelogs["Date"].between(start, end)]
             if not gamelogs_from_season.empty:
                 self.logger.info(
@@ -177,5 +213,5 @@ if __name__ == "__main__":
 
     gamelog = GamelogScraper(identifier_source="matchups_only")
     gamelog.get_data(
-        query={"player_last_initial": "j", "player_id": "jamesle01", "year": "2023"}
+        query={"player_last_initial": "j", "player_id": "jamesle01", "year": 2024}
     )

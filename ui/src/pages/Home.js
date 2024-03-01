@@ -88,12 +88,12 @@ function Home() {
                                     <div className={'relative w-1/2 h-full flex flex-col items-center text-wrap justify-center rounded-l-md ' + `${get_color_for_defense_rating(matchup.away_defense_ranking_overall)}`}>
                                         <div className='absolute top-3 px-2 flex flex-col items-center justify-center '>
                                             < img
-                                                src={'http://www.basketball-reference.com/req/202106291/images/headshots/' + `${matchup.home_player_id}` + '.jpg'}
+                                                src={'http://www.basketball-reference.com/req/202106291/images/headshots/' + `${matchup.home_player.id}` + '.jpg'}
                                                 width={55} height={60}
                                                 className=''
                                             >
                                             </img>
-                                            <div className="title pt-1 text-sm"> {matchup.home_player} </div>
+                                            <div className="title pt-1 text-sm"> {matchup.home_player.name} </div>
 
                                         </div>
                                         {/* <div className="title"> {matchup.home_player} </div> */}
@@ -125,12 +125,12 @@ function Home() {
                                     <div className={'relative w-1/2 h-full flex flex-col items-center text-wrap justify-center rounded-r-md ' + `${get_color_for_defense_rating(matchup.home_defense_ranking_overall)}`}>
                                         <div className='absolute top-3 flex flex-col items-center justify-center '>
                                             < img
-                                                src={'http://www.basketball-reference.com/req/202106291/images/headshots/' + `${matchup.away_player_id}` + '.jpg'}
+                                                src={'http://www.basketball-reference.com/req/202106291/images/headshots/' + `${matchup.away_player.id}` + '.jpg'}
                                                 width={55} height={60}
                                                 className=''
                                             >
                                             </img>
-                                            <div className="title pt-1 text-sm"> {matchup.away_player} </div>
+                                            <div className="title pt-1 text-sm"> {matchup.away_player.name} </div>
 
                                         </div>
                                         <div className='absolute bottom-0 w-full flex flex-row space-x-1 px-2 py-1 bg-gray-200 rounded-br-sm'>

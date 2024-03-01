@@ -38,7 +38,7 @@ function Matchup() {
     useEffect(() => {
 
         if (matchupLoaded && matchup != {}) {
-            axios.get(`http://localhost:3001/player-props/${matchup?.home_player_id}`)
+            axios.get(`http://localhost:3001/player-props/${matchup?.home_player?.id}`)
                 .then((response) => {
                     setHomePropLines(response.data)
                 })
@@ -46,7 +46,7 @@ function Matchup() {
                     console.log(error)
                     return null;
                 });
-            axios.get(`http://localhost:3001/player-props/${matchup?.away_player_id}`)
+            axios.get(`http://localhost:3001/player-props/${matchup?.away_player?.id}`)
                 .then((response) => {
                     setAwayPropLines(response.data)
                 })
@@ -55,7 +55,7 @@ function Matchup() {
                     return null;
                 });
 
-            axios.get(`http://localhost:3001/defense-rankings/game/${matchup?.game_id}/${matchup?.position}`)
+            axios.get(`http://localhost:3001/defense-rankings/game/${matchup?.game?.id}/${matchup?.position}`)
                 .then((response) => {
                     setDefenseRankings(response.data)
                 })
@@ -64,7 +64,7 @@ function Matchup() {
                     return null;
                 });
 
-            axios.get(`http://localhost:3001/career-stats/${matchup?.home_player_id}/season/2024`)
+            axios.get(`http://localhost:3001/career-stats/${matchup?.home_player?.id}/season/2024`)
                 .then((response) => {
                     setHomePlayerSeasonAverages(response.data)
                 })
@@ -72,7 +72,7 @@ function Matchup() {
                     console.log(error)
                     return null;
                 });
-            axios.get(`http://localhost:3001/career-stats/${matchup?.away_player_id}/season/2024`)
+            axios.get(`http://localhost:3001/career-stats/${matchup?.away_player?.id}/season/2024`)
                 .then((response) => {
                     setAwayPlayerSeasonAverages(response.data)
                 })
@@ -81,7 +81,7 @@ function Matchup() {
                     return null;
                 });
 
-            axios.get(`http://localhost:3001/lineups/${matchup?.game_id}`)
+            axios.get(`http://localhost:3001/lineups/${matchup?.game?.id}`)
                 .then((response) => {
                     setLineups(response.data)
                 })
@@ -118,19 +118,19 @@ function Matchup() {
                         <div className='flex justify-end'>
                             <div className='w-3/5 flex flex-row justify-between items-center '>
                                 <img
-                                    src={'http://www.basketball-reference.com/req/202106291/images/headshots/' + `${matchup.home_player_id}` + '.jpg'}
+                                    src={'http://www.basketball-reference.com/req/202106291/images/headshots/' + `${matchup?.home_player?.id}` + '.jpg'}
                                     width={66} height={60}
                                     className='absolute left-10'
                                 >
                                 </img>
                                 <div>
-                                    {matchup.home_player}
+                                    {matchup?.home_player?.name}
                                 </div>
                                 <div className='flex pr-2'>
                                     <div className='pr-2'>
                                         Defense OVR Rank:
                                     </div>
-                                    {defenseRankings.away?.OVR}
+                                    {defenseRankings?.away?.OVR}
                                 </div>
                             </div>
                         </div>
@@ -152,7 +152,7 @@ function Matchup() {
                         <div className='flex justify-left'>
                             <div className='w-3/5 flex flex-row justify-between items-center'>
                                 <img
-                                    src={'http://www.basketball-reference.com/req/202106291/images/headshots/' + `${matchup.away_player_id}` + '.jpg'}
+                                    src={'http://www.basketball-reference.com/req/202106291/images/headshots/' + `${matchup?.away_player?.id}` + '.jpg'}
                                     width={60} height={60}
                                     className='absolute right-10'
                                 >
@@ -161,10 +161,10 @@ function Matchup() {
                                     <div className='pr-2'>
                                         Defense OVR Rank:
                                     </div>
-                                    {defenseRankings.home?.OVR}
+                                    {defenseRankings?.home?.OVR}
                                 </div>
                                 <div>
-                                    {matchup?.away_player}
+                                    {matchup?.away_player?.name}
                                 </div>
                             </div>
                         </div>
@@ -178,28 +178,31 @@ function Matchup() {
                     {homeAwayToggle
                         ? (
                             <PlayerCard
-                                player_name={matchup.home_player}
-                                player_id={matchup.home_player_id}
-                                position={matchup.position}
+                                // player_name={matchup.home_player}
+                                // player_id={matchup.home_player_id}
+                                player={matchup?.home_player}
+                                position={matchup?.position}
                                 seasonAverages={homePlayerSeasonAverages}
                             ></PlayerCard>
                         ) : (
                             <PlayerCard
-                                player_name={matchup.away_player}
-                                player_id={matchup.away_player_id}
-                                position={matchup.position}
+                                player={matchup?.away_player}
+                                position={matchup?.position}
                                 seasonAverages={awayPlayerSeasonAverages}
                             ></PlayerCard>
                         )
                     }
 
                     <Lineup
-                        lineup={lineups.home_lineup}
+                        lineup={lineups?.home_lineup}
                     ></Lineup>
 
                     <Lineup
-                        lineup={lineups.away_lineup}
+                        lineup={lineups?.away_lineup}
                     ></Lineup>
+                    <button onClick={() => { console.log(lineups) }}>
+                        Check lineups
+                    </button>
 
 
                 </div>
@@ -221,9 +224,9 @@ function Matchup() {
                                             {/* This div represents the second row of the player data column. */}
                                             <div className='flex flex-row justify-center '>
                                                 <PlayerData
-                                                    player_id={matchup.home_player_id}
-                                                    defense_rankings={defenseRankings.away}
-                                                    team_lineup={lineups.home_lineup}
+                                                    player_id={matchup?.home_player?.id}
+                                                    defense_rankings={defenseRankings?.away}
+                                                    team_lineup={lineups?.home_lineup}
                                                     season_averages={homePlayerSeasonAverages}
                                                 />
                                             </div>
@@ -238,9 +241,10 @@ function Matchup() {
                                             {/* This div represents the second row of the player data column. */}
                                             <div className='flex flex-row justify-center'>
                                                 <PlayerData
-                                                    player_id={matchup.away_player_id}
-                                                    defense_rankings={defenseRankings.home}
-                                                    team_lineup={lineups.away_lineup}
+                                                    player_id={matchup?.away_player?.id}
+                                                    defense_rankings={defenseRankings?.home}
+                                                    team_lineup={lineups?.away_lineup}
+                                                    season_averages={awayPlayerSeasonAverages}
                                                 />
                                             </div>
                                         </div>

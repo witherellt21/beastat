@@ -3,6 +3,7 @@ from peewee import DateField
 from peewee import FloatField
 from peewee import ForeignKeyField
 from peewee import UUIDField
+from peewee import IntegerField
 from sql_app.models.base import BaseModel
 from sql_app.models.player_info import Player
 
@@ -15,7 +16,8 @@ class Gamelog(BaseModel):
     Age = CharField()
     Tm = CharField()
     Opp = CharField()
-    streak = CharField()
+    result = CharField()
+    margin = IntegerField()
     GS = FloatField(null=True)
     MP = FloatField(null=True)
     FG = FloatField(null=True)
@@ -41,3 +43,4 @@ class Gamelog(BaseModel):
     PR = FloatField(null=True)
     RA = FloatField(null=True)
     PRA = FloatField(null=True)
+    days_rest = FloatField(null=True)

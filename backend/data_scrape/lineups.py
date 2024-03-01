@@ -69,11 +69,8 @@ def get_team_lineup(
                         "status": player.span.text if player.span else None,
                     }
                 )
-            # else:
 
         player_idx += 1
-        # else:
-        #     lineup[player.div.text] = None
 
     return lineup
 
@@ -240,27 +237,16 @@ class LineupScraper(AbstractBaseScraper):
             if not home_team_lineup or not away_team_lineup:
                 return
 
-            # home_lineup = Lineups.update_or_insert_record(data=home_team_data)
-            # away_lineup = Lineups.update_or_insert_record(data=away_team_data)
-
             for position, player_id in home_team_lineup.items():
                 if position == "injuries" or type(player_id) != str:
                     continue
 
-                # home_player_id = get_player_id(player_name=player_name)
-                # away_player_id = get_player_id(player_name=away_team_lineup[position])  # type: ignore # TODO: use a pydantic model for the dict instead
-
-                # if not home_player_id or not away_player_id:
-                #     continue
-
                 matchup = {
                     "id": uuid.uuid4(),
                     "game_id": game.id,
-                    "position": position,
+                    "position": position.split("_")[0],
                     "home_player_id": player_id,
                     "away_player_id": away_team_lineup[position],
-                    # "home_player_id": home_player_id,
-                    # "away_player_id": away_player_id,
                 }
 
                 try:
@@ -269,14 +255,6 @@ class LineupScraper(AbstractBaseScraper):
                     )
                 except Exception as e:
                     print("MATCHUP ERROR ", e)
-
-        # game_entries.append(game_entry)
-
-        # games_df = pd.DataFrame(game_entries)
-
-        # row_dicts = games_df.to_dict(orient="records")
-        # for row in row_dicts:
-        #     Games.update_or_insert_record(data=row)
 
 
 if __name__ == "__main__":

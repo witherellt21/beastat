@@ -11,6 +11,13 @@ from sql_app.serializers.player_info import PlayerInfoTableEntrySerializer
 
 from sql_app.database import DB
 from sql_app.register.base import BaseTable
+from playhouse.shortcuts import model_to_dict
+
+from sql_app.models.player_prop import PropLine
+
+import logging
+
+logger = logging.getLogger("main")
 
 
 class PlayerInfoTable(BaseTable):
@@ -27,6 +34,15 @@ class PlayerTable(BaseTable):
     # READ_SERIALIZER_CLASS = PlayerInfoReadSerializer
     TABLE_ENTRY_SERIALIZER_CLASS = PlayerTableEntrySerializer
     PKS = ["id"]
+
+    def get_with_prop_lines(self, *, query: dict):
+        # player = Player.get(**query)
+        player = Player.select().join(PropLine).dicts()
+        # logger.debug(model_to_dict(player.props))
+        print(player)
+        # for prop in player.props:
+        #     logger.debug(model_to_dict(prop))
+        return player
 
 
 class CollegeTable(BaseTable):

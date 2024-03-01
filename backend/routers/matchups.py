@@ -33,9 +33,10 @@ def get_defensive_rank_summary_by_position(*, team: str, position: str) -> pd.Da
     """
     Get the best and worst stat matchups against the position for the given opponent.
     """
+    team_abr = {"UTA": "UTH", "PHX": "PHO"}
     # Get the teams stat rankings against all positions
     defense_rankings = DefenseRankings.filter_records(
-        query={"team_abr": team}, as_df=True
+        query={"team_abr": team_abr.get(team, team)}, as_df=True
     )
 
     if defense_rankings.empty:
@@ -70,35 +71,37 @@ async def list_matchups():
 
     result = []
     for matchup in matchups:
-        game: GameSerializer = Games.get_record(query={"game_id": matchup.game_id})  # type: ignore
-        # lineup: LineupSerializer = Lineups.get_record(query={"game_id": matchup.game_id, "home": True})  # type: ignore
 
         home_defense_rank_summary = get_defensive_rank_summary_by_position(
-            team=game.home, position=matchup.position
+            team=matchup.game.home, position=matchup.position
         )
 
         away_defense_rank_summary = get_defensive_rank_summary_by_position(
-            team=game.away, position=matchup.position
+            team=matchup.game.away, position=matchup.position
         )
 
         matchup_data = matchup.model_dump()
-        matchup_data["home_def_rank_summary"] = (
-            home_defense_rank_summary.to_dict(orient="records")
-            if not home_defense_rank_summary.empty
-            else {}
-        )
-        matchup_data["away_def_rank_summary"] = (
-            away_defense_rank_summary.to_dict(orient="records")
-            if not away_defense_rank_summary.empty
-            else {}
-        )
+        matchup_data["home_def_rank_summary"] = {}
+        matchup_data["away_def_rank_summary"] = {}
+        matchup_data["home_defense_ranking_overall"] = None
+        matchup_data["away_defense_ranking_overall"] = None
 
-        matchup_data["home_defense_ranking_overall"] = int(
-            home_defense_rank_summary.set_index("stat").loc["OVR"]["value"]
-        )
-        matchup_data["away_defense_ranking_overall"] = int(
-            away_defense_rank_summary.set_index("stat").loc["OVR"]["value"]
-        )
+        if not home_defense_rank_summary.empty:
+            matchup_data["home_def_rank_summary"] = home_defense_rank_summary.to_dict(
+                orient="records"
+            )
+            matchup_data["home_defense_ranking_overall"] = int(
+                home_defense_rank_summary.set_index("stat").loc["OVR"]["value"]
+            )
+
+        if not away_defense_rank_summary.empty:
+            matchup_data["away_def_rank_summary"] = away_defense_rank_summary.to_dict(
+                orient="records"
+            )
+
+            matchup_data["away_defense_ranking_overall"] = int(
+                away_defense_rank_summary.set_index("stat").loc["OVR"]["value"]
+            )
 
         result.append(matchup_data)
 
@@ -218,3 +221,12 @@ async def retrieve_matchup_stats(id: str, home_away: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error processing request: {e}",
         )
+
+
+@router.get("/today", response_model=list[GamelogSerializer])
+def get_todays_matchups():
+    todays_games = Games.filter_by_datetime(min_datetime=datetime.today(), as_df=True)
+    matchups = Matchups.get_all_records(as_df=True)
+
+    merged = todays_games.merge(matchups, left_on="id", right_on="game_id")
+    print(merged)
