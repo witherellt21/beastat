@@ -1,7 +1,11 @@
 import pandas as pd
 from fastapi import APIRouter, Query, Depends
 
-from helpers.db_helpers import get_matchup_gamelog_by_player_id, filter_gamelog
+from helpers.db_helpers import (
+    get_matchup_gamelog_by_player_id,
+    filter_gamelog,
+    GamelogQuery,
+)
 from sql_app.serializers.player_prop import PlayerPropSerializer
 from sql_app.serializers.player_prop import ReadPlayerPropSerializer
 from sql_app.serializers.player_prop import ReadPropLineSerializer
@@ -70,38 +74,18 @@ async def get_props_by_player_id(player_id: str):
     return [new_lines]
 
 
-class GamelogQuery(BaseModel):
-    query: Optional[str] = None
-    limit: int = 50
-    matchups_only: bool = False
-    startyear: int = 2024
-
-
-@router.get("/{player_id}/hitrates")
+@router.post("/{player_id}/hitrates")
 async def get_player_hitrates(
     player_id: str,
-    query: GamelogQuery = Depends(),
-    without_teammates: list[str] = Query(None),
-    with_teammates: list[str] = Query(None),
+    query: GamelogQuery,
 ):
-    player = PlayerProps.get_record(query={"player_id": player_id})
+    lines: list[ReadPropLineSerializer] = PropLines.filter_records(query={"player_id": player_id})  # type: ignore
 
-    if not player:
+    if not lines:
         print(f"No prop lines for player: {player_id}")
         return {}
 
-    # Get the prop lines for the given player
-    lines: list[ReadPropLineSerializer] = PropLines.filter_records(query={"player_id": player.id})  # type: ignore
-
-    gamelog = filter_gamelog(
-        player_id=player_id,
-        query=query.query,
-        startyear=query.startyear,
-        matchups_only=query.matchups_only,
-        limit=query.limit,
-        without_teammates=without_teammates,
-        with_teammates=with_teammates,
-    )
+    gamelog = filter_gamelog(player_id=player_id, query=query)
 
     if gamelog.empty:
         return {}
@@ -109,10 +93,15 @@ async def get_player_hitrates(
     total_number_of_games = len(gamelog)
 
     hitrates = {}
-    for line in lines:
-        stat_overs = gamelog[gamelog[line.stat] >= line.line]
-        hitrates[line.stat] = round(
-            len(stat_overs) / total_number_of_games * 100, ndigits=2
-        )
+    for limit in [total_number_of_games, 30, 20, 10, 5, 3]:
+        hitrates_per_limit = {}
+        for line in lines:
+            sublog = gamelog.tail(limit)
+            stat_overs = sublog[sublog[line.stat] >= line.line]
+            hitrates_per_limit[line.stat] = round(
+                len(stat_overs) / limit * 100, ndigits=2
+            )
+        identifier = "all" if limit == total_number_of_games else f"last_{limit}"
+        hitrates[identifier] = hitrates_per_limit
 
     return hitrates

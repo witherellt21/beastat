@@ -174,6 +174,41 @@ function Matchup() {
                 This div contains the all data for the selected player.
                 It will only load after the matchup is successfully set.
                 */}
+                <div className='flex justify-center'>
+                    <div className='border-2 border-gray-500 rounded-lg p-2'>
+                        <div>Game Markets</div>
+                        <hr></hr>
+                        <div className='pt-2'>
+                            <table>
+                                <tr>
+                                    <td className='text-right text-gray-500 pr-2'>Spread:</td>
+                                    <td>{matchup?.game?.spread}</td>
+                                </tr>
+                                <tr>
+                                    <td className='text-right text-gray-500 pr-2'>ML:</td>
+                                    <td className='text-left'>{matchup?.game?.line}</td>
+                                </tr>
+                                <tr>
+                                    <td className='text-right text-gray-500 pr-2'>O/U:</td>
+                                    <td>{matchup?.game?.over_under}</td>
+                                </tr>
+                            </table>
+                            {/* <div>
+                                <label className='w-full pb-1 text-gray-500'>Spread: </label>
+                                <span className='w-full pb-1'>{matchup?.game?.spread}</span>
+                            </div>
+                            <div>
+                                <label className='w-full pb-1 text-gray-500'>ML: </label>
+                                <span className='w-full pb-1'>{matchup?.game?.line}</span>
+                            </div>
+                            <div>
+                                <label className='w-full pb-1 text-gray-500'>O/U: </label>
+                                <span className='w-full pb-1'>{matchup?.game?.over_under}</span>
+                            </div> */}
+                        </div>
+                    </div>
+                </div>
+                <hr className='my-4'></hr>
                 <div className='min-h-44 mb-8 flex flex-row justify-center space-x-8'>
                     {homeAwayToggle
                         ? (
@@ -200,15 +235,8 @@ function Matchup() {
                     <Lineup
                         lineup={lineups?.away_lineup}
                     ></Lineup>
-                    <button onClick={() => { console.log(lineups) }}>
-                        Check lineups
-                    </button>
-
 
                 </div>
-                {/* <div>
-                    <Lineup></Lineup>
-                </div> */}
                 {
                     matchupLoaded
                         ? (

@@ -15,7 +15,6 @@ function StatAveragesTable({ statAveragesData }) {
     //     id: "Date"
     // }]);
 
-    console.log(statAveragesData)
 
     const tableInstance = useReactTable({
         columns: columnDef,

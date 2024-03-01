@@ -1,38 +1,69 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import MenuTitle from './MenuTitle';
+import Input from '../common/Input.tsx';
+import BoundedQueryParam from '../common/BoundedQueryParam.tsx';
 
 function MinutesFilters({
     setCurrentQuery,
     currentQuery
 }) {
-    // const [selectedMinutes, setSelectedMinutes] = useState(0);
+    // const [minutesOver, setMinutesOver] = useState(currentQuery.minutes_played.over);
+    // const [minutesUnder, setMinutesUnder] = useState(currentQuery.minutes_played.under);
+    const [minutesPlayed, setMinutesPlayed] = useState(currentQuery.minutes_played);
 
-    const handleChange = (new_value) => {
-        // setSelectedMinutes(new_value);
+    useEffect(() => {
         setCurrentQuery({
-            // MP: "> " + new_value.toString()
-            MP: new_value
+            ...currentQuery,
+            minutes_played: minutesPlayed
         });
-    }
+
+    }, [minutesPlayed])
+
+    // const handleChange = (new_value) => {
+    //     // setSelectedMinutes(new_value);
+    //     setCurrentQuery({
+    //         // MP: "> " + new_value.toString()
+    //         minutes_played: {
+    //             over: minutesOver,
+    //             under: minutesUnder
+    //         }
+    //     });
+    // }
 
     return (
         // <div className='flex justify-center bg-red-500'>
-        <div>
+        <div className='flex flex-col h-full'>
             {/* <div className='flex flex-col items-center'> */}
 
             {/* <div className='w-2/3 py-2 border-t-2 border-black border-solid'></div> */}
             <MenuTitle title="Filter Minutes Played" />
-            <div className='flex flex-none justify-center items-center'>
-                <label htmlFor='minimum-minutes-played-input'>Minutes Played (min):</label>
+            <div class="flex flex-col w-full h-full p-5 text-black dark:text-gray-200 bg-gray-200">
+                <form
+                    className="flex flex-col w-full h-full"
+
+                >
+                    <div className=" flex flex-col space-y-5">
+                        {/* <div className='flex flex-none justify-center items-center'> */}
+                        {/* <Input label="Minutes played (min)" type='number' value={currentQuery.minutes_played.over} setValue={(e) => setMinutesOver(e.target.value)} /> */}
+                        <BoundedQueryParam
+                            min_props={{ label: "Minutes played (min)", id: "minutes-player-min" }}
+                            max_props={{ label: "Minutes played (max)", id: "minutes-player-max" }}
+                            param={currentQuery.minutes_played}
+                            setParam={setMinutesPlayed}
+                        />
+                    </div>
+                </form>
+            </div>
+            {/* <label htmlFor='minimum-minutes-played-input'>Minutes Played (min):</label>
                 <input
                     name='minimum-minutes-played-input'
                     type='text'
-                    value={currentQuery.MP}
-                    onChange={(e) => handleChange(e.target.value)}
+                    value={currentQuery.minutes_played.over}
+                    onChange={(e) => setMinutesOver(e.target.value)}
                     className='w-10 mx-1 text-center border border-black rounded-md'
-                />
-                {/* </div> */}
-                {/* <div className='flex flex-col'>
+                /> */}
+            {/* </div> */}
+            {/* <div className='flex flex-col'>
                     <button
                         className='px-1 flex border border-black'
                         onClick={() => handleChange(selectedMinutes + 1)}
@@ -51,7 +82,7 @@ function MinutesFilters({
                 C307.322,253.536,311.161,255,315,255c3.839,0,7.678-1.464,10.607-4.394C331.464,244.748,331.464,235.251,325.606,229.393z"/>
                         </svg>
                     </button> */}
-                {/* <button
+            {/* <button
                         className='px-1 flex border border-black'
                         onClick={() => handleChange(selectedMinutes - 1)}
                     >
@@ -72,9 +103,9 @@ function MinutesFilters({
                             </g>
                         </svg>
                     </button> */}
-                {/* </div> */}
-            </div>
-        </div >
+            {/* </div> */}
+        </div>
+        // </div >
         // </div >
     )
 }

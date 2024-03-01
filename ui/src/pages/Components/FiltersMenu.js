@@ -30,7 +30,7 @@ function FiltersMenu({
     return (
         <div>
             <div className="fixed inset-0 flex justify-center items-center z-10 backdrop-blur-sm overflow-hidden">
-                <div className='flex flex-col shadow-2xl rounded-2xl'>
+                <div className='h-2/3 w-1/3 flex flex-col shadow-2xl rounded-2xl'>
                     <div className='h-14 px-4 pt-4 flex flex-row justify-between bg-gradient-to-b from-gray-300 to-gray-200 border-b-2 border-black rounded-t-2xl'>
                         <label className='h-full pb-1 flex items-end text-2xl'>Filter Settings</label>
                         <div className='h-full flex items-start'>
@@ -41,8 +41,8 @@ function FiltersMenu({
                             </button>
                         </div>
                     </div>
-                    <div className='h-96 flex'>
-                        <div className='h-full w-1/3 flex flex-col bg-gradient-to-b from-gray-200 to-gray-100'>
+                    <div className='h-full w-full flex'>
+                        <div className='h-full w-1/4 flex flex-col bg-gradient-to-b from-gray-200 to-gray-100'>
                             <button
                                 className='py-2 px-2 text-sm text-right border-b-2 border-gray-400 hover:bg-gray-300'
                                 onClick={() => { setMenuSelection("games") }}
@@ -62,8 +62,8 @@ function FiltersMenu({
                                 Lineup
                             </button>
                         </div>
-                        <div className='border-black'></div>
-                        <div className='h-full w-96 bg-white'>
+                        {/* <div className='border-black'></div> */}
+                        <div className='h-full w-3/4'>
                             {showGamesMenu && <GamesFilters setCurrentQuery={setCurrentQuery} currentQuery={currentQuery} />}
                             {showMinutesMenu && <MinutesFilters setCurrentQuery={setCurrentQuery} currentQuery={currentQuery} />}
                             {showLineupsMenu && <LineupFilters setCurrentQuery={setCurrentQuery} currentQuery={currentQuery} team_lineup={team_lineup} />}
@@ -81,6 +81,7 @@ function FiltersMenu({
                         <div className='flex items-center'>
                             <button
                                 className='text-sm px-4 border border-black rounded-lg bg-gradient-to-b from-indigo-400 to-indigo-200 active:shadow-xl active:from-indigo-500 active:to-indigo-300 '
+                                type="submit"
                                 onClick={() => {
                                     apply({ ...queryFilters, ...currentQuery });
                                     setCurrentQuery(queryFilters);

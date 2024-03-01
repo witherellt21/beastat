@@ -140,11 +140,11 @@ class BaseTable:
         # Serialize rows and convert to desired output type
         serialized_objects = []
         for record in records:
-            if as_df:
-                serialized_objects.append(model_to_dict(record, recurse=False))
-            else:
-                serialized = self.read_serializer_class(**model_to_dict(record))
-                serialized_objects.append(serialized)
+            # if as_df:
+            # serialized_objects.append(model_to_dict(record, recurse=False))
+            # else:
+            serialized = self.read_serializer_class(**model_to_dict(record))
+            serialized_objects.append(serialized.model_dump() if as_df else serialized)
 
         return pd.DataFrame(serialized_objects) if as_df else serialized_objects
 

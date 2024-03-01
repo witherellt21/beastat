@@ -101,7 +101,7 @@ class LineupScraper(AbstractBaseScraper):
         ("name", "id"): lambda x: uuid.uuid4(),
     }
     TABLE = Lineups
-    LOG_LEVEL = logging.INFO
+    LOG_LEVEL = logging.WARNING
 
     @property
     def download_url(self) -> str:

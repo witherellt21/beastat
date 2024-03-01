@@ -470,6 +470,12 @@ class AbstractBaseScraper(ABC, threading.Thread):
             dataframe=data, augmentations=self.__class__.STAT_AUGMENTATIONS
         )
 
+        # self.logger.warning(data.columns)
+        # if "days_rest" in data.columns:
+        #     self.logger.warning(data["days_rest"])
+        # else:
+        #     self.logger.warning(data)
+
         # Apply any filters to the dataset
         data = filter_dataframe(dataframe=data, filters=self.__class__.FILTERS)
 

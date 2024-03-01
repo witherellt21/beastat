@@ -45,8 +45,6 @@ def get_days_rest(dataset: pd.DataFrame) -> pd.Series:
 
     return dataset["Date"].apply(lambda date: get_closest_game(date, dataset))
 
-    # return dataset
-
 
 def get_result_and_margin(dataset: pd.DataFrame) -> pd.DataFrame:
     """
@@ -81,6 +79,7 @@ class GamelogScraper(AbstractBaseScraper):
     TRANSFORMATIONS = {
         "MP": lambda x: convert_minutes_to_float(x),
         ("PTS", "id"): lambda x: uuid.uuid4(),
+        ("Unnamed: 5", "home"): lambda cell: cell != "@",
     }
     DATA_TRANSFORMATIONS = [get_result_and_margin]
     DATETIME_COLUMNS = {"Date": "%Y-%m-%d"}
@@ -113,6 +112,7 @@ class GamelogScraper(AbstractBaseScraper):
         self, *, datasets: list[pd.DataFrame]
     ) -> pd.DataFrame:
         # TODO: This filter seems awfully presumptuous, maybe we should change it at some point
+        print(list(filter(lambda x: x.shape[1] == 30, datasets))[0])
         return list(filter(lambda x: x.shape[1] == 30, datasets))[0]
 
     def is_cached(self, *, query: QueryDictForm) -> bool:
@@ -126,8 +126,8 @@ class GamelogScraper(AbstractBaseScraper):
             if gamelogs.empty:
                 return False
 
-            start = datetime.date(year=queried_season - 1, month=6, day=1)
-            end = datetime.date(year=queried_season, month=6, day=1)
+            start = datetime.datetime(year=queried_season - 1, month=6, day=1)
+            end = datetime.datetime(year=queried_season, month=6, day=1)
 
             gamelogs_from_season = gamelogs[gamelogs["Date"].between(start, end)]
             if not gamelogs_from_season.empty:

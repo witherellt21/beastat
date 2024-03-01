@@ -13,6 +13,7 @@ class GamelogSerializer(BaseSerializer):
     Age: str
     Tm: str
     Opp: str
+    home: bool
     result: str
     margin: int
     GS: Optional[float]
@@ -51,6 +52,7 @@ class GamelogReadSerializer(BaseSerializer):
     Age: str
     Tm: str
     Opp: str
+    home: bool
     result: str
     margin: int
     GS: Optional[float]

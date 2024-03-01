@@ -1,9 +1,14 @@
+import traceback
 from fastapi import HTTPException, status
 from fastapi import APIRouter, Depends, Query
 
 import pandas as pd
 from typing import Optional, Unpack, List
-from helpers.db_helpers import get_matchup_gamelog_by_player_id, filter_gamelog
+from helpers.db_helpers import (
+    get_matchup_gamelog_by_player_id,
+    filter_gamelog,
+    GamelogQuery,
+)
 from sql_app.register.gamelog import Gamelogs
 from sql_app.register.career_stats import CareerStatss
 from global_implementations import constants
@@ -18,12 +23,12 @@ logger = logging.getLogger("main")
 router = APIRouter()
 
 
-class GamelogQuery(BaseModel):
-    query: Optional[str] = None
-    limit: int = 50
-    matchups_only: bool = False
-    startyear: int = 2024
-    # without_teammates: List[str] = Query([])
+# class GamelogQuery(BaseModel):
+#     query: Optional[str] = None
+#     limit: int = 50
+#     matchups_only: bool = False
+#     startyear: int = 2024
+#     # without_teammates: List[str] = Query([])
 
 
 ############################
@@ -31,23 +36,13 @@ class GamelogQuery(BaseModel):
 ############################
 
 
-@router.get("/{player_id}")
+@router.post("/{player_id}")
 async def get_gamelog_by_player_id(
     player_id: str,
-    query: GamelogQuery = Depends(),
-    without_teammates: list[str] = Query(None),
-    with_teammates: list[str] = Query(None),
+    query: GamelogQuery,
 ):
     try:
-        gamelog = filter_gamelog(
-            player_id=player_id,
-            query=query.query,
-            startyear=query.startyear,
-            matchups_only=query.matchups_only,
-            limit=query.limit,
-            without_teammates=without_teammates,
-            with_teammates=with_teammates,
-        )
+        gamelog = filter_gamelog(player_id=player_id, query=query)
 
         if gamelog.empty:
             return {"gamelog": [], "averages": []}
@@ -87,7 +82,7 @@ async def get_gamelog_by_player_id(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
     except Exception as e:
-        print(e)
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error retrieving the player's gamelogs. {e}",

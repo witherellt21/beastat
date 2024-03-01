@@ -17,32 +17,48 @@ function PlayerData({
     const [displayFrame, setDisplayFrame] = useState(0)
     const [gamelogData, setGamelogData] = useState({ "gamelog": [], "averages": [] });
     const [playerHitrates, setPlayerHitrates] = useState({});
-    // const [defese]
     const [queryFilters, setQueryFilters] = useState({
-        MP: '> 0',
-        // Games: 'matchup',
-        Date: '2000',
         matchups_only: false,
         limit: 100,
         withTeammates: [],
-        withoutTeammates: []
+        withoutTeammates: [],
+        gameLocation: null,
+        inStartingLineup: null,
+        minutes_played: {
+            min: 0,
+            max: null,
+        },
+        date: {
+            min: 2000,
+            max: null,
+        },
+        margin: {
+            min: null,
+            max: null,
+        },
+        daysRest: {
+            min: null,
+            max: null,
+        },
+
     });
 
     useEffect(() => {
-        let query = ''
+        // let query = ''
+        // let i = 0
+        // for (const [key, value] of Object.entries(queryFilters)) {
+        //     if (['Date', 'matchups_only', 'limit', 'withoutTeammates', 'withTeammates'].includes(`${key}`)) {
+        //         continue
+        //     }
+        //     if (i == 0) {
+        //         query = query + `${key} ${value}`
+        //     } else {
+        //         query = query + ` & ${key} ${value}`
+        //     }
+        //     i++
+        // }
 
-        let i = 0
-        for (const [key, value] of Object.entries(queryFilters)) {
-            if (['Date', 'matchups_only', 'limit', 'withoutTeammates', 'withTeammates'].includes(`${key}`)) {
-                continue
-            }
-            if (i == 0) {
-                query = query + `${key} ${value}`
-            } else {
-                query = query + ` & ${key} ${value}`
-            }
-            i++
-        }
+        console.log(queryFilters)
 
         let withoutTeammates_filter = ""
         for (const teammate of queryFilters.withoutTeammates) {
@@ -55,16 +71,32 @@ function PlayerData({
         }
 
 
-        axios.get(`http://localhost:3001/player-props/${player_id}/hitrates?query=${query}&&startyear=${queryFilters.Date}&&matchups_only=${queryFilters.matchups_only}&&limit=${queryFilters.limit}${withoutTeammates_filter}${withTeammates_filter}`).then(async (response) => {
+        // axios.get(`http://localhost:3001/player-props/${player_id}/hitrates?query=${query}&&startyear=${queryFilters.Date}&&matchups_only=${queryFilters.matchups_only}&&limit=${queryFilters.limit}${withoutTeammates_filter}${withTeammates_filter}`).then(async (response) => {
+        //     await setPlayerHitrates(response.data)
+        // }).catch((err) => {
+        //     console.log(err);
+        //     return null;
+        // });
+
+        axios.post(`http://localhost:3001/player-props/${player_id}/hitrates`, queryFilters).then(async (response) => {
             await setPlayerHitrates(response.data)
+            console.log(response.data)
         }).catch((err) => {
             console.log(err);
             return null;
         });
 
-        axios.get(`http://localhost:3001/gamelogs/${player_id}?query=${query}&&startyear=${queryFilters.Date}&&matchups_only=${queryFilters.matchups_only}&&limit=${queryFilters.limit}${withoutTeammates_filter}${withTeammates_filter}`).then(async (response) => {
+        axios.post(`http://localhost:3001/gamelogs/${player_id}`, queryFilters).then(async (response) => {
             await setGamelogData(response.data)
+        }).catch((err) => {
+            console.log(err);
+            return null;
         });
+
+
+        // axios.get(`http://localhost:3001/gamelogs/${player_id}?query=${query}&&startyear=${queryFilters.Date}&&matchups_only=${queryFilters.matchups_only}&&limit=${queryFilters.limit}${withoutTeammates_filter}${withTeammates_filter}`).then(async (response) => {
+        //     await setGamelogData(response.data)
+        // });
 
     }, [player_id, queryFilters])
 
@@ -124,8 +156,33 @@ function PlayerData({
                     }
                     {displayFrame == 0
                         ? (
-                            <div>
-                                < PlayerHitrates hitrates={playerHitrates} defense_rankings={defense_rankings} />
+                            <div className='flex flex-col items-center'>
+                                <div>
+                                    <div className='flex flex-row justify-end items-center space-x-2'>
+                                        <label className='text-xl font-bold'>All</label>
+                                        < PlayerHitrates hitrates={playerHitrates?.last_30} defense_rankings={defense_rankings} />
+                                    </div>
+                                    <div className='flex flex-row justify-end items-center space-x-2'>
+                                        <label className='text-xl font-bold'>Last 30</label>
+                                        < PlayerHitrates hitrates={playerHitrates?.last_30} defense_rankings={defense_rankings} />
+                                    </div>
+                                    <div className='flex flex-row justify-end items-center space-x-2'>
+                                        <label className='text-xl font-bold'>Last 20</label>
+                                        < PlayerHitrates hitrates={playerHitrates?.last_20} defense_rankings={defense_rankings} />
+                                    </div>
+                                    <div className='flex flex-row justify-end items-center space-x-2'>
+                                        <label className='text-xl font-bold'>Last 10</label>
+                                        < PlayerHitrates hitrates={playerHitrates?.last_20} defense_rankings={defense_rankings} />
+                                    </div>
+                                    <div className='flex flex-row justify-end items-center space-x-2'>
+                                        <label className='text-xl font-bold'>Last 5</label>
+                                        < PlayerHitrates hitrates={playerHitrates?.last_20} defense_rankings={defense_rankings} />
+                                    </div>
+
+                                    {/* < PlayerHitrates hitrates={playerHitrates?.last_20} defense_rankings={defense_rankings} />
+                                < PlayerHitrates hitrates={playerHitrates?.last_10} defense_rankings={defense_rankings} />
+                                < PlayerHitrates hitrates={playerHitrates?.last_5} defense_rankings={defense_rankings} /> */}
+                                </div>
                             </div>
                         )
                         : (
@@ -134,6 +191,18 @@ function PlayerData({
                     }
                 </div>
             </div>
+            {/* {Object.entries(queryFilters).map((key, value) => {
+                if (!typeof value === 'object') {
+                    return (
+                        <div>{value} {key}</div>
+                    )
+                }
+                // return (
+                //     <div>{value} {key}</div>
+                // )
+                // <div>{value} {key}</div>
+                // <div>{key}</div>
+            })} */}
             {showFiltersMenu &&
                 <FiltersMenu
                     show={showFiltersMenu}

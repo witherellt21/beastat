@@ -15,8 +15,6 @@ function GamelogTable({ gamelogData }) {
         id: "Date"
     }]);
 
-    console.log(gamelogData)
-
     const tableInstance = useReactTable({
         columns: columnDef,
         data: gamelogData,

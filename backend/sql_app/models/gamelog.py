@@ -4,6 +4,7 @@ from peewee import FloatField
 from peewee import ForeignKeyField
 from peewee import UUIDField
 from peewee import IntegerField
+from peewee import BooleanField
 from sql_app.models.base import BaseModel
 from sql_app.models.player_info import Player
 
@@ -16,6 +17,7 @@ class Gamelog(BaseModel):
     Age = CharField()
     Tm = CharField()
     Opp = CharField()
+    home = BooleanField()
     result = CharField()
     margin = IntegerField()
     GS = FloatField(null=True)
