@@ -27,7 +27,6 @@ function GamelogTable({ gamelogData }) {
     })
 
     return (
-        // <div className='flex flex-col grow-0 justify-center'>
         <table className='table-auto'>
             <thead>
                 {tableInstance.getHeaderGroups().map((headerElement) => {
@@ -83,7 +82,6 @@ function GamelogTable({ gamelogData }) {
                 })}
             </tfoot>
         </table>
-        // </div >
     )
 }
 

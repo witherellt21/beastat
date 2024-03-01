@@ -7,12 +7,7 @@ function PlayerHitrates({
 
 
     return (
-        <div className='flex flex-col p-8 rounded-b-xl'>
-            {/* <h1 className='flex-1 font-bold text-2xl'>
-                Stat Hit-Rates
-            </h1> */}
-            {/* <div className='grid grid-rows-1 grid-flow-col gap-4 bg-red-500'>
-             */}
+        <div className='flex flex-col'>
             <div className='p-4 flex flex-row justify-center space-x-2'>
                 <div
                     className={' min-w-32 max-w-48 flex flex-col flex-grow px-4 py-2 border-2 border-gray-900 rounded-lg ' + `

@@ -100,6 +100,7 @@ def filter_gamelog(
     # career_gamelog = career_gamelog[
     #     career_gamelog["MP"] >= average_minutes_played * 0.9
     # ]
+<<<<<<< Updated upstream
     filtered_gamelog: pd.DataFrame = gamelog.query(query)
     filtered_gamelog = filtered_gamelog.fillna("")
 
@@ -107,6 +108,105 @@ def filter_gamelog(
         try:
             filtered_gamelog = filtered_gamelog[
                 filtered_gamelog["Date"].dt.year >= int(startyear)
+=======
+    # if query:
+    #     print(query)
+    #     gamelog: pd.DataFrame = gamelog.query(query.query)
+    # print(gamelog["days_rest"].astype(float))
+
+    if query.minutes_played.min:
+        gamelog = gamelog[gamelog["MP"] > query.minutes_played.min]
+
+    if query.minutes_played.max:
+        gamelog = gamelog[gamelog["MP"] < query.minutes_played.max]
+
+    if query.inStartingLineup is not None:
+        gamelog = gamelog[gamelog["GS"] == query.inStartingLineup]
+
+    # Filter between dates.
+    # gamelog = filter_with_bounds(query)
+    # over_bound = (
+    #     gamelog[gamelog["Date"].dt.year >= query.date.min]
+    #     if query.date.min
+    #     else pd.DataFrame()
+    # )
+    # under_bound = (
+    #     gamelog[gamelog["Date"].dt.year <= query.date.max]
+    #     if query.date.max
+    #     else pd.DataFrame()
+    # )
+
+    # print(over_bound)
+    # gamelog = pd.concat([over_bound, under_bound])
+
+    # Filter by W/L margin
+    gamelog = filter_with_bounds(
+        gamelog, "margin", (query.margin.min, query.margin.max)
+    )
+
+    gamelog = filter_with_bounds(
+        gamelog, "days_rest", (query.daysRest.min, query.daysRest.max)
+    )
+
+    if query.gameLocation == "home":
+        gamelog = gamelog[gamelog["home"] == True]
+    elif query.gameLocation == "away":
+        gamelog = gamelog[gamelog["home"] == False]
+
+    if query.withoutTeammates:
+        for teammate in query.withoutTeammates:
+            teammate_id = get_player_id(player_name=teammate)
+
+            # TODO: move this inside of the get_player_id function
+            if not teammate_id:
+                raise DBNotFoundException(
+                    f"No player id found for teammate: {teammate}."
+                )
+
+            teammate_gamelogs = Gamelogs.filter_records(
+                query={"player_id": teammate_id}, as_df=True
+            )
+
+            if teammate_gamelogs.empty:
+                logger.warning(f"No gamelogs for teammate {teammate}.")
+                continue
+
+            overlapping_games = gamelog.merge(
+                teammate_gamelogs, on=["Date", "Tm"], suffixes=("", "_x")
+            )
+
+            if overlapping_games.empty:
+                logger.warning(f"No overlapping games with teammate {teammate}.")
+                continue
+
+            games_without_teammate = overlapping_games[
+                overlapping_games["G_x"].isnull()
+            ]
+
+            gamelog = games_without_teammate[gamelog.columns]
+
+    if query.withTeammates:
+        for teammate_id in query.withTeammates:
+
+            teammate_gamelogs = Gamelogs.filter_records(
+                query={"player_id": teammate_id}, as_df=True
+            )
+
+            if teammate_gamelogs.empty:
+                logger.warning(f"No gamelogs for teammate {teammate_id}.")
+                continue
+
+            overlapping_games = gamelog.merge(
+                teammate_gamelogs, on=["Date", "Tm"], suffixes=("", "_x")
+            )
+
+            if overlapping_games.empty:
+                logger.warning(f"No overlapping games with teammate {teammate_id}.")
+                continue
+
+            games_with_teammate = overlapping_games[
+                overlapping_games["G_x"].isnull() == False
+>>>>>>> Stashed changes
             ]
         except Exception as e:
             print(e)

@@ -135,37 +135,4 @@ export const propLinesColumns = [
         ],
     }),
 
-    //     columnHelper.accessor('TRB', {
-    //         cell: info => info.getValue(),
-    //         header: () => <span className='px-4'>TRB</span>,
-    //     }),
-    //     columnHelper.accessor('PA', {
-    //         cell: info => info.getValue(),
-    //         header: () => <span className='px-4'>PA</span>,
-    //     }),
-    //     columnHelper.accessor('PR', {
-    //         cell: info => info.getValue(),
-    //         header: () => <span className='px-4'>PR</span>,
-    //     }),
-    //     columnHelper.accessor('RA', {
-    //         cell: info => info.getValue(),
-    //         header: () => <span className='px-4'>RA</span>,
-    //     }),
-    //     columnHelper.accessor('PRA', {
-    //         cell: info => info.getValue(),
-    //         header: () => <span className='px-4'>PRA</span>,
-    //     }),
-    //     columnHelper.accessor('STL', {
-    //         cell: info => info.getValue(),
-    //         header: () => <span className='px-4'>STL</span>,
-    //     }),
-    //     columnHelper.accessor('BLK', {
-    //         cell: info => info.getValue(),
-    //         header: () => <span className='px-4'>BLK</span>,
-    //     }),
-    //     columnHelper.accessor('THP', {
-    //         cell: info => info.getValue(),
-    //         header: () => <span className='px-4'>THP</span>,
-    //     }),
-
 ]

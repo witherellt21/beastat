@@ -86,6 +86,19 @@ class PlayerInfoScraper(AbstractBaseScraper):
     ) -> pd.DataFrame:
         return datasets[0]
 
+    def scrape_data(self, *, url: str) -> list[pd.DataFrame] | None:
+        try:
+            datasets: list[pd.DataFrame] = pd.read_html(url, extract_links="body")
+        except ValueError as e:
+            self.logger.warning(f"{e} at url: {url}")
+            return None
+
+        return datasets
+
+    def configure_data(self, *, data: pd.DataFrame) -> pd.DataFrame:
+        data["Wt"] = data["Wt"].replace("", 0)
+        return super().configure_data(data=data)
+
 
 if __name__ == "__main__":
 
