@@ -2,10 +2,11 @@ import pandas as pd
 from fastapi import APIRouter
 
 from sql_app.register.defense_ranking import DefenseRankings
-from sql_app.register.player_prop import PlayerProps
 from sql_app.register.player_prop import PropLines
 from sql_app.register.gamelog import Gamelogs
 from sql_app.register.lineup import Lineups
+from sql_app.register.game import Games
+from sql_app.serializers.game import GameSerializer
 from sql_app.serializers.lineup import LineupSerializer
 from typing import List
 
@@ -34,16 +35,19 @@ async def get_defense_rankings_by_team_and_position(team_abr: str, position: str
 
 @router.get("/game/{game_id}/{position}")
 async def get_defense_rankings_for_game(game_id: str, position: str):
-    try:
-        lineup: LineupSerializer = Lineups.get_record(query={"game_id": game_id, "home": True})  # type: ignore
-    except:
+    game: GameSerializer = Games.get_record(query={"id": game_id})  # type: ignore
+
+    if not game:
         return {}
 
+    # TODO: Temporary solution to team_abr problems
+    team_abr = {"UTA": "UTH", "PHX": "PHO"}
+
     home_stat_rankings = DefenseRankings.filter_records(
-        query={"team_abr": lineup.team}, as_df=True
+        query={"team_abr": team_abr.get(game.home, game.home)}, as_df=True
     )
     away_stat_rankings = DefenseRankings.filter_records(
-        query={"team_abr": lineup.opp}, as_df=True
+        query={"team_abr": team_abr.get(game.away, game.away)}, as_df=True
     )
 
     home_stat_rankings = home_stat_rankings[["stat", position]]

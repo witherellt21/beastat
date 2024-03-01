@@ -4,11 +4,6 @@ import { createColumnHelper } from '@tanstack/react-table';
 const columnHelper = createColumnHelper();
 
 export const columnDef = [
-    columnHelper.accessor('player_id', {
-        cell: info => info.getValue(),
-        header: () => <span>Player ID</span>,
-        footer: props => props.column.id,
-    }),
     columnHelper.accessor('Date', {
         cell: info => info.getValue(),
         header: () => <span>Date</span>,
@@ -23,9 +18,18 @@ export const columnDef = [
         cell: info => info.getValue(),
         header: () => <span>Opp</span>,
     }),
-    columnHelper.accessor('streak', {
+    columnHelper.accessor(row => row.home ? 'H' : 'A', {
+        id: 'home',
         cell: info => info.getValue(),
-        header: () => <span>Streak</span>,
+        header: () => <span>Loc</span>,
+    }),
+    columnHelper.accessor('result', {
+        cell: info => info.getValue(),
+        header: () => <span>Result</span>,
+    }),
+    columnHelper.accessor('margin', {
+        cell: info => info.getValue(),
+        header: () => <span>Margin</span>,
     }),
     columnHelper.accessor('GS', {
         cell: info => info.getValue(),
@@ -101,6 +105,10 @@ export const columnDef = [
     columnHelper.accessor('PF', {
         cell: info => info.getValue(),
         header: () => <span>PF</span>,
+    }),
+    columnHelper.accessor('days_rest', {
+        cell: info => info.getValue(),
+        header: () => <span>Rest (days)</span>,
     }),
 
 ]

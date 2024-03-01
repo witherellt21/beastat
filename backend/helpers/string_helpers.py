@@ -2,9 +2,13 @@ import os
 import re
 
 from global_implementations import constants
-from fuzzywuzzy import process
+from fuzzywuzzy import process, fuzz
 from unidecode import unidecode
 from typing import Optional, Sequence
+
+import logging
+
+logger = logging.getLogger("main")
 
 
 RENAME = {
@@ -80,12 +84,24 @@ def find_closest_match(
         if type(match_name) != str or type(match_validity) != int:
             return False
 
-        match_last_name = match_name.split(" ")
-        search_last_name = value.split(" ")
+        try:
+            match_last_name = match_name.split(" ", 1)[1].lower()
+            search_last_name = value.split(" ", 1)[1].lower()
+        except IndexError as e:
+            logger.error(f"{e}. {match_name} and {value}")
+            return False
+
+        match_last_name = re.sub(
+            r"[\.\s]*(jr|sr|I|II|III|IV|V)[\.]*", "", search_last_name
+        )
+        search_last_name = re.sub(
+            r"[\.\s]*(jr|sr|I|II|III|IV|V)[\.]*", "", search_last_name
+        )
 
         if len(match_last_name) >= 2 and len(search_last_name) >= 2:
             return (
-                match_last_name[1] == search_last_name[1]
+                fuzz.ratio(match_last_name, search_last_name)
+                > constants.DEFAULT_MATCH_THRESHOLD
                 and match[1] >= match_threshold
             )
 
@@ -116,6 +132,6 @@ if __name__ == "__main__":
     # print(player_id)
 
     matched = find_closest_match(
-        value="Walker Kessler", search_list=["Nickeil Alexander-Walker"]
+        value="Donte Divincenzo", search_list=["Donte DiVincenzo"]
     )
     print(matched)

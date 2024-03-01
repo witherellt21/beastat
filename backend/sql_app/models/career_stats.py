@@ -1,11 +1,15 @@
 from peewee import CharField
 from peewee import FloatField
 from peewee import IntegerField
+from peewee import ForeignKeyField
+from peewee import UUIDField
 from sql_app.models.base import BaseModel
+from sql_app.models.player_info import Player
 
 
 class CareerStats(BaseModel):
-    player_id = CharField()
+    id = UUIDField(primary_key=True, unique=True)
+    player = ForeignKeyField(Player, backref="career_stats")
     Season = CharField()
     Age = IntegerField()
     Tm = CharField()

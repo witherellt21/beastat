@@ -1,2 +1,2 @@
-class NoDataFoundException(BaseException):
+class DBNotFoundException(BaseException):
     pass

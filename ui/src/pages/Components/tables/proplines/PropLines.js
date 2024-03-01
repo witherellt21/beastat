@@ -18,6 +18,14 @@ function PropLines({ propData }) {
         THP_under_implied: false,
         TRB_over_implied: false,
         TRB_under_implied: false,
+        PRA_over_implied: false,
+        PRA_under_implied: false,
+        PA_over_implied: false,
+        PA_under_implied: false,
+        PR_over_implied: false,
+        PR_under_implied: false,
+        RA_over_implied: false,
+        RA_under_implied: false,
     })
 
     const tableInstance = useReactTable({
