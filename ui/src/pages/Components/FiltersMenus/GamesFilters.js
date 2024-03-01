@@ -51,7 +51,7 @@ function GamesFilters({
     return (
         <div className='flex flex-col h-full'>
             <MenuTitle title="Filter Game Subset" />
-            <div class="flex flex-col w-full h-full p-5 text-black dark:text-gray-200 bg-gray-200">
+            <div className="flex flex-col w-full h-full p-5 text-black dark:text-gray-200 bg-gray-200">
                 <form
                     className="flex flex-col w-full h-full"
 

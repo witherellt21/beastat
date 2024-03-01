@@ -1,5 +1,5 @@
 import time
-from typing import Optional
+from typing import Literal, Optional
 from typing import TypedDict
 from typing import Unpack
 from typing import Type
@@ -66,6 +66,9 @@ class ScraperKwargs(TypedDict, total=False):
     datetime_columns: dict[str, str]
     query_save_columns: dict[str, str] | list[str]
     refresh_rate: int
+    # log_level: Literal[
+    #     logging.NOTSET, logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR
+    # ]
 
 
 class AbstractBaseScraper(ABC, threading.Thread):

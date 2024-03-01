@@ -48,11 +48,11 @@ async def get_gamelog_by_player_id(
             return {"gamelog": [], "averages": []}
 
         last_30 = gamelog.tail(30)
-        last_30_avg = last_30.mean(numeric_only=True).round(1).to_dict()
+        last_30_avg = last_30.mean(numeric_only=True).to_dict()
         last_10 = gamelog.tail(10)
-        last_10_avg = last_10.mean(numeric_only=True).round(1).to_dict()
+        last_10_avg = last_10.mean(numeric_only=True).to_dict()
         last_3 = gamelog.tail(3)
-        last_3_avg = last_3.mean(numeric_only=True).round(1).to_dict()
+        last_3_avg = last_3.mean(numeric_only=True).to_dict()
 
         last_30_avg["Season"] = "Last 30"
         last_10_avg["Season"] = "Last 10"

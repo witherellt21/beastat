@@ -112,7 +112,6 @@ class GamelogScraper(AbstractBaseScraper):
         self, *, datasets: list[pd.DataFrame]
     ) -> pd.DataFrame:
         # TODO: This filter seems awfully presumptuous, maybe we should change it at some point
-        print(list(filter(lambda x: x.shape[1] == 30, datasets))[0])
         return list(filter(lambda x: x.shape[1] == 30, datasets))[0]
 
     def is_cached(self, *, query: QueryDictForm) -> bool:

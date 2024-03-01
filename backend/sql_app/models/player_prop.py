@@ -1,6 +1,5 @@
 from peewee import (
     CharField,
-    AutoField,
     FloatField,
     IntegerField,
     ForeignKeyField,
@@ -8,11 +7,6 @@ from peewee import (
 )
 from sql_app.models.base import BaseModel
 from sql_app.models.player_info import Player
-
-
-class PlayerBet(BaseModel):
-    player_id = CharField(unique=True)
-    name = CharField()
 
 
 class PropLine(BaseModel):

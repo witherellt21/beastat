@@ -6,10 +6,7 @@ from helpers.db_helpers import (
     filter_gamelog,
     GamelogQuery,
 )
-from sql_app.serializers.player_prop import PlayerPropSerializer
-from sql_app.serializers.player_prop import ReadPlayerPropSerializer
 from sql_app.serializers.player_prop import ReadPropLineSerializer
-from sql_app.register.player_prop import PlayerProps
 from sql_app.register.player_prop import PropLines
 from sql_app.register.gamelog import Gamelogs
 from typing import List, Optional
@@ -99,7 +96,7 @@ async def get_player_hitrates(
             sublog = gamelog.tail(limit)
             stat_overs = sublog[sublog[line.stat] >= line.line]
             hitrates_per_limit[line.stat] = round(
-                len(stat_overs) / limit * 100, ndigits=2
+                len(stat_overs) / len(sublog) * 100, ndigits=2
             )
         identifier = "all" if limit == total_number_of_games else f"last_{limit}"
         hitrates[identifier] = hitrates_per_limit

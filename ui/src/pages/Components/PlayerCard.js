@@ -4,12 +4,13 @@ function PlayerCard({
     player,
     position,
     seasonAverages,
+    team
 }) {
     return (
         <div className='relative w-48 min-h-44 h-full p-2 border border-black rounded-lg' id='player_card'>
             <img
-                src={"https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/pho.png&h=180&w=180"}
-                className='absolute opacity-10 top-2 z-0'
+                src={"https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/" + `${team}` + ".png&h=160&w=160"}
+                className='absolute opacity-10 top-2 left-3.5 z-0'
             >
             </img>
             <div className='absolute top-0 left-0 h-full w-full z-10'>

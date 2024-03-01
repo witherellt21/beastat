@@ -4,11 +4,9 @@ import re
 
 from data_scrape.abstract_base_scraper import AbstractBaseScraper
 from helpers.db_helpers import get_player_id
-from sql_app.register.player_prop import PlayerProps
 from sql_app.register.player_prop import PropLines
 from sql_app.register import Games
 from sql_app.register.player_info import Players
-from sql_app.serializers.player_prop import PlayerPropSerializer
 from typing import Callable, Optional
 import threading
 import traceback
@@ -127,6 +125,10 @@ class PlayerPropsScraper(AbstractBaseScraper):
         "assists": "AST",
         "threes": "THP",
         "rebounds": "TRB",
+        "pts-+-reb-+-ast": "PRA",
+        "pts-+-reb": "PR",
+        "pts-+-ast": "PA",
+        "ast-+-reb": "RA",
     }
     TRANSFORMATIONS = {
         ("name", "player_id"): lambda name: get_player_id(player_name=name),
@@ -134,7 +136,7 @@ class PlayerPropsScraper(AbstractBaseScraper):
     }
     # STAT_AUGMENTATIONS =
     DATA_TRANSFORMATIONS = [get_player_props]
-    QUERY_SAVE_COLUMNS = {"stat": "stat_category"}
+    QUERY_SAVE_COLUMNS = {"stat": "stat_subcategory"}
     REQUIRED_COLUMNS = ["player_id"]
 
     TABLE = PropLines
@@ -157,11 +159,19 @@ class PlayerPropsScraper(AbstractBaseScraper):
             {"stat_category": "assists", "stat_subcategory": "assists"},
             {"stat_category": "threes", "stat_subcategory": "threes"},
             {"stat_category": "rebounds", "stat_subcategory": "rebounds"},
+            {"stat_category": "combos", "stat_subcategory": "pts-+-reb-+-ast"},
+            {"stat_category": "combos", "stat_subcategory": "pts-+-reb"},
+            {"stat_category": "combos", "stat_subcategory": "pts-+-ast"},
+            {"stat_category": "combos", "stat_subcategory": "ast-+-reb"},
         ]
 
-    def configure_data(self, *, data: pd.DataFrame) -> pd.DataFrame:
-        self.logger.debug(data)
-        return super().configure_data(data=data)
+    # def configure_data(self, *, data: pd.DataFrame) -> pd.DataFrame:
+    #     self.logger.debug(data.to_string())
+    #     return super().configure_data(data=data)
+
+    # def cache_data(self, *, data: pd.DataFrame) -> None:
+    #     self.logger.debug(data)
+    #     # return super().cache_data(data=data)
 
 
 def test_scraper_thread():
@@ -184,5 +194,5 @@ if __name__ == "__main__":
     # test_scraper_thread()
     player_props = PlayerPropsScraper()
     player_props.get_data(
-        query={"stat_category": "points", "stat_subcategory": "points"}
+        query={"stat_category": "combos", "stat_subcategory": "pts-%2B-reb"}
     )

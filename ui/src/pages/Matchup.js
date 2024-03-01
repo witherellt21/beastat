@@ -218,12 +218,14 @@ function Matchup() {
                                 player={matchup?.home_player}
                                 position={matchup?.position}
                                 seasonAverages={homePlayerSeasonAverages}
+                                team={matchup?.game?.home}
                             ></PlayerCard>
                         ) : (
                             <PlayerCard
                                 player={matchup?.away_player}
                                 position={matchup?.position}
                                 seasonAverages={awayPlayerSeasonAverages}
+                                team={matchup?.game?.away}
                             ></PlayerCard>
                         )
                     }

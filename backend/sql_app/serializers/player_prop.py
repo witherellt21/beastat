@@ -5,18 +5,6 @@ from pydantic import UUID4
 from sql_app.serializers.player_info import PlayerSerializer
 
 
-class PlayerPropSerializer(BaseSerializer):
-    player_id: str
-    name: str
-    # stat: str
-    # line: float
-    # odds_over: int
-    # implied_odds_over: float
-    # odds_under: int
-    # implied_odds_under: float
-    # timestamp: datetime.datetime
-
-
 class PlayerPropTableEntrySerializer(BaseSerializer):
     id: UUID4
     player_id: str
@@ -48,10 +36,3 @@ class ReadPropLineSerializer(BaseSerializer):
     over_implied: float
     under_implied: float
     player: Optional[PlayerSerializer]
-
-
-class ReadPlayerPropSerializer(BaseSerializer):
-    id: int
-    player_id: str
-    name: str
-    # lines: "list[PropLineSerializer]"

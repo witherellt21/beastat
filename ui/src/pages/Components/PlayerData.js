@@ -44,19 +44,6 @@ function PlayerData({
     });
 
     useEffect(() => {
-        // let query = ''
-        // let i = 0
-        // for (const [key, value] of Object.entries(queryFilters)) {
-        //     if (['Date', 'matchups_only', 'limit', 'withoutTeammates', 'withTeammates'].includes(`${key}`)) {
-        //         continue
-        //     }
-        //     if (i == 0) {
-        //         query = query + `${key} ${value}`
-        //     } else {
-        //         query = query + ` & ${key} ${value}`
-        //     }
-        //     i++
-        // }
 
         console.log(queryFilters)
 
@@ -69,14 +56,6 @@ function PlayerData({
         for (const teammate of queryFilters.withTeammates) {
             withTeammates_filter = withTeammates_filter + "&&with_teammates=" + teammate
         }
-
-
-        // axios.get(`http://localhost:3001/player-props/${player_id}/hitrates?query=${query}&&startyear=${queryFilters.Date}&&matchups_only=${queryFilters.matchups_only}&&limit=${queryFilters.limit}${withoutTeammates_filter}${withTeammates_filter}`).then(async (response) => {
-        //     await setPlayerHitrates(response.data)
-        // }).catch((err) => {
-        //     console.log(err);
-        //     return null;
-        // });
 
         axios.post(`http://localhost:3001/player-props/${player_id}/hitrates`, queryFilters).then(async (response) => {
             await setPlayerHitrates(response.data)
@@ -92,11 +71,6 @@ function PlayerData({
             console.log(err);
             return null;
         });
-
-
-        // axios.get(`http://localhost:3001/gamelogs/${player_id}?query=${query}&&startyear=${queryFilters.Date}&&matchups_only=${queryFilters.matchups_only}&&limit=${queryFilters.limit}${withoutTeammates_filter}${withTeammates_filter}`).then(async (response) => {
-        //     await setGamelogData(response.data)
-        // });
 
     }, [player_id, queryFilters])
 
@@ -172,11 +146,11 @@ function PlayerData({
                                     </div>
                                     <div className='flex flex-row justify-end items-center space-x-2'>
                                         <label className='text-xl font-bold'>Last 10</label>
-                                        < PlayerHitrates hitrates={playerHitrates?.last_20} defense_rankings={defense_rankings} />
+                                        < PlayerHitrates hitrates={playerHitrates?.last_10} defense_rankings={defense_rankings} />
                                     </div>
                                     <div className='flex flex-row justify-end items-center space-x-2'>
                                         <label className='text-xl font-bold'>Last 5</label>
-                                        < PlayerHitrates hitrates={playerHitrates?.last_20} defense_rankings={defense_rankings} />
+                                        < PlayerHitrates hitrates={playerHitrates?.last_5} defense_rankings={defense_rankings} />
                                     </div>
 
                                     {/* < PlayerHitrates hitrates={playerHitrates?.last_20} defense_rankings={defense_rankings} />

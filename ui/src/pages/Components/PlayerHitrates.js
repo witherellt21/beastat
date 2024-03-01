@@ -101,6 +101,27 @@ function PlayerHitrates({
                         </div>
                     </div>
                 </div>
+                <div
+                    className={' min-w-32 max-w-48 flex flex-col flex-grow px-4 py-2 border-2 border-gray-900 rounded-lg ' + `
+                        ${hitrates?.PRA > 50
+                            ? 'bg-green-300'
+                            : 'bg-red-300'
+                        }
+                    `}
+                >
+                    <label className='text-xl'>PRA</label>
+                    <div className='mt-2 flex justify-center'>
+                        <div className='text-4xl border-2 border-black border-opacity-10 p-2 rounded-2xl'>
+                            {hitrates?.PRA}%
+                        </div>
+                    </div>
+                    <div className='flex items-center border-2 border-black border-opacity-10 p-2 mt-2 rounded-2xl'>
+                        <span>Defense Rank:</span>
+                        <div className='pl-2'>
+                            {defense_rankings?.PRA}
+                        </div>
+                    </div>
+                </div>
 
             </div>
         </div >

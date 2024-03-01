@@ -95,8 +95,8 @@ class GamelogQuery(BaseModel):
     matchups_only: bool = False
     date: BoundedQuery = BoundedQuery()
     daysRest: BoundedQuery = BoundedQuery()
-    without_teammates: list[str] = []
-    with_teammates: list[str] = []
+    withoutTeammates: list[str] = []
+    withTeammates: list[str] = []
 
 
 def filter_gamelog(*, player_id: str, query: GamelogQuery) -> pd.DataFrame:
@@ -171,8 +171,8 @@ def filter_gamelog(*, player_id: str, query: GamelogQuery) -> pd.DataFrame:
     # if query.margin.under:
     #     gamelog = gamelog[gamelog["margin"] <= query.margin.under]
 
-    if query.without_teammates:
-        for teammate in query.without_teammates:
+    if query.withoutTeammates:
+        for teammate in query.withoutTeammates:
             # if with_teammates:
             # for teammate in with_teammates:
             teammate_id = get_player_id(player_name=teammate)
@@ -205,8 +205,10 @@ def filter_gamelog(*, player_id: str, query: GamelogQuery) -> pd.DataFrame:
 
             gamelog = games_without_teammate[gamelog.columns]
 
-    if query.with_teammates:
-        for teammate_id in query.with_teammates:
+    print(query.withTeammates)
+
+    if query.withTeammates:
+        for teammate_id in query.withTeammates:
 
             teammate_gamelogs = Gamelogs.filter_records(
                 query={"player_id": teammate_id}, as_df=True
