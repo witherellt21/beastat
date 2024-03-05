@@ -1,3 +1,4 @@
+import datetime
 import time
 import numpy as np
 import pandas as pd
@@ -14,6 +15,7 @@ from sql_app.register.gamelog import Gamelogs
 from sql_app.register.player_info import Players
 from typing import List, Optional
 from pydantic import BaseModel
+from global_implementations import constants
 
 # from pydantic.utils import deep_update
 from sql_app.register.gamelog import GamelogQuery
@@ -89,8 +91,14 @@ def list_all_active_props():
             continue
 
         filters = {
-            "greater_than": {"MP": avg_mp * 0.8},
+            "greater_than": {
+                "MP": avg_mp * 0.8,
+                "Date": datetime.datetime(
+                    year=constants.CURRENT_SEASON - 1, month=6, day=1
+                ),
+            },
             "less_than": {"MP": avg_mp * 1.2},
+            "equal_to": {"GS": 1},
         }
 
         lines[["over_value", "under_value"]] = lines.apply(
@@ -193,16 +201,25 @@ async def get_player_hitrates(
         for limit in [total_number_of_games, 30, 20, 10, 5, 3]:
             sublog = gamelog.tail(limit)
             stat_overs = sublog[sublog[line.stat] >= line.line]
+            # line_hitrate[
+            #     "all" if limit == total_number_of_games else f"last_{limit}"
+            # ] = round(len(stat_overs) / len(sublog) * 100, ndigits=2)
+            hitrate = round(len(stat_overs) / len(sublog) * 100, ndigits=2)
+            average = sublog[line.stat].sum() / len(sublog)
             line_hitrate[
                 "all" if limit == total_number_of_games else f"last_{limit}"
-            ] = round(len(stat_overs) / len(sublog) * 100, ndigits=2)
+            ] = {"hitrate": hitrate, "average": average}
 
         line_hitrate["line"] = line.line
-        line_hitrate["gamelog"] = [
-            gamelog[["Date", line.stat]]
-            .rename(columns={line.stat: "value"})
-            .to_dict(orient="records")
-        ]
+        # line_hitrate["gamelog"] = [
+        #     gamelog[["Date", line.stat]]
+        #     .rename(columns={line.stat: "value"})
+        #     .to_dict(orient="records")
+        # ]
+        line_hitrate["gamelog"] = {
+            "labels": list(gamelog["Date"].dt.date.values.astype(str)),
+            "values": list(gamelog[line.stat].values),
+        }
         hitrates[line.stat] = line_hitrate
 
     return hitrates

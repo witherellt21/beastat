@@ -5,7 +5,7 @@ DATA_SCRAPE: dict[str, dict[str, Any]] = {
     "PlayerInfo": {"status": False},
     "DefenseRankings": {"status": True},
     "PlayerProps": {"status": True},
-    "Lineups": {"status": False},
+    "Lineups": {"status": True},
     "CareerStats": {
         "status": False,
         "options": {"identifier_source": "all", "log_level": logging.INFO},
