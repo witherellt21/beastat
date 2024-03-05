@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import Gamelog from './Gamelog';
-import PlayerHitrates from './PlayerHitrates';
+// import PlayerHitrates from './PlayerHitrates';
+import { PlayerHitrates } from './PlayerHitrates2';
 import FiltersMenu from './FiltersMenu';
 import axios from 'axios';
 import StatAveragesTable from './tables/stat_averages/StatAveragesTable'
@@ -130,31 +131,33 @@ function PlayerData({
                     }
                     {displayFrame == 0
                         ? (
-                            <div className='flex flex-col items-center'>
-                                <div>
-                                    <div className='flex flex-row justify-end items-center space-x-2'>
-                                        <label className='text-xl font-bold'>All</label>
-                                        < PlayerHitrates hitrates={playerHitrates?.last_30} defense_rankings={defense_rankings} />
-                                    </div>
-                                    <div className='flex flex-row justify-end items-center space-x-2'>
-                                        <label className='text-xl font-bold'>Last 30</label>
-                                        < PlayerHitrates hitrates={playerHitrates?.last_30} defense_rankings={defense_rankings} />
-                                    </div>
-                                    <div className='flex flex-row justify-end items-center space-x-2'>
-                                        <label className='text-xl font-bold'>Last 20</label>
-                                        < PlayerHitrates hitrates={playerHitrates?.last_20} defense_rankings={defense_rankings} />
-                                    </div>
-                                    <div className='flex flex-row justify-end items-center space-x-2'>
-                                        <label className='text-xl font-bold'>Last 10</label>
-                                        < PlayerHitrates hitrates={playerHitrates?.last_10} defense_rankings={defense_rankings} />
-                                    </div>
-                                    <div className='flex flex-row justify-end items-center space-x-2'>
-                                        <label className='text-xl font-bold'>Last 5</label>
-                                        < PlayerHitrates hitrates={playerHitrates?.last_5} defense_rankings={defense_rankings} />
-                                    </div>
+                            // <div className='flex flex-col items-center'>
+                            // <div></div>
+                            < PlayerHitrates hitrates={playerHitrates} defense_rankings={defense_rankings} />
+                            // <div>
+                            // {/* <div className='flex flex-row justify-end items-center space-x-2'>
+                            //     <label className='text-xl font-bold'>All</label>
+                            //     < PlayerHitrates hitrates={playerHitrates} defense_rankings={defense_rankings} />
+                            // </div> */}
+                            // {/* <div className='flex flex-row justify-end items-center space-x-2'>
+                            //                 <label className='text-xl font-bold'>Last 30</label>
+                            //                 < PlayerHitrates hitrates={playerHitrates?.last_30} defense_rankings={defense_rankings} />
+                            //             </div>
+                            //             <div className='flex flex-row justify-end items-center space-x-2'>
+                            //                 <label className='text-xl font-bold'>Last 20</label>
+                            //                 < PlayerHitrates hitrates={playerHitrates?.last_20} defense_rankings={defense_rankings} />
+                            //             </div>
+                            //             <div className='flex flex-row justify-end items-center space-x-2'>
+                            //                 <label className='text-xl font-bold'>Last 10</label>
+                            //                 < PlayerHitrates hitrates={playerHitrates?.last_10} defense_rankings={defense_rankings} />
+                            //             </div>
+                            //             <div className='flex flex-row justify-end items-center space-x-2'>
+                            //                 <label className='text-xl font-bold'>Last 5</label>
+                            //                 < PlayerHitrates hitrates={playerHitrates?.last_5} defense_rankings={defense_rankings} />
+                            //             </div> */}
 
-                                </div>
-                            </div>
+                            // </div>
+                            // </div>
                         )
                         : (
                             <div />
@@ -174,7 +177,8 @@ function PlayerData({
                 // <div>{value} {key}</div>
                 // <div>{key}</div>
             })} */}
-            {showFiltersMenu &&
+            {
+                showFiltersMenu &&
                 <FiltersMenu
                     show={showFiltersMenu}
                     close={() => setShowFiltersMenu(false)}
@@ -183,7 +187,7 @@ function PlayerData({
                     team_lineup={team_lineup}
                 />
             }
-        </div>
+        </div >
     )
 }
 
