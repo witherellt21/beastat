@@ -193,8 +193,6 @@ class GamelogScraper(AbstractBaseScraper):
                 )
                 continue
 
-        self.logger.debug(f"Getting gamelogs for {query_set}")
-
         return query_set
 
     def clean(self, *, data: pd.DataFrame) -> pd.DataFrame:

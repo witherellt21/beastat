@@ -2,6 +2,7 @@ import './App.css';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import Home from "./pages/Home";
 import Matchup from "./pages/Matchup"
+import Props from './pages/Props';
 
 
 function App() {
@@ -26,7 +27,8 @@ function App() {
                 <a href="#" class="block text-white rounded" aria-current="page">Home</a>
               </li> */}
               <>
-                <Link to="/"> Home Page</Link>
+                <Link to="/"> Games</Link>
+                <Link to="/props"> Props</Link>
               </>
             </ul>
           </div>
@@ -34,6 +36,7 @@ function App() {
         <Routes>
           <Route path="/" exact Component={Home} />
           <Route path="/matchup/:id" exact Component={Matchup} />
+          <Route path="/props" exact Component={Props} />
           {/* <Route path="/matchup/:id" exact Component={Matchup} /> */}
         </Routes>
       </Router>
