@@ -4,7 +4,7 @@ import logging
 DATA_SCRAPE: dict[str, dict[str, Any]] = {
     "PlayerInfo": {"status": False},
     "DefenseRankings": {"status": True},
-    "PlayerProps": {"status": False},
+    "PlayerProps": {"status": True},
     "Lineups": {"status": True},
     "CareerStats": {
         "status": False,
