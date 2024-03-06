@@ -58,7 +58,7 @@ function PlayerData({
             withTeammates_filter = withTeammates_filter + "&&with_teammates=" + teammate
         }
 
-        axios.post(`http://localhost:3001/player-props/${player_id}/hitrates`, queryFilters).then(async (response) => {
+        axios.post(`${process.env.REACT_APP_BEASTAT_API_BASE_URL}/player-props/${player_id}/hitrates`, queryFilters).then(async (response) => {
             await setPlayerHitrates(response.data)
             console.log(response.data)
         }).catch((err) => {
@@ -66,7 +66,7 @@ function PlayerData({
             return null;
         });
 
-        axios.post(`http://localhost:3001/gamelogs/${player_id}`, queryFilters).then(async (response) => {
+        axios.post(`${process.env.REACT_APP_BEASTAT_API_BASE_URL}/gamelogs/${player_id}`, queryFilters).then(async (response) => {
             await setGamelogData(response.data)
         }).catch((err) => {
             console.log(err);

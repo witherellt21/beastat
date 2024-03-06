@@ -16,16 +16,12 @@ function HitrateCard({
                     `}
         >
             <label className='text-lg'>{label}</label>
-            {/* <hr className='black'></hr> */}
             <div className='flex justify-center'>
                 <div className='text-2xl border-2 border-black border-opacity-10 p-1 rounded-2xl'>
                     {Math.round(hitrate * 10) / 10}%
                 </div>
             </div>
-            {/* <div className='flex w-full text-sm'> */}
-            {/* <label className='text-xs'>AVG:</label> */}
-            <span className='text-xs'>{average} ({Math.round((average - line) * 10) / 10})</span>
-            {/* </div> */}
+            <span className='text-xs'>{Math.round(average * 10) / 10} ({Math.round((average - line) * 10) / 10})</span>
         </div>
     )
 }

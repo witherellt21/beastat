@@ -38,30 +38,36 @@ main_logger.addHandler(main_stream_handler)
 # TODO: MASSIVE work needs to be done in keeping these scrapers asynchronous in case data is missing
 if config.DATA_SCRAPE.get("PlayerInfo", {}).get("status"):
     player_info_scraper = PlayerInfoScraper()
+    player_info_scraper.setDaemon(True)
     player_info_scraper.start()
 
 if config.DATA_SCRAPE.get("Lineups", {}).get("status"):
     lineup_scraper = LineupScraper()
+    lineup_scraper.setDaemon(True)
     lineup_scraper.start()
 
 if config.DATA_SCRAPE.get("CareerStats", {}).get("status"):
     career_stats_scraper = CareerStatsScraper(
         **config.DATA_SCRAPE.get("CareerStats", {}).get("options", {})
     )
+    career_stats_scraper.setDaemon(True)
     career_stats_scraper.start()
 
 if config.DATA_SCRAPE.get("PlayerProps", {}).get("status"):
     player_props_scraper = PlayerPropsScraper()
+    player_props_scraper.setDaemon(True)
     player_props_scraper.start()
 
 if config.DATA_SCRAPE.get("DefenseRankings", {}).get("status"):
     defense_rankings_scraper = DefenseRankingsScraper()
+    defense_rankings_scraper.setDaemon(True)
     defense_rankings_scraper.start()
 
 if config.DATA_SCRAPE.get("Gamelogs", {}).get("status"):
     gamelog_scraper = GamelogScraper(
         **config.DATA_SCRAPE.get("Gamelogs", {}).get("options", {})
     )
+    gamelog_scraper.setDaemon(True)
     gamelog_scraper.start()
 
 

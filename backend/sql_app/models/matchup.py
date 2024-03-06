@@ -12,6 +12,6 @@ class Matchup(BaseModel):
     game = ForeignKeyField(Game, backref="matchups")
     position = CharField()
     home_player = ForeignKeyField(Player, backref="home_matchups")
-    away_player = ForeignKeyField(Player, backref="home_matchups")
+    away_player = ForeignKeyField(Player, backref="away_matchups")
     # home_player_id = ForeignKeyField(Player, backref="home_matchups")
     # away_player_id = ForeignKeyField(Player, backref="away_matchups")

@@ -110,6 +110,8 @@ async def list_matchups():
 
 @router.get("/byGame")
 async def list_matchups_by_game():
+    print("HERE")
+
     games: pd.DataFrame = Games.get_all_records(as_df=True)
     todays_games = games[games["date_time"].dt.date == datetime.today().date()]
     todays_games = todays_games.sort_values("date_time", ascending=True)

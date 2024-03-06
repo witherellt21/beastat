@@ -59,7 +59,6 @@ export function StatHitrate({
 }) {
     return (
         <div className='w-full flex flex-col relative items-center'>
-            {/* <hr className='absolute w-full bottom-32 border-t-2 border-gray-900'></hr> */}
             <BarChart
                 xAxis={[
                     {
@@ -74,19 +73,6 @@ export function StatHitrate({
                 ]}
                 height={300}
             />
-            {/* <BarChart
-                height={300}
-                series={series
-                    .slice(0, seriesNb)
-                    .map((s) => ({ ...s, data: s.data.slice(0, itemNb) }))}
-                skipAnimation={skipAnimation}
-            /> */}
-            {/* <Bar
-                options={options}
-                data={data}
-            // width={"100%"}
-            // height={"100%"}
-            /> */}
             <div className='flex flex-row space-x-2'>
                 <div
                     className=' min-w-24 max-w-32 flex flex-col flex-grow px-4 py-2 border-2 border-gray-900 rounded-lg bg-gray-200'
@@ -97,8 +83,6 @@ export function StatHitrate({
                             Hitrate
                         </div>
                     </div>
-                    {/* <div className='flex w-full text-sm'> */}
-                    {/* <label className='text-xs'>AVG:</label> */}
                     <span className='text-xs'>AVG (discount)</span>
                 </div>
 

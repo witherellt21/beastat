@@ -7,7 +7,7 @@ function Props() {
     const [playerProps, setPlayerProps] = useState([]);
 
     useEffect(() => {
-        axios.get(`http://localhost:3001/player-props/`).then(async (response) => {
+        axios.get(`${process.env.REACT_APP_BEASTAT_API_BASE_URL}/player-props/`).then(async (response) => {
             setPlayerProps(response.data)
 
         }).catch((err) => {
