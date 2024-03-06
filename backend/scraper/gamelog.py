@@ -6,9 +6,9 @@ import pandas as pd
 
 from typing import Iterable, Unpack, Literal, TypedDict, Optional
 
-from data_scrape.abstract_base_scraper import AbstractBaseScraper, ScraperKwargs
+from scraper.abstract_base_scraper import AbstractBaseScraper
 from exceptions import DBNotFoundException
-from helpers.db_helpers import get_player_active_seasons
+from sql_app.util.db_helpers import get_player_active_seasons
 from sql_app.register.gamelog import Gamelogs
 from sql_app.register.matchup import Matchups
 from sql_app.register.player_info import PlayerInfos, Players

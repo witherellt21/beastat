@@ -2,7 +2,7 @@ import time
 
 from typing import Type
 
-from data_scrape.abstract_base_scraper import AbstractBaseScraper
+from scraper.abstract_base_scraper import AbstractBaseScraper
 
 
 def test_scraper_thread(*, scraper_class: Type[AbstractBaseScraper]):

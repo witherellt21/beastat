@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from fastapi import APIRouter, Query, Depends
 
-from helpers.db_helpers import (
+from sql_app.util.db_helpers import (
     get_matchup_gamelog_by_player_id,
     filter_gamelog,
     GamelogFilter,

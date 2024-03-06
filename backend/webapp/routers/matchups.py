@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter
 
-from helpers.db_helpers import get_matchup_gamelog
+from sql_app.util.db_helpers import get_matchup_gamelog
 from sql_app.register.game import Games
 from sql_app.register.matchup import Matchups
 from sql_app.serializers.matchup import MatchupSerializer

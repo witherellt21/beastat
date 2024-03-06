@@ -2,3 +2,6 @@ __pycache__
 .env
 notes.txt
 postgres-data
+node_modules
+package-lock.json
+package.json
