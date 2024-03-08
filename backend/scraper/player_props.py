@@ -4,7 +4,7 @@ import re
 
 from scraper.abstract_base_scraper import AbstractBaseScraper
 from sql_app.util.db_helpers import get_player_id
-from sql_app.register.player_prop import PropLines
+from sql_app.register.player_prop import PlayerProps
 from sql_app.register import Games
 from sql_app.register.player import Players
 from typing import Callable, Optional
@@ -138,7 +138,7 @@ class PlayerPropsScraper(AbstractBaseScraper):
     QUERY_SAVE_COLUMNS = {"stat": "stat_subcategory"}
     REQUIRED_COLUMNS = ["player_id"]
 
-    TABLE = PropLines
+    TABLE = PlayerProps
     REFRESH_RATE = 1
 
     LOG_LEVEL = logging.WARNING

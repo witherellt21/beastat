@@ -3,3 +3,8 @@ from .career_stats import CareerStatss
 from .player import Players
 from .career_stats import CareerStatss
 from .gamelog import Gamelogs
+from .defense_ranking import DefenseRankings
+from .matchup import Matchups
+from .team import Teams
+from .lineup import Lineups
+from .player_prop import PlayerProps

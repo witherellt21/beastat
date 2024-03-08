@@ -6,7 +6,7 @@ from sql_app.database import DB
 from sql_app.register.base import BaseTable
 
 
-class PropLineTable(BaseTable):
+class PlayerPropTable(BaseTable):
     MODEL_CLASS = PropLine
     SERIALIZER_CLASS = PlayerPropSerializer
     READ_SERIALIZER_CLASS = ReadPlayerPropSerializer
@@ -14,4 +14,4 @@ class PropLineTable(BaseTable):
     PKS = ["player_id", "stat"]
 
 
-PropLines = PropLineTable(DB)
+PlayerProps = PlayerPropTable(DB)

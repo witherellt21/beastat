@@ -2,7 +2,7 @@ import pandas as pd
 from fastapi import APIRouter
 
 from sql_app.register.defense_ranking import DefenseRankings
-from sql_app.register.player_prop import PropLines
+from sql_app.register.player_prop import PlayerProps
 from sql_app.register.gamelog import Gamelogs
 from sql_app.register.lineup import Lineups
 from sql_app.register.game import Games
