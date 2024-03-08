@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Optional, Annotated
 import uuid
 
-from . import ReadTeamSerializer
+from .team import ReadTeamSerializer
 
 
 class GameSerializer(BaseSerializer):

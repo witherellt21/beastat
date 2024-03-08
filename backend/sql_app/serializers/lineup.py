@@ -2,7 +2,9 @@ from pydantic import BaseModel as BaseSerializer
 from pydantic import UUID4
 from typing import Optional
 
-from . import PlayerSerializer, GameSerializer, TeamSerializer
+from .player import PlayerSerializer
+from .game import ReadGameSerializer
+from .team import ReadTeamSerializer
 
 
 class LineupSerializer(BaseSerializer):
@@ -20,8 +22,8 @@ class LineupSerializer(BaseSerializer):
 
 
 class LineupReadSerializer(BaseSerializer):
-    game: GameSerializer
-    team: TeamSerializer
+    game: ReadGameSerializer
+    team: ReadTeamSerializer
     status: str
     PG: PlayerSerializer
     SG: PlayerSerializer

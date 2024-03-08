@@ -8,7 +8,7 @@ from peewee import BooleanField
 from sql_app.models.base import BaseModel
 from sql_app.models.player import Player
 
-from . import Team, Game
+from .game import Game
 
 
 class Gamelog(BaseModel):

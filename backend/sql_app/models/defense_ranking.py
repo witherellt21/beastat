@@ -2,7 +2,8 @@ from peewee import CharField
 from peewee import IntegerField
 from peewee import ForeignKeyField
 
-from . import BaseModel, Team
+from .team import Team
+from .base import BaseModel
 
 
 class DefenseRanking(BaseModel):

@@ -1,4 +1,3 @@
-from .base import BaseModel
 from .game import Game
 from .player import Player
 from .career_stats import CareerStats

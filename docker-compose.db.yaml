@@ -6,8 +6,10 @@ services:
     container_name: nbastats-db
     volumes:
       - $DB_VOLUME:/var/lib/postgresql/data
+    expose:
+      - ${DB_PORT}
     ports:
-      - ${DB_PORT}:${DB_PORT}
+      - ${DB_PORT}:5432
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}

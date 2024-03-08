@@ -8,11 +8,15 @@ from datetime import datetime
 import uuid
 import pandas as pd
 
+from sql_app.models import Team
+
 
 class GameTable(BaseTable):
     MODEL_CLASS = Game
     SERIALIZER_CLASS = GameSerializer
     PKS: list[str] = ["date_time", "home", "away"]
+
+    DEPENDENCIES = [Team]
 
     @overload
     def filter_by_datetime(

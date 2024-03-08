@@ -3,7 +3,8 @@ from pydantic import BaseModel as BaseSerializer
 from pydantic import UUID4
 from typing import Optional
 
-from . import PlayerSerializer, TeamSerializer, GameSerializer
+from .player import PlayerSerializer
+from .game import ReadGameSerializer
 
 
 class GamelogSerializer(BaseSerializer):
@@ -51,7 +52,7 @@ class GamelogReadSerializer(BaseSerializer):
     player: PlayerSerializer
     G: Optional[float]
     Age: str
-    game: GameSerializer
+    game: ReadGameSerializer
     # Date: datetime.datetime
     # Tm: str
     # Opp: str

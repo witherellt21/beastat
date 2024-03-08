@@ -6,7 +6,10 @@ from peewee import ForeignKeyField
 from playhouse.postgres_ext import JSONField
 import json
 
-from . import BaseModel, Game, Player, Team
+from .game import Game
+from .player import Player
+from .team import Team
+from .base import BaseModel
 
 
 class Lineup(BaseModel):

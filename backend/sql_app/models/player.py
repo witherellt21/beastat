@@ -3,13 +3,13 @@ from playhouse.postgres_ext import JSONField
 from sql_app.models.base import BaseModel
 import json
 
-from . import Team
+from .team import Team
 
 
 class Player(BaseModel):
     id = CharField(unique=True, primary_key=True)
     # team
-    team = ForeignKeyField(Team, backref="team")
+    team = ForeignKeyField(Team, backref="players", null=True)
     name = CharField()
     nicknames = JSONField(dumps=json.dumps)
     active_from = IntegerField()

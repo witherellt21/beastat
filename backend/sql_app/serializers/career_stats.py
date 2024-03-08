@@ -2,7 +2,8 @@ from typing import Optional
 from pydantic import BaseModel as BaseSerializer
 from pydantic import UUID4
 
-from . import PlayerSerializer, ReadTeamSerializer
+from .player import PlayerSerializer
+from .team import ReadTeamSerializer
 
 
 class CareerStatsSerializer(BaseSerializer):

@@ -5,7 +5,8 @@ from peewee import DateTimeField
 from peewee import UUIDField
 from peewee import ForeignKeyField
 from peewee import FloatField
-from . import BaseModel, Team
+from .base import BaseModel
+from .team import Team
 
 
 class Game(BaseModel):
