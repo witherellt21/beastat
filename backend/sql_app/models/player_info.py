@@ -18,6 +18,7 @@ class PlayerInfo(BaseModel):
 
 class Player(BaseModel):
     id = CharField(unique=True, primary_key=True)
+    # team
     name = CharField()
     nicknames = JSONField(dumps=json.dumps)
     active_from = IntegerField()

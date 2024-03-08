@@ -98,6 +98,11 @@ class BaseTable:
     ) -> list[BaseSerializer]: ...
 
     @overload
+    def filter_records(
+        self, *, query: dict, as_df: Literal[True], recurse=False
+    ) -> pd.DataFrame: ...
+
+    @overload
     def filter_records(self, *, query: dict) -> list[BaseSerializer]: ...
 
     def get_all_records(
@@ -153,10 +158,7 @@ class BaseTable:
             return None
 
     def filter_records(
-        self,
-        *,
-        query: dict = {},
-        as_df: bool = False,
+        self, *, query: dict = {}, as_df: bool = False, recurse: bool = True
     ) -> list[BaseSerializer] | pd.DataFrame:
         """
         Return all rows matching the search query.
@@ -170,11 +172,15 @@ class BaseTable:
         # Serialize rows and convert to desired output type
         serialized_objects = []
         for record in records:
-            # if as_df:
-            # serialized_objects.append(model_to_dict(record, recurse=False))
-            # else:
-            serialized = self.read_serializer_class(**model_to_dict(record))
-            serialized_objects.append(serialized.model_dump() if as_df else serialized)
+            if as_df:
+                serialized_objects.append(model_to_dict(record, recurse=False))
+            else:
+                serialized = self.read_serializer_class(
+                    **model_to_dict(record, recurse=recurse)
+                )
+                serialized_objects.append(
+                    serialized.model_dump() if as_df else serialized
+                )
 
         return pd.DataFrame(serialized_objects) if as_df else serialized_objects
 

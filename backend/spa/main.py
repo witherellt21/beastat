@@ -1,5 +1,6 @@
 import datetime
 import math
+from typing import Optional
 import numpy as np
 import pandas as pd
 from sql_app.register.gamelog import Gamelogs, GamelogQuery
@@ -27,15 +28,40 @@ Basic idea:
 
 
 def predict_result():
+    def get_closest_game(date, data: pd.DataFrame) -> Optional[int]:
+        # Get the closest last game the player played in
+        date_differences: pd.Series[datetime.timedelta] = (
+            date - data[data["Date"] < date]["Date"]
+        )
+
+        sorted_dates = date_differences.sort_values()
+
+        if not sorted_dates.empty:
+            return sorted_dates.iloc[0].days
+        else:
+            return None
 
     start = datetime.datetime(year=2023, month=6, day=1)
     games = Gamelogs.filter_records_advanced(
         query=GamelogQuery(**{"greater_than": {"Date": start}}),  # type: ignore
         confuse=True,
+        limit=100,
     )
 
     games = games[["Date", "Tm", "Opp", "result"]]
     games = games.drop_duplicates(subset=["Date", "Tm"])
+
+    # games = games.sort_values("Date")
+    for idx, row in games.iterrows():
+        team_games = games[games["Tm"] == row["Tm"]]
+        # games.loc[idx, :] = team_games[-1]
+        games.loc[idx, "days_rest"] = get_closest_game(  # type:ignore
+            row["Date"], team_games
+        )
+
+    print(games)
+
+    games["days_rest"] = games["Date"].apply(lambda date: get_closest_game(date, games))
 
     games["Date"] = pd.to_datetime(games["Date"])
     games["day"] = games["Date"].dt.day
