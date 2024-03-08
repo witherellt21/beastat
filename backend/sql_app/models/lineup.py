@@ -13,7 +13,7 @@ import json
 class Lineup(BaseModel):
     id = UUIDField(primary_key=True, unique=True)
     game = ForeignKeyField(Game, backref="lineups")
-    team = CharField()
+    team = CharField()  # link to team
     status = CharField()
     PG = ForeignKeyField(Player, backref="lineups_as_pg")
     SG = ForeignKeyField(Player, backref="lineups_as_sg")

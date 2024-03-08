@@ -12,6 +12,7 @@ from sql_app.models.player_info import Player
 class PropLine(BaseModel):
     id = UUIDField(primary_key=True, unique=True)
     # game (contains teams)
+    # status (upcoming, live, past)
     stat = CharField()
     line = FloatField()
     over = IntegerField()

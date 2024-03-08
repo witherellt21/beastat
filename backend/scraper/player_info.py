@@ -43,7 +43,7 @@ def convert_height_to_inches(*, height: str) -> int:
     return int(feet) * 12 + int(inches)
 
 
-class PlayerInfoScraper(AbstractBaseScraper):
+class PlayerScraper(AbstractBaseScraper):
     class Constants:
         QUERY_SET = [{"player_last_initial": letter} for letter in ascii_lowercase]
 
@@ -95,12 +95,5 @@ class PlayerInfoScraper(AbstractBaseScraper):
 
 if __name__ == "__main__":
 
-    # for letter in ascii_lowercase:
-    #     player_info: PlayerInfo = PlayerInfo(last_initial=letter)
-    #     data: pd.DataFrame = player_info.get_data()
-
-    #     print(data)
-
-    player_info_scraper: PlayerInfoScraper = PlayerInfoScraper()
+    player_info_scraper: PlayerScraper = PlayerScraper()
     player_info_scraper.get_data(query={"player_last_initial": "n"})
-    # test_scraper_thread(scraper_class=PlayerInfoScraper)

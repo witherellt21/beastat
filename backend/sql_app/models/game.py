@@ -9,8 +9,8 @@ from sql_app.models.base import BaseModel
 class Game(BaseModel):
     id = UUIDField(primary_key=True, default=uuid.uuid4)
     date_time = DateTimeField()
-    home = CharField(max_length=3)
-    away = CharField(max_length=3)
+    home = CharField(max_length=3)  # link to team
+    away = CharField(max_length=3)  # link to team
     line = CharField(null=True)
     spread = CharField(null=True)
     over_under = CharField(null=True)

@@ -12,7 +12,7 @@ class CareerStats(BaseModel):
     player = ForeignKeyField(Player, backref="career_stats")
     Season = CharField()
     Age = IntegerField()
-    Tm = CharField()
+    Tm = CharField()  # link to team
     Lg = CharField()
     Pos = CharField()
     G = IntegerField()
