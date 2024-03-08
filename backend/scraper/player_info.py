@@ -6,7 +6,7 @@ from scraper.abstract_base_scraper import AbstractBaseScraper
 from unidecode import unidecode
 import logging
 
-from sql_app.register.player_info import Players
+from sql_app.register.player import Players
 from string import ascii_lowercase
 
 from typing import Optional

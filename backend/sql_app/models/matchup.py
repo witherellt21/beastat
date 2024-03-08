@@ -3,7 +3,7 @@ from peewee import IntegerField
 from peewee import UUIDField
 from peewee import ForeignKeyField
 from sql_app.models.base import BaseModel
-from sql_app.models.player_info import Player
+from sql_app.models.player import Player
 from sql_app.models.game import Game
 
 
@@ -13,5 +13,3 @@ class Matchup(BaseModel):
     position = CharField()
     home_player = ForeignKeyField(Player, backref="home_matchups")
     away_player = ForeignKeyField(Player, backref="away_matchups")
-    # home_player_id = ForeignKeyField(Player, backref="home_matchups")
-    # away_player_id = ForeignKeyField(Player, backref="away_matchups")

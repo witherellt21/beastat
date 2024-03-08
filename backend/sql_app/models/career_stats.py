@@ -4,7 +4,7 @@ from peewee import IntegerField
 from peewee import ForeignKeyField
 from peewee import UUIDField
 from sql_app.models.base import BaseModel
-from sql_app.models.player_info import Player
+from sql_app.models.player import Player
 
 
 class CareerStats(BaseModel):

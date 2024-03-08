@@ -12,7 +12,7 @@ from sql_app.util.db_helpers import (
 from sql_app.serializers.player_prop import ReadPropLineSerializer
 from sql_app.register.player_prop import PropLines
 from sql_app.register.gamelog import Gamelogs
-from sql_app.register.player_info import Players
+from sql_app.register.player import Players
 from typing import List, Optional
 from pydantic import BaseModel
 from global_implementations import constants

@@ -2,7 +2,7 @@ import datetime
 from pydantic import BaseModel as BaseSerializer
 from pydantic import UUID4
 from typing import Optional
-from sql_app.serializers.player_info import PlayerSerializer
+from sql_app.serializers.player import PlayerSerializer
 
 
 class GamelogSerializer(BaseSerializer):

@@ -1,5 +1,5 @@
 from sql_app.models.career_stats import CareerStats
-from sql_app.models.player_info import Player
+from sql_app.models.player import Player
 from sql_app.serializers.career_stats import (
     CareerStatsSerializer,
     CareerStatsReadSerializer,

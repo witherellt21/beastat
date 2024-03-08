@@ -6,7 +6,7 @@ from peewee import UUIDField
 from peewee import IntegerField
 from peewee import BooleanField
 from sql_app.models.base import BaseModel
-from sql_app.models.player_info import Player
+from sql_app.models.player import Player
 
 
 class Gamelog(BaseModel):

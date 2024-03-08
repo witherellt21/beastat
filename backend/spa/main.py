@@ -4,7 +4,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 from sql_app.register.gamelog import Gamelogs, GamelogQuery
-from sql_app.register.player_info import Players
+from sql_app.register.player import Players
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.linear_model import Lasso, LinearRegression
 from sklearn.model_selection import GridSearchCV

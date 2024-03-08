@@ -6,8 +6,8 @@ from scraper.util.dataset_helpers import filter_with_bounds
 from sql_app.register.career_stats import CareerStatss
 from sql_app.register.matchup import Matchups
 from sql_app.register.gamelog import Gamelogs
-from sql_app.register.player_info import Players
-from sql_app.serializers.player_info import PlayerSerializer
+from sql_app.register.player import Players
+from sql_app.serializers.player import PlayerSerializer
 from sql_app.serializers.matchup import MatchupReadSerializer, MatchupSerializer
 from sql_app.serializers.gamelog import GamelogSerializer
 from typing import Optional, Literal

@@ -1,5 +1,5 @@
-from sql_app.models.player_info import Player
-from sql_app.serializers.player_info import (
+from sql_app.models.player import Player
+from sql_app.serializers.player import (
     PlayerSerializer,
     PlayerTableEntrySerializer,
 )

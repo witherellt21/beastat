@@ -4,11 +4,11 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, status
 from typing import List, Optional
-from sql_app.serializers.player_info import PlayerSerializer
-from sql_app.register.player_info import Players
+from sql_app.serializers.player import PlayerSerializer
+from sql_app.register.player import Players
 from sql_app.register import CareerStatss
 from sql_app.serializers import CareerStatsReadSerializer
-from sql_app.models.player_info import Player
+from sql_app.models.player import Player
 from sql_app.models.player_prop import PropLine
 from playhouse.shortcuts import model_to_dict
 

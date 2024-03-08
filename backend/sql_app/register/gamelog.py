@@ -4,7 +4,7 @@ import pandas as pd
 from pydantic import BaseModel
 from typing import Optional
 from sql_app.models.gamelog import Gamelog
-from sql_app.models.player_info import Player
+from sql_app.models.player import Player
 from sql_app.serializers.gamelog import GamelogSerializer, GamelogReadSerializer
 from sql_app.database import DB
 from sql_app.register.base import BaseTable

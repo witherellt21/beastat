@@ -9,4 +9,3 @@ class Team(BaseModel):
     name = CharField()
     abbr = CharField(max_length=3)
     alt_abbrs = JSONField(dumps=json.dumps)
-    # ranking =

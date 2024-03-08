@@ -7,11 +7,12 @@ services:
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
     ports:
-      - 5432:5432
+      - ${DB_PORT}:5432
     environment:
-      POSTGRES_DB: "nbastats"
-      POSTGRES_USER: "nbastats"
-      POSTGRES_PASSWORD: "nbastats"
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PORT: $DB_PORT
     restart: on-failure
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U nbastats -d nbastats" ]
