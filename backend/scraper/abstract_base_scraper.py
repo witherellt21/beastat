@@ -438,6 +438,8 @@ class AbstractBaseScraper(ABC, threading.Thread):
                     )
                 data[column] = data[column].apply(lambda x: x[0])
 
+        data["team_id"] = None
+
         # Rename columns to desired names
         data = data.rename(columns=self.__class__.RENAME_COLUMNS)
 

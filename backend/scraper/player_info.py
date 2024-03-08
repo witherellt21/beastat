@@ -92,6 +92,10 @@ class PlayerScraper(AbstractBaseScraper):
 
         return datasets
 
+    def configure_data(self, *, data: pd.DataFrame) -> pd.DataFrame:
+
+        return super().configure_data(data=data)
+
 
 if __name__ == "__main__":
 
