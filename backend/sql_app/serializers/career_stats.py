@@ -1,7 +1,8 @@
 from typing import Optional
 from pydantic import BaseModel as BaseSerializer
 from pydantic import UUID4
-from sql_app.serializers.player import PlayerSerializer
+
+from . import PlayerSerializer, ReadTeamSerializer
 
 
 class CareerStatsSerializer(BaseSerializer):
@@ -9,7 +10,7 @@ class CareerStatsSerializer(BaseSerializer):
     player_id: str
     Season: str
     Age: Optional[float]
-    Tm: str
+    Tm_id: UUID4
     Lg: str
     Pos: str
     G: int
@@ -49,7 +50,7 @@ class CareerStatsReadSerializer(BaseSerializer):
     player: PlayerSerializer
     Season: str
     Age: Optional[float]
-    Tm: str
+    Tm: ReadTeamSerializer
     Lg: str
     Pos: str
     G: int

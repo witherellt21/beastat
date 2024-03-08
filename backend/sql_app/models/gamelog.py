@@ -8,18 +8,24 @@ from peewee import BooleanField
 from sql_app.models.base import BaseModel
 from sql_app.models.player import Player
 
+from . import Team, Game
+
 
 class Gamelog(BaseModel):
     id = UUIDField(primary_key=True, unique=True)
     player = ForeignKeyField(Player, backref="gamelogs")
     G = FloatField(null=True)
-    Date = DateField()
+    game = ForeignKeyField(Game, backref="boxscore")
     Age = CharField()
-    Tm = CharField()  # link to team
-    Opp = CharField()  # link to team
+    # Tm = ForeignKeyField(Team, backref="player_gamelogs")
+
+    # Date = DateField()
+    # Tm = ForeignKeyField(Team, backref="player_gamelogs")
+    # Opp = ForeignKeyField(Team, backref="opponent_gamelogs")
     home = BooleanField()
-    result = CharField()
-    margin = IntegerField()
+    # result = CharField()
+    # margin = IntegerField()
+
     GS = FloatField(null=True)
     MP = FloatField(null=True)
     FG = FloatField(null=True)

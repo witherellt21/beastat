@@ -9,7 +9,7 @@ from sql_app.util.db_helpers import (
     filter_gamelog,
     GamelogFilter,
 )
-from sql_app.serializers.player_prop import ReadPropLineSerializer
+from sql_app.serializers.player_prop import ReadPlayerPropSerializer
 from sql_app.register.player_prop import PropLines
 from sql_app.register.gamelog import Gamelogs
 from sql_app.register.player import Players
@@ -136,7 +136,7 @@ def list_all_active_props():
 
 @router.get("/{player_id}")
 async def get_props_by_player_id(player_id: str):
-    lines: list[ReadPropLineSerializer] = PropLines.filter_records(query={"player_id": player_id})  # type: ignore
+    lines: list[ReadPlayerPropSerializer] = PropLines.filter_records(query={"player_id": player_id})  # type: ignore
 
     new_lines = {}
     for line in lines:
@@ -156,7 +156,7 @@ async def get_player_hitrates(
     player_id: str,
     query: GamelogFilter,
 ):
-    lines: list[ReadPropLineSerializer] = PropLines.filter_records(query={"player_id": player_id})  # type: ignore
+    lines: list[ReadPlayerPropSerializer] = PropLines.filter_records(query={"player_id": player_id})  # type: ignore
 
     if not lines:
         print(f"No prop lines for player: {player_id}")

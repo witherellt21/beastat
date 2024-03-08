@@ -3,8 +3,8 @@ from peewee import FloatField
 from peewee import IntegerField
 from peewee import ForeignKeyField
 from peewee import UUIDField
-from sql_app.models.base import BaseModel
-from sql_app.models.player import Player
+
+from . import BaseModel, Player, Team
 
 
 class CareerStats(BaseModel):
@@ -12,7 +12,7 @@ class CareerStats(BaseModel):
     player = ForeignKeyField(Player, backref="career_stats")
     Season = CharField()
     Age = IntegerField()
-    Tm = CharField()  # link to team
+    Tm = ForeignKeyField(Team, backref="player_career_stats")
     Lg = CharField()
     Pos = CharField()
     G = IntegerField()

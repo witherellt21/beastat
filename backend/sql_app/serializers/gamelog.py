@@ -2,20 +2,22 @@ import datetime
 from pydantic import BaseModel as BaseSerializer
 from pydantic import UUID4
 from typing import Optional
-from sql_app.serializers.player import PlayerSerializer
+
+from . import PlayerSerializer, TeamSerializer, GameSerializer
 
 
 class GamelogSerializer(BaseSerializer):
     id: UUID4
     player_id: str
     G: Optional[float]
-    Date: datetime.datetime
     Age: str
-    Tm: str
-    Opp: str
+    game_id: UUID4
+    # Date: datetime.datetime
+    # Tm: str
+    # Opp: str
     home: bool
-    result: str
-    margin: int
+    # result: str
+    # margin: int
     GS: Optional[float]
     MP: Optional[float]
     FG: Optional[float]
@@ -48,13 +50,14 @@ class GamelogReadSerializer(BaseSerializer):
     id: UUID4
     player: PlayerSerializer
     G: Optional[float]
-    Date: datetime.datetime
     Age: str
-    Tm: str
-    Opp: str
+    game: GameSerializer
+    # Date: datetime.datetime
+    # Tm: str
+    # Opp: str
     home: bool
-    result: str
-    margin: int
+    # result: str
+    # margin: int
     GS: Optional[float]
     MP: Optional[float]
     FG: Optional[float]
