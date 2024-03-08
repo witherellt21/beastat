@@ -2,7 +2,7 @@ import pandas as pd
 from global_implementations import constants
 from webapp.helpers.string_helpers import find_closest_match
 from scraper.util.string_helpers import convert_season_to_year
-from webapp.helpers.dataset_helpers import filter_with_bounds
+from scraper.util.dataset_helpers import filter_with_bounds
 from sql_app.register.career_stats import CareerStatss
 from sql_app.register.matchup import Matchups
 from sql_app.register.gamelog import Gamelogs

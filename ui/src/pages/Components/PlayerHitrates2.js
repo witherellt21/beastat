@@ -162,6 +162,14 @@ export function PlayerHitrates({
                 </div>
                 <StatHitrate statData={hitrates?.THP} />
             </div >
+            <div className='flex flex-row space-x-8 items-center text-4xl'>
+                <div className='flex flex-col'>
+                    <span>PRA</span>
+                    <span className='text-sm'>D-Rank: {defense_rankings?.PRA}</span>
+
+                </div>
+                <StatHitrate statData={hitrates?.PRA} />
+            </div >
 
         </div>
     );

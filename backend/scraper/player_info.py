@@ -1,7 +1,7 @@
 import pandas as pd
 
 from global_implementations import constants
-from util.string_helpers import get_player_id_from_name
+from scraper.util.string_helpers import get_player_id_from_name
 from scraper.abstract_base_scraper import AbstractBaseScraper
 from unidecode import unidecode
 import logging

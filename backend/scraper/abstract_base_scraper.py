@@ -14,10 +14,10 @@ from abc import ABC
 from abc import abstractmethod, abstractproperty
 from collections.abc import Callable
 from global_implementations import constants
-from helpers.dataset_helpers import augment_dataframe
-from helpers.dataset_helpers import filter_dataframe
-from helpers.dataset_helpers import reorder_columns
-from helpers.http_helpers import format_pandas_http_request
+from scraper.util.dataset_helpers import augment_dataframe
+from scraper.util.dataset_helpers import filter_dataframe
+from scraper.util.dataset_helpers import reorder_columns
+from scraper.util.http_helpers import format_pandas_http_request
 from urllib.error import HTTPError
 from pydantic.fields import FieldInfo
 

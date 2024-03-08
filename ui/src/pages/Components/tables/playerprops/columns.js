@@ -1,7 +1,8 @@
 import { createColumnHelper } from '@tanstack/react-table';
+import { useNavigate } from 'react-router-dom';
 
 const columnHelper = createColumnHelper();
-
+// let navigate = useNavigate();
 
 export const playerPropsColumns = [
     // columnHelper.group({
@@ -23,8 +24,9 @@ export const playerPropsColumns = [
     //         }),
     //     ],
     // }),
-    columnHelper.accessor('player.name', {
-        cell: info => <button>{info.getValue()}</button>,
+    columnHelper.accessor('player', {
+        // cell: info => <button onClick={() => { console.log(`/player/${info.getValue().id}`) }}>{info.getValue().name}</button>,
+        cell: info => info.getValue().name,
         header: () => <span>Player</span>,
     }),
     columnHelper.group({

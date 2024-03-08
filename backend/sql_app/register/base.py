@@ -77,6 +77,16 @@ class BaseTable:
     def get_all_records(self, *, as_df: Literal[False]) -> list[BaseSerializer]: ...
 
     @overload
+    def get_all_records(
+        self, *, as_df: Literal[True], confuse: bool
+    ) -> pd.DataFrame: ...
+
+    @overload
+    def get_all_records(
+        self, *, as_df: Literal[True], confuse: bool, limit: int
+    ) -> pd.DataFrame: ...
+
+    @overload
     def get_all_records(self) -> list[BaseSerializer]: ...
 
     @overload
@@ -90,9 +100,20 @@ class BaseTable:
     @overload
     def filter_records(self, *, query: dict) -> list[BaseSerializer]: ...
 
-    def get_all_records(self, *, as_df=False) -> list[BaseSerializer] | pd.DataFrame:
+    def get_all_records(
+        self, *, as_df=False, confuse: bool = False, limit: Optional[int] = None
+    ) -> list[BaseSerializer] | pd.DataFrame:
         records = []
-        for record in self.model_class.select():
+
+        query = self.model_class.select()
+
+        if confuse:
+            query = query.order_by(peewee.fn.Random())
+
+        if limit is not None:
+            query = query.limit(limit)
+
+        for record in query:
             if as_df:
                 records.append(model_to_dict(record, recurse=False))
             else:
