@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 from playhouse.shortcuts import model_to_dict
 from pydantic import BaseModel as BaseSerializer
-from typing import Any
+from typing import Any, Union
 from typing import Literal
 from typing import Optional
 from typing import overload
@@ -21,6 +21,13 @@ from abc import abstractmethod
 
 
 logger = logging.getLogger("main")
+
+
+class AdvancedQuery(BaseModel):
+    greater_than: dict[str, Union[int, float, datetime]] = {}
+    less_than: dict[str, Union[int, float, datetime]] = {}
+    equal_to: dict[str, Any] = {}
+    in_: dict[str, list[Union[str, int, float, datetime]]] = {}
 
 
 class BaseTable:
@@ -184,6 +191,49 @@ class BaseTable:
 
         return pd.DataFrame(serialized_objects) if as_df else serialized_objects
 
+    def filter_records_advanced(
+        self,
+        query: Optional[AdvancedQuery] = None,
+        columns: list[str] = [],
+        confuse: bool = False,
+        limit: Optional[int] = None,
+    ) -> pd.DataFrame:
+        search = self.model_class.select()
+
+        # print(query.in_.items())
+
+        if query:
+            search = search.where(
+                *[
+                    getattr(self.model_class, key) == value
+                    for key, value in query.equal_to.items()
+                ],
+                *[
+                    getattr(self.model_class, key) > value
+                    for key, value in query.greater_than.items()
+                ],
+                *[
+                    getattr(self.model_class, key) < value
+                    for key, value in query.less_than.items()
+                ],
+                *[
+                    getattr(self.model_class, key) << value
+                    for key, value in query.in_.items()
+                ],
+            )
+
+        if confuse:
+            search = search.order_by(peewee.fn.Random())
+
+        if limit is not None:
+            search = search.limit(limit)
+
+        rows = []
+        for row in search:
+            rows.append(model_to_dict(row, recurse=False))
+
+        return pd.DataFrame(rows)
+
     def filter_records_by_literal(
         self,
         *,
@@ -284,6 +334,10 @@ class BaseTable:
         validated_data: BaseSerializer = self.serializer_class(
             **data, timestamp=datetime.now()
         )
+
+        update_dict = validated_data.model_dump()
+        update_dict.pop("id")
+
         # print(data)
         # current = self.get_record(query=data)
 
@@ -299,7 +353,7 @@ class BaseTable:
         #     )
 
         result: Optional[BaseModel] = (
-            self.model_class.update(**validated_data.model_dump())
+            self.model_class.update(**update_dict)
             .where(
                 *[
                     getattr(self.model_class, id_field) == data.get(id_field)
@@ -330,6 +384,8 @@ class BaseTable:
 
         except peewee.DoesNotExist as e:
             existing_row = None
+
+        # print(existing_row)
 
         if existing_row:
             return self.update_record(

@@ -14,7 +14,7 @@ from sql_app.models import Team
 class GameTable(BaseTable):
     MODEL_CLASS = Game
     SERIALIZER_CLASS = GameSerializer
-    PKS: list[str] = ["date_time", "home", "away"]
+    PKS: list[str] = ["date_time", "home_id", "away_id"]
 
     DEPENDENCIES = [Team]
 

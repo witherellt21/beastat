@@ -3,16 +3,23 @@ import pandas as pd
 import re
 
 from scraper.abstract_base_scraper import AbstractBaseScraper
+from scraper.util.team_helpers import get_team_id_by_abbr
+from sql_app.serializers.game import ReadGameSerializer
+from sql_app.serializers.player import ReadPlayerSerializer
 from sql_app.util.db_helpers import get_player_id
 from sql_app.register.player_prop import PlayerProps
 from sql_app.register import Games
 from sql_app.register.player import Players
+from sql_app.models.player_prop import PropLine
+from sql_app.register.base import AdvancedQuery
 from typing import Callable, Optional
 import threading
 import traceback
 import logging
 import time
 import uuid
+
+from playhouse.shortcuts import model_to_dict
 
 from pydantic_core import ValidationError
 
@@ -114,6 +121,81 @@ def get_player_props(dataset: pd.DataFrame) -> pd.DataFrame:
     return full_data
 
 
+def get_game_id(*, player_id: str):
+    player: ReadPlayerSerializer = Players.get_record(query={"id": player_id})  # type: ignore
+    # print(player.team)
+    todays_games: pd.DataFrame = Games.filter_by_datetime(
+        min_datetime=datetime.today(), as_df=True
+    )
+
+    # print(todays_games)
+    cur_team_game = todays_games[
+        (todays_games["home"] == getattr(player.team, "id", None))
+        | (todays_games["away"] == getattr(player.team, "id", None))
+    ]
+
+    # print(cur_team_game)
+    if not cur_team_game.empty:
+        cur_team_game = cur_team_game.iloc[0, :]
+        return cur_team_game["id"]
+    else:
+        return None
+
+
+def set_statuses(dataset: pd.DataFrame) -> pd.DataFrame:
+    todays_games = Games.filter_by_datetime(min_datetime=datetime.today(), as_df=True)
+
+    todays_game_ids = list(todays_games["id"].values)
+    # records = Games.model_class.select().where(
+    #     Games.model_class.date_time > datetime.today()
+    # )
+    # todays_props = []
+    # for record in records:
+    #     # print(record.props)
+    #     for prop in record.props:
+    #         todays_props.append(model_to_dict(prop))
+
+    # print(todays_game_ids)
+    todays_props = PlayerProps.filter_records_advanced(
+        query=AdvancedQuery(in_={"game_id": todays_game_ids})
+    )
+
+    # records = (
+    #     PropLine.select().join(
+    #         Games.model_class, on=(PropLine.game == Games.model_class)
+    #     )
+    #     # .where(PropLine.game.id << ["b60dafec-ad86-40fb-b5d8-b92c24fc390b"])
+    # )
+
+    # for record in records:
+    #     print(model_to_dict(record))
+
+    # print(todays_props)
+    # print(dataset)
+    # print(todays_props)
+    # print(dataset)
+    # print(dataset.columns)
+    dataset = dataset[dataset["player_id"] != "harteis01"]
+
+    if todays_props.empty:
+        dataset["status"] = 1
+    else:
+        merged = todays_props.merge(
+            dataset,
+            how="left",
+            left_on=["game", "player", "stat"],
+            right_on=["game_id", "player_id", "stat"],
+        )
+
+        print(merged.columns)
+
+        locked_lines = merged[merged["id_y"].isna()]["id_x"].values
+
+        print(locked_lines)
+
+    return dataset
+
+
 class PlayerPropsScraper(AbstractBaseScraper):
 
     RENAME_COLUMNS = {
@@ -132,9 +214,10 @@ class PlayerPropsScraper(AbstractBaseScraper):
     TRANSFORMATIONS = {
         ("name", "player_id"): lambda name: get_player_id(player_name=name),
         ("name", "id"): lambda x: uuid.uuid4(),
+        ("player_id", "game_id"): lambda player_id: get_game_id(player_id=player_id),
     }
     # STAT_AUGMENTATIONS =
-    DATA_TRANSFORMATIONS = [get_player_props]
+    DATA_TRANSFORMATIONS = [get_player_props, set_statuses]
     QUERY_SAVE_COLUMNS = {"stat": "stat_subcategory"}
     REQUIRED_COLUMNS = ["player_id"]
 
@@ -163,6 +246,37 @@ class PlayerPropsScraper(AbstractBaseScraper):
             {"stat_category": "combos", "stat_subcategory": "pts-+-ast"},
             {"stat_category": "combos", "stat_subcategory": "ast-+-reb"},
         ]
+
+    def configure_data(self, *, data: pd.DataFrame) -> pd.DataFrame:
+        # print(data)
+        return super().configure_data(data=data)
+
+    # def cache_data(self, *, data: pd.DataFrame) -> None:
+    #     # return super().cache_data(data=data)
+    #     print(data)
+
+    def prepare_data(self, data: pd.DataFrame) -> pd.DataFrame:
+        # todays_games = Games.filter_by_datetime(
+        #     min_datetime=datetime.today(), as_df=True
+        # )
+
+        # todays_game_ids = todays_games["id"].values
+
+        # todays_props = PlayerProps.filter_records_advanced(
+        #     query=AdvancedQuery(in_={"game_id": todays_game_ids})
+        # )
+
+        # merged = todays_props.merge(data, how="left", on="id")
+
+        # print(merged)
+        teamless = data[data["game_id"].isna()]
+
+        if not teamless.empty:
+            print(teamless)
+
+        data = data.dropna(subset=["game_id"])
+
+        return super().prepare_data(data)
 
 
 def test_scraper_thread():

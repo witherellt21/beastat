@@ -3,6 +3,7 @@ from sql_app.util.db_helpers import get_player_id
 from sql_app.register.lineup import Lineups
 from sql_app.register.matchup import Matchups
 from sql_app.register.game import Games
+from scraper.util.team_helpers import get_team_id_by_abbr
 from sql_app.serializers.game import GameSerializer
 
 import requests
@@ -170,10 +171,13 @@ class LineupScraper(AbstractBaseScraper):
                 self.logger.debug("Tag for away team not found.")
                 continue
 
+            home_team_id = get_team_id_by_abbr(home_team_abbr)
+            away_team_id = get_team_id_by_abbr(away_team_abbr)
+
             game_entry = {
                 "date_time": game_date_time,
-                "home": home_team_abbr,
-                "away": away_team_abbr,
+                "home_id": home_team_id,
+                "away_id": away_team_id,
             }
 
             game_line_divs = game_div.findAll("div", class_="lineup__odds-item")
@@ -216,7 +220,7 @@ class LineupScraper(AbstractBaseScraper):
                 home_team_data: dict = {
                     "id": uuid.uuid4(),
                     "game_id": game.id,
-                    "team": home_team_abbr,
+                    "team_id": home_team_id,
                     "status": home_lineup_status,
                     **home_team_lineup,
                 }
@@ -227,7 +231,7 @@ class LineupScraper(AbstractBaseScraper):
                 away_team_data: dict = {
                     "id": uuid.uuid4(),
                     "game_id": game.id,
-                    "team": away_team_abbr,
+                    "team_id": away_team_id,
                     "status": away_lineup_status,
                     **away_team_lineup,
                 }
@@ -250,9 +254,7 @@ class LineupScraper(AbstractBaseScraper):
                 }
 
                 try:
-                    Matchups.update_or_insert_record(
-                        data=matchup, id_fields=["game_id", "position"]
-                    )
+                    Matchups.update_or_insert_record(data=matchup)
                 except Exception as e:
                     print("MATCHUP ERROR ", e)
 

@@ -442,8 +442,6 @@ class AbstractBaseScraper(ABC, threading.Thread):
                     )
                 data[column] = data[column].apply(lambda x: x[0])
 
-        data["team_id"] = None
-
         # Rename columns to desired names
         data = data.rename(columns=self.__class__.RENAME_COLUMNS)
 
@@ -458,6 +456,9 @@ class AbstractBaseScraper(ABC, threading.Thread):
                 from_column = to_column = column
 
             data[to_column] = data[from_column].apply(transformation)
+
+        # print(data)
+        # print(data.columns)
 
         for transformation_function in self.__class__.DATA_TRANSFORMATIONS:
             data = transformation_function(dataset=data)

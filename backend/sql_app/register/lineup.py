@@ -10,7 +10,7 @@ class LineupTable(BaseTable):
     SERIALIZER_CLASS = LineupSerializer
     READ_SERIALIZER_CLASS = LineupReadSerializer
     TABLE_ENTRY_SERIALIZER_CLASS = LineupSerializer
-    PKS = ["game_id", "team"]
+    PKS = ["game_id", "team_id"]
 
 
 Lineups = LineupTable(DB)

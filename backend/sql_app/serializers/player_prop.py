@@ -1,5 +1,4 @@
 from pydantic import BaseModel as BaseSerializer
-import datetime
 from typing import Literal, Optional
 from pydantic import UUID4
 from sql_app.serializers.player import PlayerSerializer
@@ -28,3 +27,8 @@ class ReadPlayerPropSerializer(BaseSerializer):
     over_implied: float
     under_implied: float
     player: Optional[PlayerSerializer]
+
+
+class PlayerPropTableEntrySerializer(PlayerPropSerializer):
+    game_id: str
+    status: int

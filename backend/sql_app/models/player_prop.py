@@ -12,7 +12,7 @@ from . import Game
 
 class PropLine(BaseModel):
     id = UUIDField(primary_key=True, unique=True)
-    game = ForeignKeyField(Game, backref="game")
+    game = ForeignKeyField(Game, backref="props")
     status = IntegerField(choices=[0, 1])
     stat = CharField()
     line = FloatField()
