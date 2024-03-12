@@ -111,7 +111,9 @@ class AbstractBaseScraper(ABC, threading.Thread):
     TABLE: Optional[BaseTable] = None
 
     # A function to tranform a specific column (key) on a dataset by a callable function (value) uses apply method
-    TRANSFORMATIONS: dict[str | tuple[str, str], Callable[[Any], Any]] = {}
+    TRANSFORMATIONS: dict[
+        str | tuple[str] | tuple[str | tuple[str], str], Callable[[Any], Any]
+    ] = {}
     DATA_TRANSFORMATIONS: list[Callable[[pd.DataFrame], pd.DataFrame]] = []
     QUERY_SAVE_COLUMNS: dict[str, str] | list[str] = []
     COLUMN_ORDERING: list[str] = []
@@ -328,6 +330,8 @@ class AbstractBaseScraper(ABC, threading.Thread):
         # Configure the data
         data = self.configure_data(data=data)
 
+        data = self.prepare_data(data=data)
+
         # Save the data
         self.cache_data(data=data)
 
@@ -476,12 +480,6 @@ class AbstractBaseScraper(ABC, threading.Thread):
             dataframe=data, augmentations=self.__class__.STAT_AUGMENTATIONS
         )
 
-        # self.logger.warning(data.columns)
-        # if "days_rest" in data.columns:
-        #     self.logger.warning(data["days_rest"])
-        # else:
-        #     self.logger.warning(data)
-
         # Apply any filters to the dataset
         data = filter_dataframe(dataframe=data, filters=self.__class__.FILTERS)
 
@@ -489,13 +487,17 @@ class AbstractBaseScraper(ABC, threading.Thread):
             dataframe=data, column_order=self.__class__.COLUMN_ORDERING
         )
 
-        data = data[self.desired_columns]
-
         data = data.replace(to_replace="None", value=np.nan).dropna(
             subset=self.__class__.REQUIRED_COLUMNS
         )
 
+        # if self.primary_key in list(data.columns):
+        #     data = data.set_index(self.primary_key)
+
+        return data
+
+    def prepare_data(self, data):
+        data = data[self.desired_columns]
         if self.primary_key in list(data.columns):
             data = data.set_index(self.primary_key)
-
         return data

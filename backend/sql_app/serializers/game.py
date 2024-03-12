@@ -11,8 +11,10 @@ from .team import ReadTeamSerializer
 class GameSerializer(BaseSerializer):
     id: UUID4
     date_time: datetime
-    home: Annotated[str, StringConstraints(min_length=3, max_length=3)]
-    away: Annotated[str, StringConstraints(min_length=3, max_length=3)]  # type: ignore
+    # home: Annotated[str, StringConstraints(min_length=3, max_length=3)]
+    # away: Annotated[str, StringConstraints(min_length=3, max_length=3)]  # type: ignore
+    home_id: UUID4
+    away_id: UUID4
     home_score: Optional[int] = None
     away_score: Optional[int] = None
     winner: Optional[Annotated[str, StringConstraints(min_length=3, max_length=3)]] = None  # type: ignore
@@ -23,8 +25,8 @@ class GameSerializer(BaseSerializer):
 class ReadGameSerializer(BaseSerializer):
     id: UUID4
     date_time: datetime
-    home: Annotated[str, StringConstraints(min_length=3, max_length=3)]
-    away: Annotated[str, StringConstraints(min_length=3, max_length=3)]  # type: ignore
+    home: ReadTeamSerializer
+    away: ReadTeamSerializer
     home_score: Optional[int] = None
     away_score: Optional[int] = None
     winner: Optional[Annotated[str, StringConstraints(min_length=3, max_length=3)]] = None  # type: ignore

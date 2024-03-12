@@ -3,6 +3,7 @@ from sql_app.models.player import Player
 from sql_app.serializers.career_stats import (
     CareerStatsSerializer,
     CareerStatsReadSerializer,
+    CareerStatsTableEntrySerializer,
 )
 
 from sql_app.database import DB
@@ -13,7 +14,7 @@ class CareerStatsTable(BaseTable):
     MODEL_CLASS = CareerStats
     SERIALIZER_CLASS = CareerStatsSerializer
     READ_SERIALIZER_CLASS = CareerStatsReadSerializer
-    TABLE_ENTRY_SERIALIZER_CLASS = CareerStatsSerializer
+    TABLE_ENTRY_SERIALIZER_CLASS = CareerStatsTableEntrySerializer
     PKS = ["player_id", "Season"]
 
     DEPENDENCIES = [Player]

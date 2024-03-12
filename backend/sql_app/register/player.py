@@ -2,6 +2,7 @@ from sql_app.models.player import Player
 from sql_app.serializers.player import (
     PlayerSerializer,
     PlayerTableEntrySerializer,
+    ReadPlayerSerializer,
 )
 
 from sql_app.database import DB
@@ -19,6 +20,7 @@ class PlayerTable(BaseTable):
     MODEL_CLASS = Player
     SERIALIZER_CLASS = PlayerSerializer
     TABLE_ENTRY_SERIALIZER_CLASS = PlayerTableEntrySerializer
+    READ_SERIALIZER_CLASS = ReadPlayerSerializer
     PKS = ["id"]
 
     def get_with_prop_lines(self, *, query: dict):

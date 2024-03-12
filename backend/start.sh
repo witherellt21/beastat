@@ -7,8 +7,6 @@ set -o allexport
 source .env set
 +o allexport
 
-echo $PORT
 PORT="${PORT:-8080}"
-echo $PORT
 exec uvicorn webapp.main:app --host 0.0.0.0 --port "$PORT"
 # exec find / -name uvicorn 2> /dev/null

@@ -1,0 +1,98 @@
+{
+    "Atlanta Hawks": [
+        "ATL"
+    ],
+    "Boston Celtics": [
+        "BOS"
+    ],
+    "Charlotte Hornets": [
+        "CHA",
+        "CHO"
+    ],
+    "Chicago Bulls": [
+        "CHI"
+    ],
+    "Cleveland Cavaliers": [
+        "CLE"
+    ],
+    "Dallas Mavericks": [
+        "DAL"
+    ],
+    "Denver Nuggets": [
+        "DEN"
+    ],
+    "Detroit Pistons": [
+        "DET"
+    ],
+    "Golden State Warriors": [
+        "GSW"
+    ],
+    "Houston Rockets": [
+        "HOU"
+    ],
+    "Indiana Pacers": [
+        "IND"
+    ],
+    "Los Angeles Clippers": [
+        "LAC"
+    ],
+    "Los Angeles Lakers": [
+        "LAL"
+    ],
+    "Memphis Grizzlies": [
+        "MEM"
+    ],
+    "Miami Heat": [
+        "MIA"
+    ],
+    "Milwaukee Bucks": [
+        "MIL"
+    ],
+    "Minnesota Timberwolves": [
+        "MIN"
+    ],
+    "New Orleans Pelicans": [
+        "NOP",
+        "NOH",
+        "NOR"
+    ],
+    "New York Knicks": [
+        "NYK"
+    ],
+    "Brooklyn Nets": [
+        "BRK",
+        "BKN"
+    ],
+    "Oklahoma City Thunder": [
+        "OKC",
+        "SEA"
+    ],
+    "Orlando Magic": [
+        "ORL"
+    ],
+    "Philadelphia 76ers": [
+        "PHI"
+    ],
+    "Phoenix Suns": [
+        "PHO"
+    ],
+    "Portland Trail Blazers": [
+        "POR"
+    ],
+    "Sacramento Kings": [
+        "SAC"
+    ],
+    "Toronto Raptors": [
+        "TOR"
+    ],
+    "Utah Jazz": [
+        "UTA",
+        "UTH"
+    ],
+    "Washington Wizards": [
+        "WAS"
+    ],
+    "San Antonio Spurs": [
+        "SAS"
+    ]
+}

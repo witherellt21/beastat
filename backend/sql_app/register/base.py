@@ -48,7 +48,7 @@ class BaseTable:
             dependencies = self.__class__.DEPENDENCIES
             self.db.create_tables([*dependencies, self.model_class])
         else:
-            raise Exception("DB not connect. Cannot perform operations on the table.")
+            raise Exception("DB not connected. Cannot perform operations on the table.")
 
     @property
     def serializer_class(self) -> Type[BaseSerializer]:
@@ -225,6 +225,56 @@ class BaseTable:
         else:
             return None
 
+    def partial_update(self, *, data: dict, **kwargs):
+        id_fields = kwargs.get("id_fields", self.__class__.PKS)
+
+        # current = self.get_record(
+        #     query={key: value for key, value in data.items() if key in id_fields}
+        # )
+
+        # if not current:
+        #     raise Exception(f"Record does not exist with primary key in {data}.")
+
+        # print(data)
+        # validated_data = current.model_copy(update=data)
+        # print(validated_data)
+
+        # existing_row: Optional[BaseModel]
+        # try:
+        #     existing_row = self.model_class.get(
+        #         *[
+        #             getattr(self.model_class, id_field) == data.get(id_field)
+        #             for id_field in id_fields
+        #         ]
+        #     )
+
+        # except peewee.DoesNotExist as e:
+        #     raise Exception(f"Record does not exist with primary key in {data}.")
+
+        for key, value in data.items():
+            self.serializer_class.__pydantic_validator__.validate_assignment(
+                self.serializer_class.model_construct(), key, value
+            )
+        # data = model_to_dict(existing_row)
+        # validated_data = self.serializer_class(**model_to_dict(existing_row))
+        # validated_data = validated_data.model_copy(update=data)
+
+        result: Optional[BaseModel] = (
+            self.model_class.update(**data)
+            .where(
+                *[
+                    getattr(self.model_class, id_field) == data.get(id_field)
+                    for id_field in id_fields
+                ]
+            )
+            .execute()
+        )
+
+        if result:
+            return data
+        else:
+            return None
+
     def update_record(self, *, data: dict, **kwargs) -> Optional[BaseSerializer]:
         """
         Update a record in the database.
@@ -234,6 +284,19 @@ class BaseTable:
         validated_data: BaseSerializer = self.serializer_class(
             **data, timestamp=datetime.now()
         )
+        # print(data)
+        # current = self.get_record(query=data)
+
+        # if not current:
+        #     raise Exception(f"Record does not exist with primary key in {data}.")
+
+        # validated_data = current.model_copy(update=data)
+
+        # temporary workaround for partial updates
+        # for key, value in data.items():
+        #     self.serializer_class.__pydantic_validator__.validate_assignment(
+        #         self.serializer_class.model_construct(), key, value
+        #     )
 
         result: Optional[BaseModel] = (
             self.model_class.update(**validated_data.model_dump())

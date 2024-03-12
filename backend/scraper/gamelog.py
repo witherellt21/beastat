@@ -6,13 +6,19 @@ import pandas as pd
 
 from typing import Iterable, Unpack, Literal, TypedDict, Optional
 
+from pydantic import UUID4
+
 from scraper.abstract_base_scraper import AbstractBaseScraper
 from exceptions import DBNotFoundException
+from sql_app.serializers.game import ReadGameSerializer
 from sql_app.util.db_helpers import get_player_active_seasons
 from sql_app.register.gamelog import Gamelogs
 from sql_app.register.matchup import Matchups
 from sql_app.register.player import Players
+from sql_app.register import Games, Teams
 from global_implementations import constants
+from scraper.util.team_helpers import get_team_id_by_abbr
+
 
 import time
 
@@ -58,6 +64,32 @@ def get_result_and_margin(dataset: pd.DataFrame) -> pd.DataFrame:
     return dataset
 
 
+def get_game_ids(dataset: pd.DataFrame) -> pd.Series:
+    def get_game_id(
+        date: datetime.datetime, team: str, opponent: str, home: bool
+    ) -> UUID4:
+        home_team = team if home else opponent
+        away_team = opponent if home else team
+
+        home_team_id = get_team_id_by_abbr(home_team)
+        away_team_id = get_team_id_by_abbr(away_team)
+
+        game: ReadGameSerializer = Games.update_or_insert_record(
+            data={"date_time": date, "home_id": home_team_id, "away_id": away_team_id}
+        )  # type: ignore
+
+        return game.id
+
+    game_id = dataset.apply(
+        lambda row: get_game_id(
+            row["Date"], row["Tm"], row["Opp"], row["home"]
+        ),  # type: ignore
+        axis=1,
+    )  # type: ignore
+
+    return game_id
+
+
 class QueryDictForm(TypedDict):
     player_last_initial: str
     player_id: str
@@ -81,7 +113,9 @@ class GamelogScraper(AbstractBaseScraper):
         ("PTS", "id"): lambda x: uuid.uuid4(),
         ("Unnamed: 5", "home"): lambda cell: cell != "@",
     }
-    DATA_TRANSFORMATIONS = [get_result_and_margin]
+    DATA_TRANSFORMATIONS = [
+        get_result_and_margin,
+    ]
     DATETIME_COLUMNS = {"Date": "%Y-%m-%d"}
     STAT_AUGMENTATIONS = {
         "PA": "PTS+AST",
@@ -89,6 +123,7 @@ class GamelogScraper(AbstractBaseScraper):
         "RA": "TRB+AST",
         "PRA": "PTS+TRB+AST",
         "days_rest": get_days_rest,
+        "game_id": get_game_ids,
     }
     QUERY_SAVE_COLUMNS = ["player_id"]
     COLUMN_ORDERING = ["player_id"]
@@ -139,6 +174,8 @@ class GamelogScraper(AbstractBaseScraper):
     def get_query_set(self) -> Optional[list[QueryDictForm]]:
         # TODO: There has to be a faster way to do this. Without extend and iteration
         # There should simply be a dataset for all active players playing tonight
+        # return [{"player_last_initial": "j", "player_id": "jamesle01", "year": 2024}]
+
         player_ids: Iterable[str] = []
 
         if self.identifier_source == "matchups_only":

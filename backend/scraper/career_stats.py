@@ -15,9 +15,12 @@ from scraper.util.string_helpers import convert_season_to_year
 from sql_app.register.career_stats import CareerStatss
 from sql_app.register.matchup import Matchups
 from sql_app.register.player import Players
+from sql_app.register import Teams
 
 from typing import Unpack, Literal, TypedDict, Iterable, Optional
+from pydantic import UUID4
 
+from scraper.util.team_helpers import get_team_id_by_abbr
 
 IS_SEASON = re.compile(r"^\d{4}")
 
@@ -36,6 +39,7 @@ class CareerStatsScraper(AbstractBaseScraper):
     TRANSFORMATIONS = {
         "Season": lambda season: convert_season_to_year(season=season),
         ("PTS", "id"): lambda x: uuid.uuid4(),
+        ("Tm", "Tm_id"): get_team_id_by_abbr,
     }
 
     _exception_msgs = {
@@ -59,7 +63,7 @@ class CareerStatsScraper(AbstractBaseScraper):
 
     TABLE = CareerStatss
 
-    LOG_LEVEL = logging.WARNING
+    LOG_LEVEL = logging.INFO
 
     def __init__(self, **kwargs: Unpack[Kwargs]):
 
@@ -148,6 +152,17 @@ class CareerStatsScraper(AbstractBaseScraper):
                 return False
 
         return True
+
+    def configure_data(self, *, data: pd.DataFrame) -> pd.DataFrame:
+        data = data[data["Tm"] != "TOT"]
+        data = data.dropna(subset=["Tm"])
+        data = super().configure_data(data=data)
+
+        player_data = Players.partial_update(
+            data={"id": data.iloc[0]["player_id"], "team_id": data.iloc[-1]["Tm_id"]}
+        )
+
+        return data
 
 
 if __name__ == "__main__":

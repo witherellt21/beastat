@@ -24,7 +24,7 @@ class GamelogTable(BaseTable):
     SERIALIZER_CLASS = GamelogSerializer
     READ_SERIALIZER_CLASS = GamelogReadSerializer
     TABLE_ENTRY_SERIALIZER_CLASS = GamelogSerializer
-    PKS = ["player_id", "Date"]
+    PKS = ["player_id", "game_id"]
 
     DEPENDENCIES = [Player]
 
@@ -32,7 +32,7 @@ class GamelogTable(BaseTable):
         last_10_played_in = (
             self.model_class.select(getattr(self.model_class, column))
             .where(Gamelog.MP != None, Gamelog.player == player_id)
-            .order_by(Gamelog.Date.desc())
+            .order_by(Gamelog.game.Date.desc())
             .limit(limit)
         )
         average_mp = last_10_played_in.select_from(
