@@ -52,6 +52,7 @@ class PlayerScraper(AbstractBaseScraper):
         "name": lambda name: unidecode(name),
         "height": lambda height: convert_height_to_inches(height=height),
         ("player_link", "id"): lambda link: link.rsplit("/", 1)[1].split(".")[0],
+        # ("name", "team_id"): lambda row: None
     }
 
     FILTERS = [lambda dataframe: dataframe["active_to"] == constants.CURRENT_SEASON]
