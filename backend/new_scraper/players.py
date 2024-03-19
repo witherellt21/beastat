@@ -1,73 +1,90 @@
-from collections.abc import Callable
-from new_scraper.base import BaseHTMLDatasetConfig, BaseScraper, TableConfig
-from sql_app.register.base import BaseTable
-from sql_app.register import Players
 import pandas as pd
-from string import ascii_lowercase
-from unidecode import unidecode
-from global_implementations import constants
+from new_scraper.base import BaseScraper, DatasetScrapeConfig, Dependency, Inheritance
+from new_scraper.configs import (
+    CareerStatsTableConfig,
+    GamelogScrapeConfig,
+    PlayerInfoTableConfig,
+)
+
+# IS_SEASON = re.compile(r"^\d{4}")
 
 
-def has_season_column(dataset: pd.DataFrame) -> bool:
-    return True
+def get_team_id_from_career_stats(career_stats_data: pd.DataFrame) -> pd.DataFrame:
+    career_stats_data = (
+        career_stats_data.sort_values("Season").groupby("player_id").tail(1)
+    )
+    career_stats_data = career_stats_data.rename(columns={"Tm_id": "team_id"})
+    data = career_stats_data[["player_id", "team_id"]]
+    data = data.set_index("player_id")
 
-
-def convert_height_to_inches(*, height: str) -> int:
-    feet, inches = height.split("-")
-    return int(feet) * 12 + int(inches)
-
-
-class PlayerInfoTableConfig(TableConfig):
-    """
-    Here we will include the cleaning function stuff as class attributes
-    """
-
-    # TODO: Lets see if we can speed up how a lot of the post download logic is done
-    TRANSFORMATIONS = {
-        "name": lambda name: unidecode(name),
-        "height": lambda height: convert_height_to_inches(height=height),
-        ("player_link", "id"): lambda link: link.rsplit("/", 1)[1].split(".")[0],
-        ("name", "team_id"): lambda row: None,
-    }
-
-    FILTERS = [lambda dataframe: dataframe["active_to"] == constants.CURRENT_SEASON]
-    DATETIME_COLUMNS = {"birth_date": "%B %d, %Y"}
-    RENAME_COLUMNS = {
-        "Player": "name",
-        "From": "active_from",
-        "To": "active_to",
-        "Pos": "position",
-        "Ht": "height",
-        "Wt": "weight",
-        "Birth Date": "birth_date",
-    }
-    # RENAME_VALUES = {"weight": {"": 0}}
-    HREF_SAVE_MAP = {"Player": "player_link"}
-
-    # TABLE = Players
-    # LOG_LEVEL = logging.WARNING
-
-    def __init__(self):
-        super().__init__(identification_function=has_season_column, sql_table=Players)
-
-
-class PlayerInfoDatasetConfig(BaseHTMLDatasetConfig):
-    def __init__(self):
-        table_configs: list[TableConfig] = [PlayerInfoTableConfig()]
-        super().__init__(
-            table_configs=table_configs,
-            query_set=[{"player_last_initial": letter} for letter in ascii_lowercase],
-        )
-
-    @property
-    def base_download_url(self):
-        return "http://www.basketball-reference.com/players/{player_last_initial}/"
+    return data
 
 
 player_info_scraper = BaseScraper()
-# player_info_scraper.add_dataset(PlayerInfoDatasetConfig())
-# player_info_scraper.daemon = True
-# player_info_scraper.start()
-player_info_scraper.download_and_process_data(
-    config=PlayerInfoDatasetConfig(), query_args={"player_last_initial": "a"}
+
+player_info_scrape_config = DatasetScrapeConfig(
+    config=PlayerInfoTableConfig(),
+    dependencies=[],
+    inheritances=[
+        Inheritance(
+            source_name="CareerStats",
+            inheritance_function=get_team_id_from_career_stats,
+        )
+    ],
 )
+
+career_stats_scrape_config = DatasetScrapeConfig(
+    config=CareerStatsTableConfig(),
+    dependencies=[
+        Dependency(
+            source_name="PlayerInfo",
+            query_set_provider=lambda dataset: [
+                {"player_last_initial": player_id[0], "player_id": player_id}
+                for player_id in dataset.index.values
+            ],
+        )
+    ],
+)
+
+
+gamelog_scrape_config = DatasetScrapeConfig(
+    config=GamelogScrapeConfig(),
+    dependencies=[
+        Dependency(
+            source_name="CareerStats",
+            query_set_provider=lambda dataset: [
+                {
+                    "player_last_initial": row["player_id"][0],
+                    "player_id": row["player_id"],
+                    "year": str(
+                        int(
+                            row["Season"],
+                        )
+                    ),
+                }
+                for index, row in dataset[["player_id", "Season"]].iterrows()
+            ],
+        )
+    ],
+)
+
+player_info_scraper.add_dataset("PlayerInfo", player_info_scrape_config)
+player_info_scraper.add_dataset("CareerStats", career_stats_scrape_config)
+player_info_scraper.add_dataset("Gamelog", gamelog_scrape_config)
+
+player_info_scraper.daemon = True
+# player_info_scraper.start()
+
+# print(player_info_scraper.datasets)
+# career_stats_scrape_config = DatasetScrapeConfig(
+#     config=CareerStatsTableConfig(),
+#     dependencies=[],
+#     inheritances=player_info_inheritances,
+# )
+
+
+# player_info_scraper.add_dataset(PlayerInfoDatasetConfig())
+
+
+# player_info_scraper.forward_pass()
+# player_info_scraper.resolve_backward_dependencies_and_save()

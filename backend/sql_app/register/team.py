@@ -1,14 +1,15 @@
-import json, uuid
-from typing import Optional
-from sql_app.models import Team
-from sql_app.serializers import TeamSerializer, ReadTeamSerializer
-
-from sql_app.database import DB
-from sql_app.register.base import BaseTable
-from playhouse.shortcuts import model_to_dict
-import peewee
-
+import json
 import logging
+import os
+import uuid
+from typing import Optional
+
+import peewee
+from playhouse.shortcuts import model_to_dict
+from sql_app.database import DB
+from sql_app.models import Team
+from sql_app.register.base import BaseTable
+from sql_app.serializers import ReadTeamSerializer, TeamSerializer
 
 logger = logging.getLogger("main")
 
@@ -34,17 +35,18 @@ class TeamTable(BaseTable):
 
 Teams = TeamTable(DB)
 
-# with open("./sql_app/static_data/teams.json", "r") as teams_file:
-#     new_data = {}
-#     team_data = json.load(teams_file)
-#     for name, abbreviations in team_data.items():
-#         Teams.update_or_insert_record(
-#             data={
-#                 "id": uuid.uuid4(),
-#                 "abbr": abbreviations[0],
-#                 "name": name,
-#                 "alt_abbrs": abbreviations[1:],
-#             }
-#         )
+# print(os.getcwd())
+with open("sql_app/static_data/teams.json", "r") as teams_file:
+    new_data = {}
+    team_data = json.load(teams_file)
+    for name, abbreviations in team_data.items():
+        Teams.update_or_insert_record(
+            data={
+                "id": uuid.uuid4(),
+                "abbr": abbreviations[0],
+                "name": name,
+                "alt_abbrs": abbreviations[1:],
+            }
+        )
 # with open("./sql_app/static_data/teams_new.json", "w") as teams_new:
 #     json.dump(new_data, teams_new)

@@ -1,5 +1,5 @@
-from .game import GameSerializer
-from .matchup import MatchupReadSerializer
 from .career_stats import CareerStatsReadSerializer
-from .team import TeamSerializer, ReadTeamSerializer
+from .game import GameSerializer, ReadGameSerializer
+from .matchup import MatchupReadSerializer
 from .player import PlayerSerializer
+from .team import ReadTeamSerializer, TeamSerializer

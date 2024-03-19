@@ -1,7 +1,11 @@
-from peewee import PostgresqlDatabase, InterfaceError
 import os
 
-DB = PostgresqlDatabase(os.environ.get("DB_URL"))
+from peewee import InterfaceError, PostgresqlDatabase
+from sql_app.settings import DB_URL
+
+print(f"Connecting to database at {DB_URL}")
+
+DB = PostgresqlDatabase(DB_URL)
 
 try:
     DB.connect()

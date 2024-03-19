@@ -9,7 +9,7 @@ from .team import ReadTeamSerializer
 class CareerStatsSerializer(BaseSerializer):
     id: UUID4
     player_id: str
-    Season: str
+    Season: int
     Age: Optional[float]
     Tm_id: UUID4
     Lg: str
@@ -49,7 +49,7 @@ class CareerStatsSerializer(BaseSerializer):
 class CareerStatsReadSerializer(BaseSerializer):
     id: UUID4
     player: ReadPlayerSerializer
-    Season: str
+    Season: int
     Age: Optional[float]
     Tm: ReadTeamSerializer
     Lg: str
