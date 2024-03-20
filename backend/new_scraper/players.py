@@ -1,3 +1,5 @@
+import logging
+
 import pandas as pd
 from new_scraper.base import BaseScraper, DatasetScrapeConfig, Dependency, Inheritance
 from new_scraper.configs import (
@@ -20,7 +22,7 @@ def get_team_id_from_career_stats(career_stats_data: pd.DataFrame) -> pd.DataFra
     return data
 
 
-player_info_scraper = BaseScraper()
+player_info_scraper = BaseScraper(log_level=logging.DEBUG)
 
 player_info_scrape_config = DatasetScrapeConfig(
     config=PlayerInfoTableConfig(),
@@ -56,11 +58,7 @@ gamelog_scrape_config = DatasetScrapeConfig(
                 {
                     "player_last_initial": row["player_id"][0],
                     "player_id": row["player_id"],
-                    "year": str(
-                        int(
-                            row["Season"],
-                        )
-                    ),
+                    "year": row["Season"],
                 }
                 for index, row in dataset[["player_id", "Season"]].iterrows()
             ],
@@ -70,7 +68,7 @@ gamelog_scrape_config = DatasetScrapeConfig(
 
 player_info_scraper.add_dataset("PlayerInfo", player_info_scrape_config)
 player_info_scraper.add_dataset("CareerStats", career_stats_scrape_config)
-player_info_scraper.add_dataset("Gamelog", gamelog_scrape_config)
+# player_info_scraper.add_dataset("Gamelog", gamelog_scrape_config)
 
 player_info_scraper.daemon = True
 # player_info_scraper.start()

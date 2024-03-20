@@ -6,7 +6,7 @@ import threading
 from fastapi import FastAPI
 from fastapi.logger import logger
 from fastapi.middleware.cors import CORSMiddleware
-from new_scraper.players import player_info_scraper
+from new_scraper.players2 import player_info_scraper
 from scraper.career_stats import CareerStatsScraper
 from scraper.defense_rankings_scraper import DefenseRankingsScraper
 from scraper.gamelog import GamelogScraper
@@ -51,6 +51,7 @@ main_logger.addHandler(main_stream_handler)
 if config.DATA_SCRAPE.get("Player", {}).get("status"):
     # player_info_scraper = PlayerScraper()
     # player_info_scraper.setDaemon(True)
+    player_info_scraper.daemon = True
     player_info_scraper.start()
 
 # if config.DATA_SCRAPE.get("Lineups", {}).get("status"):

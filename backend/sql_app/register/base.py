@@ -1,29 +1,22 @@
-import time
-import peewee
 import logging
-
-from datetime import datetime
-from playhouse.shortcuts import model_to_dict
-from pydantic import BaseModel as BaseSerializer
-from typing import Any, Union
-from typing import Literal
-from typing import Optional
-from typing import overload
-from typing import Type
-from sql_app.models.base import BaseModel
-
-import pandas as pd
-
-from typing import TypeVar
+import time
 
 # Serializer = TypeVar("Serializer", bound="BaseSerializer")
 from abc import abstractmethod
+from datetime import datetime
+from typing import Any, Literal, Optional, Type, TypeVar, Union, overload
+from xml.sax.handler import feature_external_ges
 
+import pandas as pd
+import peewee
+from playhouse.shortcuts import model_to_dict
+from pydantic import BaseModel as BaseSerializer
+from sql_app.models.base import BaseModel
 
 logger = logging.getLogger("main")
 
 
-class AdvancedQuery(BaseModel):
+class AdvancedQuery(BaseSerializer):
     greater_than: dict[str, Union[int, float, datetime]] = {}
     less_than: dict[str, Union[int, float, datetime]] = {}
     equal_to: dict[str, Any] = {}
@@ -112,6 +105,16 @@ class BaseTable:
     @overload
     def filter_records(self, *, query: dict) -> list[BaseSerializer]: ...
 
+    def get_foreign_relationships(self) -> list[str]:
+        # return get_foreign_key_fields(self.model_class)
+        foreign_keys = []
+
+        for field_name, field in self.model_class._meta.fields.items():  # type: ignore
+            if isinstance(field, peewee.ForeignKeyField):
+                foreign_keys.append(field_name)
+
+        return foreign_keys
+
     def get_all_records(
         self, *, as_df=False, confuse: bool = False, limit: Optional[int] = None
     ) -> list[BaseSerializer] | pd.DataFrame:
@@ -154,7 +157,6 @@ class BaseTable:
         try:
             model = self.model_class.get(**validated_data.model_dump())
         except peewee.DoesNotExist:
-            print(validated_data)
             model, created = self.model_class.get_or_create(
                 **validated_data.model_dump()
             )
@@ -385,8 +387,7 @@ class BaseTable:
         except peewee.DoesNotExist as e:
             existing_row = None
 
-        # print(existing_row)
-
+        data.pop("timestamp", None)
         if existing_row:
             return self.update_record(
                 data={**data, "id": existing_row.id}, id_fields=id_fields  # type: ignore

@@ -6,7 +6,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 from exceptions import DBNotFoundException
-from new_scraper.base import BaseHTMLDatasetConfig, QueryArgs
+from new_scraper.base2 import BaseHTMLDatasetConfig, QueryArgs
 from new_scraper.util.string_helpers import convert_season_to_year
 from pandas.core.api import DataFrame as DataFrame
 from pyparsing import col
@@ -27,7 +27,7 @@ def get_team_id_by_abbr(team_abbr: str):
     return team.id
 
 
-class CareerStatsTableConfig(BaseHTMLDatasetConfig):
+class CareerStatsTableConfig2(BaseHTMLDatasetConfig):
     """
     Here we will include the cleaning function stuff as class attributes
     """

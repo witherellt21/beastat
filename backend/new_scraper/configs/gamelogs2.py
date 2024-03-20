@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from click import Option
 from global_implementations import constants
-from new_scraper.base import BaseHTMLDatasetConfig, QueryArgs
+from new_scraper.base2 import BaseHTMLDatasetConfig, QueryArgs
 from playhouse.shortcuts import model_to_dict
 from pydantic import UUID4
 from sql_app.models.game import Game
@@ -92,7 +92,7 @@ def get_game_ids(dataset: pd.DataFrame) -> pd.Series:
     return game_id
 
 
-class GamelogScrapeConfig(BaseHTMLDatasetConfig):
+class GamelogTableConfig2(BaseHTMLDatasetConfig):
     """
     Here we will include the cleaning function stuff as class attributes
     """

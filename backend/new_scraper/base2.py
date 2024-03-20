@@ -1,30 +1,13 @@
 import logging
 import threading
-from ast import Call
 from collections.abc import Callable
-from ctypes import Union
 from functools import reduce
-from logging import config
-from telnetlib import EC
 from time import sleep
-from typing import (
-    Any,
-    Iterable,
-    Literal,
-    Mapping,
-    NamedTuple,
-    Optional,
-    OrderedDict,
-    Self,
-    Type,
-    TypeAlias,
-)
+from typing import Any, Literal, Optional, OrderedDict, Type, TypeAlias, overload
 
 import numpy as np
 import pandas as pd
-from click import Option
 from global_implementations import constants
-from matplotlib import table
 from new_scraper.abstract_scraper import AbstractDatasetConfig, AbstractScraper
 from pandas._typing import Dtype
 from pydantic.fields import FieldInfo
@@ -79,9 +62,6 @@ class BaseHTMLDatasetConfig:
     STAT_AUGMENTATIONS: dict[str, str | Callable[[pd.DataFrame], pd.Series]] = {}
 
     # Select specific rows from the dataset based on callable filter functions
-    PRE_FILTERS: list[Callable] = []
-
-    # Select specific rows from the dataset based on callable filter functions
     FILTERS: list[Callable] = []
     RENAME_COLUMNS: dict[str, str] = {}
     RENAME_VALUES: dict[str, dict[Any, Any]] = {}
@@ -109,6 +89,7 @@ class BaseHTMLDatasetConfig:
         self.sql_table = sql_table
         self.query_set: Optional[QuerySet] = query_set
         self.data: pd.DataFrame = pd.DataFrame()
+        self.staged_data: pd.DataFrame = pd.DataFrame()
         self.data_source: Literal["cached", "downloaded"] = "downloaded"
 
         self.primary_key: str = self.sql_table.model_class._meta.primary_key.name  # type: ignore
@@ -144,43 +125,36 @@ class BaseHTMLDatasetConfig:
     def get_download_url(self, *, query_args: QueryArgs) -> str:
         return self.base_download_url.format(**query_args)
 
-    def clean_data(self) -> pd.DataFrame:
+    def clean_data(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Manipulate the dataset column types, add columns, slice columns.
 
         **Override this for anything you want to be done to the dataset AFTER saving.
         """
-        if self.data.empty:
+        if data.empty:
             return pd.DataFrame()
 
-        for column in self.data.columns:
+        for column in data.columns:
             if column in self.__class__.HREF_SAVE_MAP:
-                self.data[self.__class__.HREF_SAVE_MAP[column]] = self.data[
-                    column
-                ].apply(lambda x: x[1])
-            self.data[column] = self.data[column].apply(
-                lambda x: x[0] if type(x) == tuple else x
-            )
+                data[self.__class__.HREF_SAVE_MAP[column]] = data[column].apply(
+                    lambda x: x[1]
+                )
+            data[column] = data[column].apply(lambda x: x[0] if type(x) == tuple else x)
 
-        self.data = self.data.replace(constants.NAN_VALUES, np.nan, regex=True)
+        data = data.replace(constants.NAN_VALUES, np.nan, regex=True)
 
         # Rename columns to desired names
-        self.data = self.data.rename(columns=self.__class__.RENAME_COLUMNS)
+        data = data.rename(columns=self.__class__.RENAME_COLUMNS)
 
         # Replace row values with desired row values
-        self.data = self.data.replace(self.__class__.RENAME_VALUES)
+        data = data.replace(self.__class__.RENAME_VALUES)
 
         # print(self.data["Rk"])
         # print("Rk" in self.data.columns)
 
-        self.data = self.data.dropna(subset=self.__class__.REQUIRED_FIELDS)
+        data = data.dropna(subset=self.__class__.REQUIRED_FIELDS)
 
-        # Apply any filters to the dataset
-        self.data = filter_dataframe(
-            dataframe=self.data, filters=self.__class__.PRE_FILTERS
-        )
-
-        print(self.data)
+        # print(self.data)
 
         # Apply all transformations to the dataset
         for column, transformation in self.__class__.TRANSFORMATIONS.items():
@@ -189,39 +163,37 @@ class BaseHTMLDatasetConfig:
             else:
                 from_column = to_column = column
 
-            self.data[to_column] = self.data[from_column].apply(transformation)
+            data[to_column] = data[from_column].apply(transformation)
 
-        self.data = self.data.dropna(subset=self.__class__.REQUIRED_FIELDS)
+        data = data.dropna(subset=self.__class__.REQUIRED_FIELDS)
 
         # Convert the columns to the desired types
         if self.column_types:
             try:
-                self.data = self.data.astype(self.column_types)
+                data = data.astype(self.column_types)
             except pd.errors.IntCastingNaNError as e:
                 # self.logger.warning(e)
                 print(e)
 
         # Convert datetime columns appropriately
         for key, dt_format in self.__class__.DATETIME_COLUMNS.items():
-            self.data[key] = pd.to_datetime(self.data[key], format=dt_format)
+            data[key] = pd.to_datetime(data[key], format=dt_format)
 
         # Add additional columns to augment the dataset and clean the unnecessary ones out
-        self.data = augment_dataframe(
-            dataframe=self.data, augmentations=self.__class__.STAT_AUGMENTATIONS
+        data = augment_dataframe(
+            dataframe=data, augmentations=self.__class__.STAT_AUGMENTATIONS
         )
 
         # Apply any filters to the dataset
-        self.data = filter_dataframe(
-            dataframe=self.data, filters=self.__class__.FILTERS
-        )
+        data = filter_dataframe(dataframe=data, filters=self.__class__.FILTERS)
 
-        self.data = self.data.dropna(subset=self.__class__.REQUIRED_FIELDS)
+        data = data.dropna(subset=self.__class__.REQUIRED_FIELDS)
 
-        self.data = self.data[self.desired_columns]
-        if self.primary_key in list(self.data.columns):
-            self.data = self.data.set_index(self.primary_key)
+        data = data[self.desired_columns]
+        if self.primary_key in list(data.columns):
+            data = data.set_index(self.primary_key)
 
-        return self.data
+        return data
 
 
 class Dependency:
@@ -280,34 +252,63 @@ class Inheritance2:
         )
 
 
+class NestedDataset:
+    def __init__(
+        self,
+        dataset_config: "DatasetScrapeConfig",
+        query_set_provider: Callable[[pd.DataFrame], list[dict[str, str]]],
+    ) -> None:
+        self.dataset_config = dataset_config
+        self.query_set_provider = query_set_provider
+
+
 class DatasetScrapeConfig:
     def __init__(
         self,
         *,
-        config: BaseHTMLDatasetConfig,
-        dependencies: list[Dependency] = [],
-        # dependencies: list[Dependency2] = [],
-        inheritances: list[Inheritance] = [],
-        datasets: OrderedDict[str, "DatasetScrapeConfig"] = OrderedDict(),
+        dataset: BaseHTMLDatasetConfig,
+        nested_datasets: Optional[list["DatasetScrapeConfig"]] = None,
+        dependencies: Optional[list[Dependency2]] = None,
+        inheritances: Optional[list[Inheritance2]] = None,
     ) -> None:
-        self.config: BaseHTMLDatasetConfig = config
-        self.dependencies: list[Dependency] = dependencies
-        # self.dependencies: list[Dependency2] = dependencies
-        self.inheritances: list[Inheritance] = inheritances
-        # self.needed_by: list[]
+        self.dataset: BaseHTMLDatasetConfig = dataset
 
-        self.datasets: OrderedDict[str, DatasetScrapeConfig] = datasets
-        self.nested_datasets: list["DatasetScrapeConfig"] = []
+        self.dependencies: list[Dependency2] = dependencies or []
+        self.inheritances: list[Inheritance2] = inheritances or []
+        self.nested_datasets: list["DatasetScrapeConfig"] = nested_datasets or []
 
-
-class NestedDataset:
-    def __init__(
+    def add_dependency(
         self,
-        dataset: "Dataset",
+        *,
+        source: BaseHTMLDatasetConfig,
         query_set_provider: Callable[[pd.DataFrame], list[dict[str, str]]],
-    ) -> None:
-        self.dataset = dataset
-        self.query_set_provider = query_set_provider
+    ):
+        self.dependencies.append(
+            Dependency2(source=source, query_set_provider=query_set_provider)
+        )
+
+    def add_nested_dataset(
+        self,
+        *,
+        dataset_config: "DatasetScrapeConfig",
+        # query_set_provider: Callable[[pd.DataFrame], list[dict[str, str]]],
+    ):
+        self.nested_datasets.append(dataset_config)
+        # self.nested_datasets.append(
+        #     NestedDataset(
+        #         dataset_config=dataset_config, query_set_provider=query_set_provider
+        #     )
+        # )
+
+
+# class NestedDataset:
+#     def __init__(
+#         self,
+#         dataset: "Dataset",
+#         query_set_provider: Callable[[pd.DataFrame], list[dict[str, str]]],
+#     ) -> None:
+#         self.dataset = dataset
+#         self.query_set_provider = query_set_provider
 
 
 class Dataset:
@@ -341,7 +342,7 @@ class BaseScraper(threading.Thread):
         threading.Thread.__init__(self, name=self.__class__.__name__)
 
         self.datasets: OrderedDict[str, DatasetScrapeConfig] = OrderedDict()
-        self.RUNNING = True
+        self.RUNNING: Literal[False, True] = True
 
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(log_level)
@@ -353,19 +354,35 @@ class BaseScraper(threading.Thread):
     def download_data(self, *, url: str) -> list[pd.DataFrame]:
         return pd.read_html(url, extract_links="body")
 
-    def save_data(self, config: BaseHTMLDatasetConfig) -> None:
+    def save_data(self, dataset_config: DatasetScrapeConfig) -> None:
         """"""
-        self.logger.debug("Saving data to database.")
+        self.logger.info("Saving data to database.")
 
-        data = config.data.fillna(np.nan).replace([np.nan], [None])
+        data = (
+            dataset_config.dataset.data
+            if dataset_config.dataset.staged_data.empty
+            else dataset_config.dataset.staged_data
+        )
+
+        dataset_config.dataset.staged_data = pd.DataFrame()
+
+        data = data.fillna(np.nan).replace([np.nan], [None])
+
+        # print(data)
+
         for index, row in data.iterrows():
             row_data = row.to_dict()
             row_data["id"] = index
             if index == None:
                 self.logger.warning(row)
-            config.sql_table.update_or_insert_record(data=row_data)
+            dataset_config.dataset.sql_table.update_or_insert_record(data=row_data)
 
         self.logger.debug(f"\n{data}")
+
+        for nested_config in dataset_config.nested_datasets:
+            self.save_data(dataset_config=nested_config)
+
+        # self.logger.debug(f"\n{data}")
 
     def download_and_process_query(
         self, *, config: BaseHTMLDatasetConfig, query_args: Optional[QueryArgs] = None
@@ -378,7 +395,7 @@ class BaseScraper(threading.Thread):
 
         cached_data = config.cached_data(query=query_args)
         if not cached_data.empty:
-            # config.data_source = "cached"
+            config.data_source = "cached"
             return cached_data
 
         else:
@@ -399,133 +416,163 @@ class BaseScraper(threading.Thread):
                     data[df_column] = query_args[query_key]
 
             # Apply each cleaning function
-            config.data = data
-
-            print(query_args)
             try:
-                data = config.clean_data()
+                data = config.clean_data(data=data)
             except Exception as e:
                 raise Exception(f"{config.__class__.__name__}: {e}")
 
             return data
 
-    def process_data(
-        self, config: BaseHTMLDatasetConfig, query_set: QuerySet
-    ) -> pd.DataFrame:
-        self.logger.info(
-            f"Processing data for {config.__class__.__name__}. Query set length: {len(query_set)}"
+    # def process_data(
+    #     self, config: BaseHTMLDatasetConfig, query_set: QuerySet
+    # ) -> pd.DataFrame:
+    #     self.logger.info(
+    #         f"Processing data for {config.__class__.__name__}. Query set length: {len(query_set)}"
+    #     )
+    #     idx = 0
+    #     n = len(query_set)
+
+    #     data: pd.DataFrame = pd.DataFrame()
+    #     for query in query_set:
+    #         data = pd.concat(
+    #             [data, self.download_and_process_query(config=config, query_args=query)]
+    #         )
+
+    #         idx += 1
+    #         self.logger.info(
+    #             f"{config.__class__.__name__} query set {round(idx/n * 100, 2)}% complete."
+    #         )
+
+    #     return data
+
+    def perform_single_pass(
+        self, dataset_config: DatasetScrapeConfig, query_args: QueryArgs
+    ):
+        dataset_config.dataset.data = self.download_and_process_query(
+            config=dataset_config.dataset, query_args=query_args
         )
+
+        for nested_dataset in dataset_config.nested_datasets:
+            # if self.RUNNING == False:
+            #     break
+
+            query_set_extractions = []
+            for dependency in nested_dataset.dependencies:
+                if self.RUNNING == False:
+                    break
+
+                dependency_data = dependency.source.data
+
+                if dependency_data.empty:
+                    raise Exception(
+                        f"Dataset {nested_dataset.dataset.__class__.__name__} processed before dependency {dependency.source.__class__.__name__}."
+                    )
+
+                query_set_extractions.append(
+                    dependency.query_set_provider(dependency_data)
+                )
+
+            query_set = combine_lists_of_dicts(*query_set_extractions)
+
+            self.process_dataset(dataset_config=nested_dataset, query_set=query_set)
+
+    @overload
+    def resolve_inheritances(
+        self, *, dataset_config: DatasetScrapeConfig, confirm_update: Literal[True]
+    ) -> bool: ...
+
+    @overload
+    def resolve_inheritances(
+        self, *, dataset_config: DatasetScrapeConfig, confirm_update: Literal[False]
+    ) -> None: ...
+
+    @overload
+    def resolve_inheritances(self, *, dataset_config: DatasetScrapeConfig) -> None: ...
+
+    def resolve_inheritances(
+        self, *, dataset_config: DatasetScrapeConfig, confirm_update: bool = False
+    ) -> Optional[bool]:
+        if confirm_update:
+            data = dataset_config.dataset.data.copy()
+            self.logger.debug(f"Starting data: \n\n{data}")
+
+        for inheritance in dataset_config.inheritances:
+            if not inheritance.source.staged_data.empty:
+                inherited_data = inheritance.inheritance_function(
+                    inheritance.source.staged_data
+                )
+
+                dataset_config.dataset.data.update(inherited_data)
+
+        if confirm_update:
+            self.logger.debug(f"Ending data: \n\n{dataset_config.dataset.data}")
+            return not data.equals(dataset_config.dataset.data)
+
+    def process_dataset(self, dataset_config: DatasetScrapeConfig, query_set: QuerySet):
+        full_data = pd.DataFrame()
+        ready_for_save: bool = all(
+            [
+                dependency.source.data_source == "cached"
+                for dependency in dataset_config.dependencies
+            ]
+        )
+
         idx = 0
         n = len(query_set)
 
-        data: pd.DataFrame = pd.DataFrame()
+        # print(dataset_config.dataset.data_source)
+        # self.logger.debug(
+        #     f"{dataset_config.dataset.__class__.__name__}: {ready_for_save}"
+        # )
+        self.logger.info(f"Beginning download of query set: {query_set}")
         for query in query_set:
-            data = pd.concat(
-                [data, self.download_and_process_query(config=config, query_args=query)]
+            if self.RUNNING == False:
+                break
+
+            self.perform_single_pass(dataset_config=dataset_config, query_args=query)
+
+            data_was_updated = self.resolve_inheritances(
+                dataset_config=dataset_config, confirm_update=True
             )
+
+            self.logger.info(
+                f"{dataset_config.dataset.__class__.__name__}: {ready_for_save} : {data_was_updated} : {dataset_config.dataset.data_source == 'cached'}"
+            )
+
+            if dataset_config.dataset.data_source == "cached" and not data_was_updated:
+                pass
+            elif dataset_config.dependencies and not ready_for_save:
+                full_data = pd.concat([full_data, dataset_config.dataset.data])
+            else:
+                self.save_data(dataset_config=dataset_config)
 
             idx += 1
             self.logger.info(
-                f"{config.__class__.__name__} query set {round(idx/n * 100, 2)}% complete."
+                f"{dataset_config.dataset.__class__.__name__} query set {round(idx/n * 100, 2)}% complete."
             )
 
-        return data
-
-    def perform_single_download(
-        self, dataset: DatasetScrapeConfig, query_args: QueryArgs
-    ):
-        dataset.config.data = self.download_and_process_query(
-            config=dataset.config, query_args=query_args
+        dataset_config.dataset.staged_data = pd.concat(
+            [dataset_config.dataset.staged_data, full_data]
         )
-
-        if dataset.config.data_source == "cached":
-            # download and process sub queries and save
-            pass
-        else:
-            for dataset in dataset.nested_datasets:
-                query_set_extractions = []
-                for dependency in dataset.dependencies:
-                    dependency_data = self.datasets[dependency.source_name].config.data
-
-                    if dependency_data.empty:
-                        raise Exception("dependency empty")
-                        # raise Exception(
-                        #     f"Dataset {dataset_name} processed before dependency {dependency.source_name}."
-                        # )
-
-                    query_set_extractions.append(
-                        dependency.query_set_provider(dependency_data)
-                    )
-
-                query_set = combine_lists_of_dicts(*query_set_extractions)
-
-                for query in query_set:
-                    self.perform_single_download(dataset=dataset, query_args=query)
+        # self.logger.debug(f"Ready for back pass: {dataset_config.dataset.staged_data}")
 
     def forward_pass(self):
         for dataset_name, dataset_info in self.datasets.items():
-            if not dataset_info.dependencies:  # No forward dependencies
-                # Scrape and clean data
+            if self.RUNNING == False:
+                break
 
-                query_set = dataset_info.config.query_set
-                # if dataset_name == "PlayerInfo" and query_set:
-                #     query_set = query_set[24:25]
+            query_set = dataset_info.dataset.query_set
 
-                if not query_set:
-                    raise Exception(
-                        f"Dataset {dataset_name} does not have a query set source so it must have a default query set."
-                    )
+            if not query_set:
+                raise Exception("Must specify a query set.")
 
-                # for each of its dependents:
-                # process the data for the dependent
-                # for query in query_set:
-                #     self.perform_single_download(dataset)
+            # query_set = query_set[16:17]
 
-                dataset_info.config.data = self.process_data(
-                    config=dataset_info.config, query_set=query_set
-                )
-
-            else:  # has some forward dependencies so get the values from the dependency datasets
-                query_set_extractions = []
-                for dependency in dataset_info.dependencies:
-                    dependency_data = self.datasets[dependency.source_name].config.data
-
-                    if dependency_data.empty:
-                        raise Exception(
-                            f"Dataset {dataset_name} processed before dependency {dependency.source_name}."
-                        )
-
-                    query_set_extractions.append(
-                        dependency.query_set_provider(dependency_data)
-                    )
-
-                query_set = combine_lists_of_dicts(*query_set_extractions)
-
-                dataset_info.config.data = self.process_data(
-                    config=dataset_info.config,
-                    query_set=query_set,
-                )
-
-    def resolve_inheritances_and_save(self):
-        """
-        Iterate back through the datasets and resolve inherited fields.
-        """
-        for dataset_name, dataset_info in self.datasets.items():
-            for inheritance in dataset_info.inheritances:
-
-                inherited_data = inheritance.inheritance_function(
-                    self.datasets[inheritance.source_name].config.data
-                )
-
-                dataset_info.config.data.update(inherited_data)
-
-            # self.logger.debug(dataset_name)
-            # self.logger.debug(dataset_info.config.data)
-            self.save_data(dataset_info.config)
+            self.process_dataset(dataset_info, query_set=query_set)
 
     def run(self):
         self.logger.info("Starting Scraper...")
         # this will include gamelog dataset
         while self.RUNNING:
             self.forward_pass()
-            self.resolve_inheritances_and_save()
+            # self.resolve_inheritances_and_save()

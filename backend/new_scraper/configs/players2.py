@@ -3,7 +3,7 @@ from typing import Optional
 
 import pandas as pd
 from global_implementations import constants
-from new_scraper.base import BaseHTMLDatasetConfig, QueryArgs
+from new_scraper.base2 import BaseHTMLDatasetConfig, QueryArgs
 from pandas.core.api import DataFrame as DataFrame
 from sql_app.register import Players
 from unidecode import unidecode
@@ -14,7 +14,7 @@ def convert_height_to_inches(*, height: str) -> int:
     return int(feet) * 12 + int(inches)
 
 
-class PlayerInfoTableConfig(BaseHTMLDatasetConfig):
+class PlayerInfoTableConfig2(BaseHTMLDatasetConfig):
     """
     Here we will include the cleaning function stuff as class attributes
     """
