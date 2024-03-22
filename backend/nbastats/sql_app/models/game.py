@@ -1,6 +1,5 @@
 import uuid
 
-from base.sql_app.models import BaseModel
 from peewee import (
     CharField,
     DateTimeField,
@@ -10,6 +9,7 @@ from peewee import (
     UUIDField,
 )
 
+from .base_model import BaseModel
 from .team import Team
 
 

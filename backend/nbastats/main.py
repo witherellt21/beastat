@@ -1,5 +1,5 @@
-import config
-from scraper import player_info_scraper, todays_games_scraper
+from . import config
+from .scraper import player_info_scraper, todays_games_scraper
 
 # TODO: MASSIVE work needs to be done in keeping these scrapers asynchronous in case data is missing
 if config.DATA_SCRAPE.get("Player", {}).get("status"):
@@ -15,7 +15,7 @@ if config.DATA_SCRAPE.get("TodaysGames", {}).get("status"):
     todays_games_scraper.start()
 
 
-from webapp.main import app
+# from nbastats.webapp.main import app
 
 # if config.DATA_SCRAPE.get("Lineups", {}).get("status"):
 #     lineup_scraper = LineupScraper()

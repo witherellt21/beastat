@@ -1,9 +1,9 @@
 import json
 
-from base.sql_app.models import BaseModel
 from peewee import CharField, DateField, DateTimeField, ForeignKeyField, IntegerField
 from playhouse.postgres_ext import JSONField
 
+from .base_model import BaseModel
 from .team import Team
 
 

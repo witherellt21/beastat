@@ -1,6 +1,6 @@
-from base.sql_app.models import BaseModel
 from peewee import CharField, FloatField, ForeignKeyField, IntegerField, UUIDField
 
+from .base_model import BaseModel
 from .player import Player
 from .team import Team
 

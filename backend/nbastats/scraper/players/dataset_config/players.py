@@ -14,6 +14,14 @@ def convert_height_to_inches(*, height: str) -> int:
     return int(feet) * 12 + int(inches)
 
 
+def has_player_column(tables: list[pd.DataFrame]) -> Optional[pd.DataFrame]:
+    data = next(
+        (table for table in tables if "Player" in table.columns),
+        None,
+    )
+    return data
+
+
 class PlayerInfoTableConfig(TableConfig):
     """
     Here we will include the cleaning function stuff as class attributes
@@ -43,7 +51,7 @@ class PlayerInfoTableConfig(TableConfig):
 
     def __init__(self, **kwargs):
         super().__init__(
-            identification_function=lambda dataset: "Player" in dataset.columns,
+            identification_function=has_player_column,
             sql_table=Players,
             **kwargs,
         )

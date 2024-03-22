@@ -1,8 +1,9 @@
 import json
 
-from base.sql_app.models import BaseModel
 from peewee import CharField, UUIDField
 from playhouse.postgres_ext import BinaryJSONField
+
+from .base_model import BaseModel
 
 
 class Team(BaseModel):

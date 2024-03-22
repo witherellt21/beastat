@@ -4,7 +4,7 @@ from typing import Any, Literal, Optional, Type, Union, overload
 
 import pandas as pd
 import peewee
-from base.sql_app.models.base_model import BaseModel
+from peewee import Model
 from playhouse.shortcuts import model_to_dict
 from pydantic import BaseModel as BaseSerializer
 
@@ -19,14 +19,14 @@ class AdvancedQuery(BaseSerializer):
 
 
 class BaseTable:
-    MODEL_CLASS: Type[BaseModel]
+    MODEL_CLASS: Type[Model]
     SERIALIZER_CLASS: Type[BaseSerializer]
     UPDATE_SERIALIZER_CLASS: Type[BaseSerializer]
     TABLE_ENTRY_SERIALIZER_CLASS: Type[BaseSerializer]
     READ_SERIALIZER_CLASS: Optional[Type[BaseSerializer]] = None
     PKS: list[str] = ["id"]
 
-    DEPENDENCIES: list[Type[BaseModel]] = []
+    DEPENDENCIES: list[Type[Model]] = []
 
     def __init__(self, db: peewee.Database):
         if not self.model_class:
@@ -62,7 +62,7 @@ class BaseTable:
         return self.__class__.READ_SERIALIZER_CLASS or self.serializer_class
 
     @property
-    def model_class(self) -> Type[BaseModel]:
+    def model_class(self) -> Type[Model]:
         return self.__class__.MODEL_CLASS
 
     @overload
@@ -168,7 +168,7 @@ class BaseTable:
         Return all rows matching the search query.
         """
         # start = time.time()
-        records: list[BaseModel] = self.model_class.select().where(
+        records: list[Model] = self.model_class.select().where(
             *[getattr(self.model_class, key) == value for key, value in query.items()]
         )
         # print(time.time() - start)
@@ -241,7 +241,7 @@ class BaseTable:
         Return all rows matching the search query.
         """
         # start = time.time()
-        records: list[BaseModel] = self.model_class.select().where(
+        records: list[Model] = self.model_class.select().where(
             *[getattr(self.model_class, key) == value for key, value in query.items()]
         )
         # print(time.time() - start)
@@ -265,7 +265,7 @@ class BaseTable:
             **data, timestamp=datetime.now()
         )
 
-        result: BaseModel = self.model_class.create(**validated_data.model_dump())
+        result: Model = self.model_class.create(**validated_data.model_dump())
 
         if result:
             return validated_data
@@ -306,7 +306,7 @@ class BaseTable:
         # validated_data = self.serializer_class(**model_to_dict(existing_row))
         # validated_data = validated_data.model_copy(update=data)
 
-        result: Optional[BaseModel] = (
+        result: Optional[Model] = (
             self.model_class.update(**data)
             .where(
                 *[
@@ -349,7 +349,7 @@ class BaseTable:
         #         self.serializer_class.model_construct(), key, value
         #     )
 
-        result: Optional[BaseModel] = (
+        result: Optional[Model] = (
             self.model_class.update(**update_dict)
             .where(
                 *[
@@ -370,7 +370,7 @@ class BaseTable:
     ) -> Optional[BaseSerializer]:
         id_fields = kwargs.get("id_fields", self.__class__.PKS)
 
-        existing_row: Optional[BaseModel]
+        existing_row: Optional[Model]
         try:
             existing_row = self.model_class.get(
                 *[
@@ -391,7 +391,7 @@ class BaseTable:
         else:
             return self.insert_record(data=data)
 
-    def delete_record(self, **kwargs) -> BaseModel:
+    def delete_record(self, **kwargs) -> Model:
         query = kwargs.get("query", self.__class__.PKS)
 
         delete_query = self.model_class.delete().where(

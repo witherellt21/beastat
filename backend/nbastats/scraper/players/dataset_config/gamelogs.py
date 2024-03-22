@@ -89,6 +89,14 @@ def get_game_ids(dataset: pd.DataFrame) -> pd.Series:
     return game_id
 
 
+def has_30_columns(tables: list[pd.DataFrame]) -> Optional[pd.DataFrame]:
+    data = next(
+        (table for table in tables if len(table.columns) == 30),
+        None,
+    )
+    return data
+
+
 class GamelogTableConfig(TableConfig):
     """
     Here we will include the cleaning function stuff as class attributes
@@ -138,7 +146,7 @@ class GamelogTableConfig(TableConfig):
         kwargs.setdefault("name", "Gamelogs")
 
         super().__init__(
-            identification_function=lambda dataset: len(dataset.columns) == 30,
+            identification_function=has_30_columns,
             sql_table=Gamelogs,
             **kwargs,
         )

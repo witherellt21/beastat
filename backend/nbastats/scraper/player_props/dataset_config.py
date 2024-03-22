@@ -146,11 +146,7 @@ def set_statuses(dataset: pd.DataFrame) -> pd.DataFrame:
             right_on=["game_id", "player_id", "stat"],
         )
 
-        print(merged.columns)
-
         locked_lines = merged[merged["id_y"].isna()]["id_x"].values
-
-        print(locked_lines)
 
     return dataset
 
@@ -183,7 +179,7 @@ class PlayerPropsTableConfig(TableConfig):
 
     def __init__(self, **kwargs):
         super().__init__(
-            identification_function=identification_function,
+            identification_function=lambda tables: pd.concat(tables),
             sql_table=PlayerProps,
             **kwargs,
         )

@@ -15,6 +15,7 @@ from base.scraper.util.dependency_tree_helpers import (
     topological_sort_dependency_tree,
 )
 from base.sql_app.register import BaseTable
+from click import Option
 from pandas._typing import Dtype
 from pydantic.fields import FieldInfo
 
@@ -97,7 +98,7 @@ class TableConfig(DependentObject["TableConfig", "DependencyKwargs"]):
     def __init__(
         self,
         *,
-        identification_function: Callable[[pd.DataFrame], bool],
+        identification_function: Callable[[list[pd.DataFrame]], Optional[pd.DataFrame]],
         sql_table: BaseTable,
         **kwargs,
     ):
@@ -400,10 +401,11 @@ class BaseScraper(threading.Thread):
     def identify_table(
         self, table_config: TableConfig, tables: list[pd.DataFrame]
     ) -> Optional[pd.DataFrame]:
-        data = next(
-            (table for table in tables if table_config._identification_function(table)),
-            None,
-        )
+        data = table_config._identification_function(tables)
+        # data = next(
+        #     (table for table in tables if table_config._identification_function(table)),
+        #     None,
+        # )
         return data
 
     def download_and_process_query(

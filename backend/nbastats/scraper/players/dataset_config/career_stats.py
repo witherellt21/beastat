@@ -13,6 +13,14 @@ from pandas.core.api import DataFrame as DataFrame
 IS_SEASON = re.compile(r"^\d{4}")
 
 
+def has_season_column(tables: list[pd.DataFrame]) -> Optional[pd.DataFrame]:
+    data = next(
+        (table for table in tables if "Season" in table.columns),
+        None,
+    )
+    return data
+
+
 class CareerStatsTableConfig(TableConfig):
     """
     Here we will include the cleaning function stuff as class attributes
@@ -64,7 +72,7 @@ class CareerStatsTableConfig(TableConfig):
 
     def __init__(self, **kwargs):
         super().__init__(
-            identification_function=lambda dataset: "Season" in dataset.columns,
+            identification_function=has_season_column,
             sql_table=CareerStatss,
             **kwargs,
         )

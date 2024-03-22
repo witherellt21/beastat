@@ -10,6 +10,7 @@ import pandas as pd
 import requests
 from base.scraper import BaseHTMLDatasetConfig, TableConfig
 from bs4 import BeautifulSoup, element
+from click import Option
 from dateutil import parser
 from dateutil.tz import gettz
 from nbastats.sql_app.register import Games, Lineups, Matchups
@@ -104,8 +105,12 @@ class GameTableConfig(TableConfig):
             **kwargs,
         )
 
-    def identify(self, dataset: pd.DataFrame):
-        return "date_time" in dataset.columns
+    def identify(self, tables: list[pd.DataFrame]) -> Optional[pd.DataFrame]:
+        data = next(
+            (table for table in tables if "date_time" in table.columns),
+            None,
+        )
+        return data
 
 
 class LineupTableConfig(TableConfig):
@@ -120,8 +125,12 @@ class LineupTableConfig(TableConfig):
             **kwargs,
         )
 
-    def identify(self, dataset: pd.DataFrame):
-        return "status" in dataset.columns
+    def identify(self, tables: list[pd.DataFrame]) -> Optional[pd.DataFrame]:
+        data = next(
+            (table for table in tables if "status" in table.columns),
+            None,
+        )
+        return data
 
 
 class MatchupTableConfig(TableConfig):
@@ -136,8 +145,12 @@ class MatchupTableConfig(TableConfig):
             **kwargs,
         )
 
-    def identify(self, dataset: pd.DataFrame):
-        return "position" in dataset.columns
+    def identify(self, tables: list[pd.DataFrame]) -> Optional[pd.DataFrame]:
+        data = next(
+            (table for table in tables if "position" in table.columns),
+            None,
+        )
+        return data
 
 
 class TodaysGamesDatasetConfig(BaseHTMLDatasetConfig):
