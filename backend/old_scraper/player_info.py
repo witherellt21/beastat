@@ -1,15 +1,13 @@
-import pandas as pd
-
-from global_implementations import constants
-from scraper.util.string_helpers import get_player_id_from_name
-from scraper.abstract_base_scraper import AbstractBaseScraper
-from unidecode import unidecode
 import logging
-
-from sql_app.register.player import Players
 from string import ascii_lowercase
-
 from typing import Optional
+
+import pandas as pd
+from global_implementations import constants
+from old_scraper.abstract_base_scraper import AbstractBaseScraper
+from old_scraper.util.string_helpers import get_player_id_from_name
+from sql_app.register.player import Players
+from unidecode import unidecode
 
 
 def get_player_ids(*, source_table: pd.DataFrame, id_from_column: str) -> pd.Series:

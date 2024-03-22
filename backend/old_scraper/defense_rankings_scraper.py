@@ -1,10 +1,10 @@
-import pandas as pd
-from scraper.abstract_base_scraper import AbstractBaseScraper
-from sql_app.register.defense_ranking import DefenseRankings
-
-from bs4 import BeautifulSoup, ResultSet, element
-import requests
 import logging
+
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup, ResultSet, element
+from old_scraper.abstract_base_scraper import AbstractBaseScraper
+from sql_app.register.defense_ranking import DefenseRankings
 
 
 class DefenseRankingsScraper(AbstractBaseScraper):

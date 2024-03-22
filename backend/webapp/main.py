@@ -6,13 +6,7 @@ import threading
 from fastapi import FastAPI
 from fastapi.logger import logger
 from fastapi.middleware.cors import CORSMiddleware
-from new_scraper.players2 import player_info_scraper
-from scraper.career_stats import CareerStatsScraper
-from scraper.defense_rankings_scraper import DefenseRankingsScraper
-from scraper.gamelog import GamelogScraper
-from scraper.lineups import LineupScraper
-from scraper.player_info import PlayerScraper
-from scraper.player_props import PlayerPropsScraper
+from scraper import player_info_scraper, todays_games_scraper
 from webapp import config
 from webapp.routers import (
     career_stats,
@@ -49,10 +43,16 @@ main_logger.addHandler(main_stream_handler)
 
 # TODO: MASSIVE work needs to be done in keeping these scrapers asynchronous in case data is missing
 if config.DATA_SCRAPE.get("Player", {}).get("status"):
-    # player_info_scraper = PlayerScraper()
-    # player_info_scraper.setDaemon(True)
+
     player_info_scraper.daemon = True
+    player_info_scraper.configure(nested_download=True)
     player_info_scraper.start()
+
+if config.DATA_SCRAPE.get("TodaysGames", {}).get("status"):
+
+    todays_games_scraper.daemon = True
+    todays_games_scraper.configure()
+    todays_games_scraper.start()
 
 # if config.DATA_SCRAPE.get("Lineups", {}).get("status"):
 #     lineup_scraper = LineupScraper()

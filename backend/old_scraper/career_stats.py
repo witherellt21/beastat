@@ -1,26 +1,24 @@
 # Aliases
-import uuid
-import numpy as np
-import pandas as pd
-
 # Module imports
 import logging
 import os
 import re
+import uuid
+from typing import Iterable, Literal, Optional, TypedDict, Unpack
+
+import numpy as np
+import pandas as pd
 
 # Package imports
-from scraper.abstract_base_scraper import AbstractBaseScraper
-from scraper.test.main_tester_functions import test_scraper_thread
-from scraper.util.string_helpers import convert_season_to_year
+from old_scraper.abstract_base_scraper import AbstractBaseScraper
+from old_scraper.test.main_tester_functions import test_scraper_thread
+from old_scraper.util.string_helpers import convert_season_to_year
+from old_scraper.util.team_helpers import get_team_id_by_abbr
+from pydantic import UUID4
+from sql_app.register import Teams
 from sql_app.register.career_stats import CareerStatss
 from sql_app.register.matchup import Matchups
 from sql_app.register.player import Players
-from sql_app.register import Teams
-
-from typing import Unpack, Literal, TypedDict, Iterable, Optional
-from pydantic import UUID4
-
-from scraper.util.team_helpers import get_team_id_by_abbr
 
 IS_SEASON = re.compile(r"^\d{4}")
 

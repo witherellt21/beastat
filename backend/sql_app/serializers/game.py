@@ -1,9 +1,10 @@
+import uuid
+from datetime import datetime
+from typing import Annotated, Optional
+
+from pydantic import UUID4
 from pydantic import BaseModel as BaseSerializer
 from pydantic import StringConstraints
-from pydantic import UUID4
-from datetime import datetime
-from typing import Optional, Annotated
-import uuid
 
 from .team import ReadTeamSerializer
 
@@ -34,7 +35,7 @@ class ReadGameSerializer(BaseSerializer):
     timestamp: datetime
 
 
-class GameLinesSerializer(BaseSerializer):
+class GameLineSerializer(BaseSerializer):
     game_id: UUID4
     favored_team_id: UUID4
     line: float
@@ -42,7 +43,7 @@ class GameLinesSerializer(BaseSerializer):
     over_under: float
 
 
-class ReadGameLinesSerializer(BaseSerializer):
+class ReadGameLineSerializer(BaseSerializer):
     game: ReadGameSerializer
     favored_team: ReadTeamSerializer
     line: float

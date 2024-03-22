@@ -1,7 +1,7 @@
-from abc import ABC, abstractmethod, abstractproperty
 import threading
-import pandas as pd
+from abc import ABC, abstractmethod, abstractproperty
 
+import pandas as pd
 from sql_app.register.base import BaseTable
 
 

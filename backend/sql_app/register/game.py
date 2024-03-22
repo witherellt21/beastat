@@ -1,19 +1,25 @@
-from playhouse.shortcuts import model_to_dict
-from sql_app.register.base import BaseTable
-from sql_app.models.game import Game
-from sql_app.serializers.game import GameSerializer
-from sql_app.database import DB
-from typing import Optional, Literal, overload
-from datetime import datetime
 import uuid
-import pandas as pd
+from datetime import datetime
+from typing import Literal, Optional, overload
 
-from sql_app.models import Team
+import pandas as pd
+from playhouse.shortcuts import model_to_dict
+from sql_app.database import DB
+from sql_app.models import Game, GameLine, Team
+from sql_app.register.base import BaseTable
+from sql_app.serializers import (
+    GameLineSerializer,
+    GameSerializer,
+    ReadGameLineSerializer,
+    ReadGameSerializer,
+)
 
 
 class GameTable(BaseTable):
     MODEL_CLASS = Game
     SERIALIZER_CLASS = GameSerializer
+    TABLE_ENTRY_SERIALIZER_CLASS = GameSerializer
+    READ_SERIALIZER_CLASS = ReadGameSerializer
     PKS: list[str] = ["date_time", "home_id", "away_id"]
 
     DEPENDENCIES = [Team]
@@ -60,4 +66,15 @@ class GameTable(BaseTable):
         return pd.DataFrame(serialized_objects) if as_df else serialized_objects
 
 
+class GameLineTable(BaseTable):
+    MODEL_CLASS = GameLine
+    SERIALIZER_CLASS = GameLineSerializer
+    TABLE_ENTRY_SERIALIZER_CLASS = GameLineSerializer
+    READ_SERIALIZER_CLASS = ReadGameLineSerializer
+    PKS: list[str] = ["date_time", "home_id", "away_id"]
+
+    DEPENDENCIES = [Game]
+
+
 Games = GameTable(DB)
+GameLines = GameLineTable(DB)

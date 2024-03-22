@@ -1,10 +1,14 @@
 import uuid
-from peewee import IntegerField
-from peewee import CharField
-from peewee import DateTimeField
-from peewee import UUIDField
-from peewee import ForeignKeyField
-from peewee import FloatField
+
+from peewee import (
+    CharField,
+    DateTimeField,
+    FloatField,
+    ForeignKeyField,
+    IntegerField,
+    UUIDField,
+)
+
 from .base import BaseModel
 from .team import Team
 
@@ -21,7 +25,7 @@ class Game(BaseModel):
     timestamp = DateTimeField()
 
 
-class GameLines(BaseModel):
+class GameLine(BaseModel):
     game = ForeignKeyField(Game, backref="line", unique=True)
     favored_team = ForeignKeyField(Team, backref="favored_games")
     line = FloatField()

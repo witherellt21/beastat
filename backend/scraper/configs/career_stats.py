@@ -1,33 +1,20 @@
 import re
 import uuid
-from asyncio import QueueEmpty
 from typing import Optional
 
 import numpy as np
 import pandas as pd
-from exceptions import DBNotFoundException
-from new_scraper.base2 import BaseHTMLDatasetConfig, QueryArgs
-from new_scraper.util.string_helpers import convert_season_to_year
 from pandas.core.api import DataFrame as DataFrame
-from pyparsing import col
-from sql_app.register import CareerStatss, Teams
+from scraper.base import BaseHTMLDatasetConfig, QueryArgs, TableConfig
+from scraper.util.string_helpers import convert_season_to_year
+from scraper.util.team_helpers import get_team_id_by_abbr
+from sql_app.register import CareerStatss
+from sql_app.register.base import BaseTable
 
 IS_SEASON = re.compile(r"^\d{4}")
 
 
-def get_team_id_by_abbr(team_abbr: str):
-    if type(team_abbr) != str and np.isnan(team_abbr):
-        return np.nan
-
-    team = Teams.get_team_by_abbr(team_abbr=team_abbr)
-
-    if not team:
-        raise DBNotFoundException(f"Could not find team with abbreviation {team_abbr}.")
-
-    return team.id
-
-
-class CareerStatsTableConfig2(BaseHTMLDatasetConfig):
+class CareerStatsTableConfig(TableConfig):
     """
     Here we will include the cleaning function stuff as class attributes
     """
@@ -76,27 +63,21 @@ class CareerStatsTableConfig2(BaseHTMLDatasetConfig):
     QUERY_SAVE_COLUMNS = {"player_id": "player_id"}
     REQUIRED_FIELDS = ["Season", "G", "Tm"]
 
-    # TABLE = Players
-    # LOG_LEVEL = logging.WARNING
-
-    def __init__(self):
+    def __init__(self, **kwargs):
         super().__init__(
             identification_function=lambda dataset: "Season" in dataset.columns,
             sql_table=CareerStatss,
+            **kwargs,
         )
 
-    @property
-    def base_download_url(self):
-        return "http://www.basketball-reference.com/players/{player_last_initial}/{player_id}.html"
-
-    def cached_data(self, *, query: Optional[QueryArgs] = None) -> pd.DataFrame:
-        if query == None:
-            return super().cached_data(query=query)
+    def cached_data(self, *, query_args: Optional[QueryArgs] = None) -> pd.DataFrame:
+        if query_args == None:
+            return super().cached_data(query_args=query_args)
 
         else:
 
             data = CareerStatss.filter_records(
-                query={"player_id": query.get("player_id")}, as_df=True
+                query={"player_id": query_args.get("player_id")}, as_df=True
             )
 
             foreign_keys = CareerStatss.get_foreign_relationships()
@@ -108,3 +89,15 @@ class CareerStatsTableConfig2(BaseHTMLDatasetConfig):
             data = data.rename(columns=foreign_keys_remap)
 
             return data
+
+
+class CareerStatsDatasetConfig(BaseHTMLDatasetConfig):
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault("name", "CareerStats")
+
+        super().__init__(**kwargs)
+
+    @property
+    def base_download_url(self):
+        return "http://www.basketball-reference.com/players/{player_last_initial}/{player_id}.html"

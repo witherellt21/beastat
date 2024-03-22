@@ -1,30 +1,24 @@
+import logging
+import threading
 import time
-from typing import Literal, Optional
-from typing import TypedDict
-from typing import Unpack
-from typing import Type
-from typing import Any
-
+import traceback
+from abc import ABC, abstractmethod, abstractproperty
+from collections.abc import Callable
+from typing import Any, Literal, Optional, Type, TypedDict, Unpack
+from urllib.error import HTTPError
 
 import numpy as np
 import pandas as pd
-from pandas._typing import Dtype
-
-from abc import ABC
-from abc import abstractmethod, abstractproperty
-from collections.abc import Callable
 from global_implementations import constants
-from scraper.util.dataset_helpers import augment_dataframe
-from scraper.util.dataset_helpers import filter_dataframe
-from scraper.util.dataset_helpers import reorder_columns
-from scraper.util.http_helpers import format_pandas_http_request
-from urllib.error import HTTPError
+from old_scraper.util.dataset_helpers import (
+    augment_dataframe,
+    filter_dataframe,
+    reorder_columns,
+)
+from old_scraper.util.http_helpers import format_pandas_http_request
+from pandas._typing import Dtype
 from pydantic.fields import FieldInfo
-
 from sql_app.register.base import BaseTable
-import threading
-import traceback
-import logging
 
 # DEFAULT_LOG_FORMATTER = logging.Formatter(
 #     "[ %(levelname)s ] [ %(asctime)s ] [ %(threadName)s ]  %(message)s",

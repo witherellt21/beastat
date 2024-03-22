@@ -1,16 +1,13 @@
 import time
 
-from typing import Type
-
-from scraper.abstract_base_scraper import AbstractBaseScraper
+from scraper.base import BaseScraper
 
 
-def test_scraper_thread(*, scraper_class: Type[AbstractBaseScraper]):
-    scraper: AbstractBaseScraper = scraper_class()
+def test_scraper_thread(*, scraper: BaseScraper, timeout: int = 10):
     scraper.start()
 
     start = time.time()
-    while time.time() - start < 10:
+    while time.time() - start < timeout:
         time.sleep(1)
 
     scraper.RUNNING = False

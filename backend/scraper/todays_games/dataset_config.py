@@ -1,24 +1,23 @@
-from scraper.abstract_base_scraper import AbstractBaseScraper
-from sql_app.util.db_helpers import get_player_id
-from sql_app.register.lineup import Lineups
-from sql_app.register.matchup import Matchups
-from sql_app.register.game import Games
-from scraper.util.team_helpers import get_team_id_by_abbr
-from sql_app.serializers.game import GameSerializer
-
-import requests
-import pandas as pd
+import calendar
 import datetime
-from dateutil import parser
-
-from bs4 import BeautifulSoup, element
-from typing import Optional
 import logging
 import re
-import calendar
-import uuid
-from dateutil.tz import gettz
 import string
+import uuid
+from operator import index
+from typing import Optional
+
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup, element
+from dateutil import parser
+from dateutil.tz import gettz
+from old_scraper.util.team_helpers import get_team_id_by_abbr
+from scraper.base import BaseHTMLDatasetConfig, TableConfig
+from sql_app.models import game
+from sql_app.register import Games, Lineups, Matchups
+from sql_app.serializers import GameSerializer
+from sql_app.util.db_helpers import get_player_id
 
 date_regex = r"(?:%s)\s\d\d,\s\d{4}" % "|".join(calendar.month_name)
 TZ_INFOS = {"ET": gettz("America/New York"), "EST": gettz("America/New York")}
@@ -97,26 +96,64 @@ def get_team_abbr(*, team_div: element.Tag) -> str:
     return home_team_abbr_div.text
 
 
-class LineupScraper(AbstractBaseScraper):
+class GameTableConfig(TableConfig):
     TRANSFORMATIONS = {
         ("name", "id"): lambda x: uuid.uuid4(),
     }
-    TABLE = Lineups
-    LOG_LEVEL = logging.WARNING
+
+    def __init__(self, **kwargs):
+        super().__init__(
+            identification_function=self.identify,
+            sql_table=Games,
+            **kwargs,
+        )
+
+    def identify(self, dataset: pd.DataFrame):
+        return "date_time" in dataset.columns
+
+
+class LineupTableConfig(TableConfig):
+    TRANSFORMATIONS = {
+        ("name", "id"): lambda x: uuid.uuid4(),
+    }
+
+    def __init__(self, **kwargs):
+        super().__init__(
+            identification_function=self.identify,
+            sql_table=Lineups,
+            **kwargs,
+        )
+
+    def identify(self, dataset: pd.DataFrame):
+        return "status" in dataset.columns
+
+
+class MatchupTableConfig(TableConfig):
+    TRANSFORMATIONS = {
+        ("name", "id"): lambda x: uuid.uuid4(),
+    }
+
+    def __init__(self, **kwargs):
+        super().__init__(
+            identification_function=self.identify,
+            sql_table=Matchups,
+            **kwargs,
+        )
+
+    def identify(self, dataset: pd.DataFrame):
+        return "position" in dataset.columns
+
+
+class TodaysGamesDatasetConfig(BaseHTMLDatasetConfig):
+
+    def __init__(self, **kwargs):
+        super().__init__(default_query_set=None, **kwargs)
 
     @property
-    def download_url(self) -> str:
+    def base_download_url(self) -> str:
         return "http://www.rotowire.com/basketball/nba-lineups.php"
 
-    def get_query_set(self) -> Optional[list[dict[str, str]]]:
-        return None
-
-    def select_dataset_from_html_tables(
-        self, *, datasets: list[pd.DataFrame]
-    ) -> pd.DataFrame:
-        return datasets[0]
-
-    def scrape_data(self, *, url: str) -> Optional[list[pd.DataFrame]]:
+    def extract_tables(self, *, url: str) -> list[pd.DataFrame]:
         page: requests.Response = requests.get(url)
 
         soup: BeautifulSoup = BeautifulSoup(page.content, "html.parser")
@@ -142,7 +179,11 @@ class LineupScraper(AbstractBaseScraper):
             "div", class_="lineup is-nba"
         )
 
-        game_entries = []
+        games = pd.DataFrame()
+        lineups = pd.DataFrame()
+        matchups = pd.DataFrame()
+
+        # game_entries = []
         for game_div in game_divs:
             if "is-tools" in game_div["class"]:
                 continue
@@ -151,7 +192,7 @@ class LineupScraper(AbstractBaseScraper):
             try:
                 game_time = get_game_time(game_div=game_div)
             except AttributeError as e:
-                self.logger.error(game_div)
+                # self.logger.error(game_div)
                 continue
 
             game_date_time = datetime.datetime.combine(date=game_date, time=game_time)
@@ -161,23 +202,23 @@ class LineupScraper(AbstractBaseScraper):
             if type(home_team_div) == element.Tag:
                 home_team_abbr = get_team_abbr(team_div=home_team_div)
             else:
-                self.logger.debug("Tag for home team not found.")
+                # self.logger.debug("Tag for home team not found.")
                 continue
 
             away_team_div = game_div.find("a", class_="lineup__team is-visit")
             if type(away_team_div) == element.Tag:
                 away_team_abbr = get_team_abbr(team_div=away_team_div)
             else:
-                self.logger.debug("Tag for away team not found.")
+                # self.logger.debug("Tag for away team not found.")
                 continue
 
-            home_team_id = get_team_id_by_abbr(home_team_abbr)
-            away_team_id = get_team_id_by_abbr(away_team_abbr)
+            # home_team_id = get_team_id_by_abbr(home_team_abbr)
+            # away_team_id = get_team_id_by_abbr(away_team_abbr)
 
             game_entry = {
                 "date_time": game_date_time,
-                "home_id": home_team_id,
-                "away_id": away_team_id,
+                "home_id": home_team_abbr,
+                "away_id": away_team_abbr,
             }
 
             game_line_divs = game_div.findAll("div", class_="lineup__odds-item")
@@ -192,7 +233,14 @@ class LineupScraper(AbstractBaseScraper):
 
                 game_entry[label] = line
 
-            game: GameSerializer = Games.update_or_insert_record(data=game_entry)  # type: ignore
+            # print(game_entry)
+            # print(pd.DataFrame(game_entry, index=[0]))
+            games = pd.concat(
+                [games, pd.DataFrame(game_entry, index=[0])], ignore_index=True
+            )
+            # print(games)
+
+            # game: GameSerializer = Games.update_or_insert_record(data=game_entry)  # type: ignore
 
             # Get the home and away team starting lineups
             home_lineup_div = game_div.find("ul", class_="lineup__list is-home")
@@ -213,33 +261,41 @@ class LineupScraper(AbstractBaseScraper):
                     lineup_status.text if lineup_status else "Expected Lineup"
                 )
                 away_team_lineup = get_team_lineup(lineup_div=away_lineup_div)
+                print(away_team_lineup)
             else:
                 continue
+
+            # lineups = pd.DataFrame()
 
             if home_team_lineup:
                 home_team_data: dict = {
                     "id": uuid.uuid4(),
-                    "game_id": game.id,
-                    "team_id": home_team_id,
+                    # "game_id": game.id,
+                    "team_id": home_team_abbr,
                     "status": home_lineup_status,
                     **home_team_lineup,
                 }
 
-                Lineups.update_or_insert_record(data=home_team_data)
+                lineups = pd.concat([lineups, pd.DataFrame(**home_team_data)])
+
+                # Lineups.update_or_insert_record(data=home_team_data)
 
             if away_team_lineup:
                 away_team_data: dict = {
                     "id": uuid.uuid4(),
-                    "game_id": game.id,
-                    "team_id": away_team_id,
+                    # "game_id": game.id,
+                    "team_id": away_team_abbr,
                     "status": away_lineup_status,
                     **away_team_lineup,
                 }
 
-                Lineups.update_or_insert_record(data=away_team_data)
+                lineups = pd.concat([lineups, pd.DataFrame(**away_team_data)])
+
+                # Lineups.update_or_insert_record(data=away_team_data)
 
             if not home_team_lineup or not away_team_lineup:
-                return
+                # return []
+                continue
 
             for position, player_id in home_team_lineup.items():
                 if position == "injuries" or type(player_id) != str:
@@ -247,18 +303,22 @@ class LineupScraper(AbstractBaseScraper):
 
                 matchup = {
                     "id": uuid.uuid4(),
-                    "game_id": game.id,
+                    # "game_id": game.id,
                     "position": position.split("_")[0],
                     "home_player_id": player_id,
                     "away_player_id": away_team_lineup[position],
                 }
 
-                try:
-                    Matchups.update_or_insert_record(data=matchup)
-                except Exception as e:
-                    print("MATCHUP ERROR ", e)
+                matchups = pd.concat([matchups, pd.DataFrame(**matchup)])
+
+                # try:
+                #     Matchups.update_or_insert_record(data=matchup)
+                # except Exception as e:
+                #     print("MATCHUP ERROR ", e)
+
+        return [games, lineups, matchups]
 
 
-if __name__ == "__main__":
-    scraper = LineupScraper()
-    scraper.scrape_data(url="http://www.rotowire.com/basketball/nba-lineups.php")
+# if __name__ == "__main__":
+#     scraper = LineupScraper()
+#     scraper.extract_tables(url="http://www.rotowire.com/basketball/nba-lineups.php")

@@ -1,27 +1,25 @@
-from datetime import datetime
-import pandas as pd
+import logging
 import re
+import threading
+import time
+import traceback
+import uuid
+from datetime import datetime
+from typing import Callable, Optional
 
-from scraper.abstract_base_scraper import AbstractBaseScraper
-from scraper.util.team_helpers import get_team_id_by_abbr
+import pandas as pd
+from old_scraper.abstract_base_scraper import AbstractBaseScraper
+from old_scraper.util.team_helpers import get_team_id_by_abbr
+from playhouse.shortcuts import model_to_dict
+from pydantic_core import ValidationError
+from sql_app.models.player_prop import PropLine
+from sql_app.register import Games
+from sql_app.register.base import AdvancedQuery
+from sql_app.register.player import Players
+from sql_app.register.player_prop import PlayerProps
 from sql_app.serializers.game import ReadGameSerializer
 from sql_app.serializers.player import ReadPlayerSerializer
 from sql_app.util.db_helpers import get_player_id
-from sql_app.register.player_prop import PlayerProps
-from sql_app.register import Games
-from sql_app.register.player import Players
-from sql_app.models.player_prop import PropLine
-from sql_app.register.base import AdvancedQuery
-from typing import Callable, Optional
-import threading
-import traceback
-import logging
-import time
-import uuid
-
-from playhouse.shortcuts import model_to_dict
-
-from pydantic_core import ValidationError
 
 plus_minus_match = re.compile(r"−|\+")
 minus_match = re.compile(r"−")

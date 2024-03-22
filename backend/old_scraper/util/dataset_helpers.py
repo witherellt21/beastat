@@ -1,6 +1,5 @@
-from typing import Any, Callable, Mapping, Optional
-
 import pandas as pd
+from typing import Any, Callable, Mapping, Optional
 
 MATHEMATICAL_OPERATORS = ["+", "-"]
 

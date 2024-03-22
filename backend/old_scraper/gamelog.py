@@ -1,26 +1,22 @@
 import datetime
 import logging
+import time
 import uuid
+from typing import Iterable, Literal, Optional, TypedDict, Unpack
+
 import numpy as np
 import pandas as pd
-
-from typing import Iterable, Unpack, Literal, TypedDict, Optional
-
-from pydantic import UUID4
-
-from scraper.abstract_base_scraper import AbstractBaseScraper
 from exceptions import DBNotFoundException
-from sql_app.serializers.game import ReadGameSerializer
-from sql_app.util.db_helpers import get_player_active_seasons
+from global_implementations import constants
+from old_scraper.abstract_base_scraper import AbstractBaseScraper
+from old_scraper.util.team_helpers import get_team_id_by_abbr
+from pydantic import UUID4
+from sql_app.register import Games, Teams
 from sql_app.register.gamelog import Gamelogs
 from sql_app.register.matchup import Matchups
 from sql_app.register.player import Players
-from sql_app.register import Games, Teams
-from global_implementations import constants
-from scraper.util.team_helpers import get_team_id_by_abbr
-
-
-import time
+from sql_app.serializers.game import ReadGameSerializer
+from sql_app.util.db_helpers import get_player_active_seasons
 
 
 def convert_minutes_to_float(time: str) -> float:

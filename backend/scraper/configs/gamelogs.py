@@ -4,15 +4,12 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from click import Option
 from global_implementations import constants
-from new_scraper.base import BaseHTMLDatasetConfig, QueryArgs
 from playhouse.shortcuts import model_to_dict
 from pydantic import UUID4
-from sql_app.models.game import Game
-from sql_app.models.gamelog import Gamelog
+from scraper.base import BaseHTMLDatasetConfig, QueryArgs, TableConfig
+from sql_app.models import Game, Gamelog
 from sql_app.register import Gamelogs, Games
-from sql_app.register.base import AdvancedQuery
 from sql_app.serializers import ReadGameSerializer
 
 from .career_stats import get_team_id_by_abbr
@@ -92,7 +89,7 @@ def get_game_ids(dataset: pd.DataFrame) -> pd.Series:
     return game_id
 
 
-class GamelogScrapeConfig(BaseHTMLDatasetConfig):
+class GamelogTableConfig(TableConfig):
     """
     Here we will include the cleaning function stuff as class attributes
     """
@@ -134,28 +131,25 @@ class GamelogScrapeConfig(BaseHTMLDatasetConfig):
     }
     QUERY_SAVE_COLUMNS = {"player_id": "player_id"}
     COLUMN_ORDERING = ["player_id"]
-    # QUERY_DICT_FORM = QueryDictForm
 
-    # TABLE = Players
     # LOG_LEVEL = logging.WARNING
 
-    def __init__(self):
+    def __init__(self, **kwargs):
+        kwargs.setdefault("name", "Gamelogs")
+
         super().__init__(
             identification_function=lambda dataset: len(dataset.columns) == 30,
             sql_table=Gamelogs,
+            **kwargs,
         )
 
-    @property
-    def base_download_url(self):
-        return "http://www.basketball-reference.com/players/{player_last_initial}/{player_id}/gamelog/{year}"
+    def cached_data(self, *, query_args: Optional[QueryArgs] = None) -> pd.DataFrame:
+        if query_args == None:
+            return super().cached_data(query_args=query_args)
 
-    def cached_data(self, *, query: Optional[QueryArgs] = None) -> pd.DataFrame:
-        if query == None:
-            return super().cached_data(query=query)
-
-        queried_season = query.get("year", None)
+        queried_season = query_args.get("year", None)
         # TODO: Switch to less than to always update the current season
-        if queried_season and int(queried_season) < constants.CURRENT_SEASON:
+        if queried_season and int(queried_season) <= constants.CURRENT_SEASON:
             start = datetime.datetime(year=queried_season - 1, month=6, day=1)
             end = datetime.datetime(year=queried_season, month=6, day=1)
 
@@ -163,7 +157,7 @@ class GamelogScrapeConfig(BaseHTMLDatasetConfig):
                 Gamelog.select()
                 .join(Game, on=Game.id == Gamelog.game)
                 .where(
-                    Gamelog.player == query.get("player_id"),
+                    Gamelog.player == query_args.get("player_id"),
                     Game.date_time > start,
                     Game.date_time < end,
                 )
@@ -187,4 +181,17 @@ class GamelogScrapeConfig(BaseHTMLDatasetConfig):
 
             return gamelogs_from_season
 
-        return super().cached_data(query=query)
+        return super().cached_data(query_args=query_args)
+
+
+class GamelogDatasetConfig(BaseHTMLDatasetConfig):
+    # LOG_LEVEL = logging.WARNING
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault("name", "Gamelogs")
+
+        super().__init__(**kwargs)
+
+    @property
+    def base_download_url(self):
+        return "http://www.basketball-reference.com/players/{player_last_initial}/{player_id}/gamelog/{year}"
