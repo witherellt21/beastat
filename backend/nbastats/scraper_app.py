@@ -1,14 +1,10 @@
 import logging
 import time
 
-from nbastats.config import scrapers as nbastats_scrapers
-from nbastats.scraper import SCRAPERS
+import scrapers
+from settings import DATA_SCRAPE
 
-from .settings import DATA_SCRAPE
-
-# print(SCRAPERS)
-
-for scraper_name, scraper in SCRAPERS.items():
+for scraper_name, scraper in scrapers.__iter__():
     if scraper_name in DATA_SCRAPE:
         if (
             "status" in DATA_SCRAPE[scraper_name]
@@ -27,8 +23,8 @@ for scraper_name, scraper in SCRAPERS.items():
 RUNNING = True
 
 while RUNNING:
-    print(SCRAPERS)
+    print(scrapers._scrapers)
     time.sleep(1)
 
-for scraper in nbastats_scrapers:
+for scraper_name, scraper in scrapers.__iter__():
     scraper.kill_process()

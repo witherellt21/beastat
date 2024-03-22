@@ -1,3 +1,5 @@
+from . import tables
+
 NAME = "PlayerPropsDataset"
 DEFAULT_QUERY_SET = (
     [
@@ -13,4 +15,4 @@ DEFAULT_QUERY_SET = (
 )
 BASE_DOWNLOAD_URL = "http://sportsbook.draftkings.com/nba-player-props?category=player-{stat_category}&subcategory={stat_subcategory}"
 
-from .tables import TABLES
+_tables = tables.__load_all__()

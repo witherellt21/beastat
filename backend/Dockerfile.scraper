@@ -15,4 +15,4 @@ RUN pip3 install -r requirements.txt --no-cache-dir
 # copy backend files
 COPY . .
 
-ENTRYPOINT [ "python", "scraper_app.py"]
+ENTRYPOINT [ "python", "nbastats/scraper_app.py"]
