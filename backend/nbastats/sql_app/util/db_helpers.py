@@ -3,10 +3,10 @@ import traceback
 from typing import Literal, Optional
 
 import pandas as pd
-from base.scraper.util.dataset_helpers import filter_with_bounds
+from base.util.dataset_helpers import filter_with_bounds
 from base.util.string_helpers import find_closest_match
 from exceptions import DBNotFoundException
-from nbastats.scraper.util.string_helpers import convert_season_to_year
+from nbastats.global_implementations.string_helpers import convert_season_to_year
 from nbastats.sql_app.register import CareerStatss, Gamelogs, Matchups, Players
 from nbastats.sql_app.serializers import (
     GamelogSerializer,

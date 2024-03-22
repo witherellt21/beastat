@@ -1,8 +1,8 @@
 from base.sql_app.register import BaseTable
-from nbastats.sql_app.database import DB
-from nbastats.sql_app.models.career_stats import CareerStats
-from nbastats.sql_app.models.player import Player
-from nbastats.sql_app.serializers.career_stats import (
+from nbastats.sql_app.models import CareerStats
+from nbastats.sql_app.register.player import PlayerTable
+from nbastats.sql_app.register.team import TeamTable
+from nbastats.sql_app.serializers import (
     CareerStatsReadSerializer,
     CareerStatsSerializer,
     CareerStatsTableEntrySerializer,
@@ -16,7 +16,7 @@ class CareerStatsTable(BaseTable):
     TABLE_ENTRY_SERIALIZER_CLASS = CareerStatsTableEntrySerializer
     PKS = ["player_id", "Season"]
 
-    DEPENDENCIES = [Player]
+    DEPENDENCIES = [PlayerTable, TeamTable]
 
 
-CareerStatss = CareerStatsTable(DB)
+# CareerStatss = CareerStatsTable(DB)

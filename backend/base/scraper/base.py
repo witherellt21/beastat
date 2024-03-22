@@ -8,13 +8,13 @@ from typing import Any, Literal, Optional, Type, TypeAlias
 
 import numpy as np
 import pandas as pd
-from base.scraper.util.dataset_helpers import augment_dataframe, filter_dataframe
 from base.scraper.util.dependency_tree_helpers import (
     DependencyKwargs,
     DependentObject,
     topological_sort_dependency_tree,
 )
 from base.sql_app.register import BaseTable
+from base.util.dataset_helpers import augment_dataframe, filter_dataframe
 from click import Option
 from pandas._typing import Dtype
 from pydantic.fields import FieldInfo
@@ -225,6 +225,7 @@ class BaseHTMLDatasetConfig(
     def __init__(
         self,
         *,
+        base_download_url: str,
         table_configs: Optional[dict[str, TableConfig]] = None,
         default_query_set: Optional[QuerySet] = None,
         **kwargs,
@@ -236,6 +237,7 @@ class BaseHTMLDatasetConfig(
         self._table_configs: dict[str, TableConfig] = table_configs or {}
 
         self._default_query_set: Optional[QuerySet] = default_query_set
+        self._base_download_url: str = base_download_url
 
         self.nested_datasets: list["BaseHTMLDatasetConfig"] = []
 
@@ -250,9 +252,10 @@ class BaseHTMLDatasetConfig(
 
     @property
     def base_download_url(self) -> str:
-        raise NotImplementedError(
-            "Must specify a base download url property in your subclass."
-        )
+        return self._base_download_url
+        # raise NotImplementedError(
+        #     "Must specify a base download url property in your subclass."
+        # )
 
     @property
     def name(self) -> str:
@@ -347,21 +350,24 @@ class DatasetDependency:
 class BaseScraper(threading.Thread):
 
     def __init__(
-        self, *, log_level: int = logging.INFO, download_rate: int = 5
+        self, *, name: str, log_level: int = logging.INFO, download_rate: int = 5
     ) -> None:
-        threading.Thread.__init__(self, name=self.__class__.__name__)
+        threading.Thread.__init__(self, name=name)
 
         self._dataset_configs: dict[str, BaseHTMLDatasetConfig] = {}
         self._configured: bool = False
 
         self.RUNNING: Literal[False, True] = True
 
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logging.getLogger(name)
         self.logger.setLevel(log_level)
         self.logger.addHandler(STREAM_HANDLER)
 
         self.download_rate = download_rate
         self.last_download_time = time()
+
+    def set_log_level(self, log_level: int):
+        self.logger.setLevel(log_level)
 
     def add_dataset_config(self, dataset_config: BaseHTMLDatasetConfig):
         """
@@ -674,7 +680,7 @@ class BaseScraper(threading.Thread):
                 "Must call '.configure()' on the scraper before running it."
             )
 
-        self.logger.info("Starting Scraper...")
+        self.logger.info(f"Starting {self.name}...")
 
         consecutive_failures: int = 0
 

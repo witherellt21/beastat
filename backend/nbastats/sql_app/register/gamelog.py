@@ -5,7 +5,8 @@ import pandas as pd
 import peewee
 from base.sql_app.register import AdvancedQuery, BaseTable
 from nbastats.sql_app.database import DB
-from nbastats.sql_app.models import Game, Gamelog, Player
+from nbastats.sql_app.models import Game, Gamelog
+from nbastats.sql_app.register.player import PlayerTable
 from nbastats.sql_app.serializers import GamelogReadSerializer, GamelogSerializer
 from playhouse.shortcuts import model_to_dict
 from pydantic import BaseModel
@@ -24,7 +25,7 @@ class GamelogTable(BaseTable):
     TABLE_ENTRY_SERIALIZER_CLASS = GamelogSerializer
     PKS = ["player_id", "game_id"]
 
-    DEPENDENCIES = [Player]
+    DEPENDENCIES = [PlayerTable]
 
     def average_column(self, player_id, column: str, limit: int = 10) -> int:
         last_10_played_in = (
@@ -156,6 +157,6 @@ class GamelogTable(BaseTable):
 
 
 # try:
-Gamelogs = GamelogTable(DB)
+# Gamelogs = GamelogTable(DB)
 # except peewee.OperationalError as e:
 #     print("Unable to connect to database for Gamelog.")

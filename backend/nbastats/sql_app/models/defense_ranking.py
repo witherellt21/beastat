@@ -1,6 +1,6 @@
 from peewee import CharField, ForeignKeyField, IntegerField
 
-from .base_model import BaseModel
+from .base import BaseModel
 from .team import Team
 
 

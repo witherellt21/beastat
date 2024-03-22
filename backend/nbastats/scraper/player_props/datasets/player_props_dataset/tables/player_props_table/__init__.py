@@ -151,12 +151,12 @@ def set_statuses(dataset: pd.DataFrame) -> pd.DataFrame:
     return dataset
 
 
-class PlayerPropsTableConfig(TableConfig):
-
-    RENAME_COLUMNS = {
+CONFIG = {
+    "name": "PlayerPropsTable",
+    "rename_columns": {
         "PLAYER": "name",
-    }
-    RENAME_VALUES = {
+    },
+    "rename_values": {
         "stat": {
             "points": "PTS",
             "assists": "AST",
@@ -167,42 +167,15 @@ class PlayerPropsTableConfig(TableConfig):
             "pts-+-ast": "PA",
             "ast-+-reb": "RA",
         }
-    }
-    TRANSFORMATIONS = {
+    },
+    "transformations": {
         ("name", "player_id"): lambda name: get_player_id(player_name=name),
         ("name", "id"): lambda x: uuid.uuid4(),
         ("player_id", "game_id"): lambda player_id: get_game_id(player_id=player_id),
-    }
-    DATA_TRANSFORMATIONS = [get_player_props, set_statuses]
-    QUERY_SAVE_COLUMNS = {"stat": "stat_subcategory"}
-    REQUIRED_COLUMNS = ["player_id"]
-
-    def __init__(self, **kwargs):
-        super().__init__(
-            identification_function=lambda tables: pd.concat(tables),
-            sql_table=PlayerProps,
-            **kwargs,
-        )
-
-
-class PlayerPropsDatasetConfig(BaseHTMLDatasetConfig):
-
-    def __init__(self, **kwargs):
-        kwargs.setdefault("name", "PlayerPropsDataset")
-        super().__init__(
-            default_query_set=[
-                {"stat_category": "points", "stat_subcategory": "points"},
-                {"stat_category": "assists", "stat_subcategory": "assists"},
-                {"stat_category": "threes", "stat_subcategory": "threes"},
-                {"stat_category": "rebounds", "stat_subcategory": "rebounds"},
-                {"stat_category": "combos", "stat_subcategory": "pts-+-reb-+-ast"},
-                {"stat_category": "combos", "stat_subcategory": "pts-+-reb"},
-                {"stat_category": "combos", "stat_subcategory": "pts-+-ast"},
-                {"stat_category": "combos", "stat_subcategory": "ast-+-reb"},
-            ],
-            **kwargs,
-        )
-
-    @property
-    def base_download_url(self):
-        return "http://sportsbook.draftkings.com/nba-player-props?category=player-{stat_category}&subcategory={stat_subcategory}"
+    },
+    "data_transformations": [get_player_props, set_statuses],
+    "query_save_columns": {"stat": "stat_subcategory"},
+    "required_columns": ["player_id"],
+    "identification_function": lambda tables: pd.concat(tables),
+    "sql_table": PlayerProps,
+}

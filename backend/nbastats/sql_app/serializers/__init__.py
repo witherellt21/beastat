@@ -1,4 +1,8 @@
-from .career_stats import CareerStatsReadSerializer, CareerStatsSerializer
+from .career_stats import (
+    CareerStatsReadSerializer,
+    CareerStatsSerializer,
+    CareerStatsTableEntrySerializer,
+)
 from .defense_ranking import DefenseRankingSerializer, ReadDefenseRankingSerializer
 from .game import (
     GameLineSerializer,

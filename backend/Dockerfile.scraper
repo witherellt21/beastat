@@ -15,4 +15,4 @@ RUN pip3 install -r requirements.txt --no-cache-dir
 # copy backend files
 COPY . .
 
-ENTRYPOINT [ "bash", "start.sh"]
+ENTRYPOINT [ "python", "scraper_app.py"]

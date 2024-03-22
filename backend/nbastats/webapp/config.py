@@ -1,7 +1,6 @@
 import logging
 
-from fastapi import APIRouter, FastAPI, middleware
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import APIRouter
 from nbastats.webapp.routers import (
     career_stats,
     defense_rankings,
@@ -25,22 +24,6 @@ main_stream_handler.setFormatter(main_formatter)
 main_logger = logging.getLogger("main")
 main_logger.setLevel(logging.DEBUG)
 main_logger.addHandler(main_stream_handler)
-
-
-# app = FastAPI(debug=True)
-
-# # origins = ["*"]
-
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
-# class MiddlewareConfig:
-#     middleware_class
-
 
 router = APIRouter()
 

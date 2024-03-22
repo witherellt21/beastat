@@ -19,9 +19,14 @@ def convert_minutes_to_float(time: str) -> float:
     if not isinstance(time, str):
         return time
 
-    minutes, seconds = time.split(":")
-    result = int(minutes) + round(int(seconds) / 60, ndigits=1)
-    return result
+    try:
+        minutes, seconds = time.split(":")
+        result = int(minutes) + round(int(seconds) / 60, ndigits=1)
+        return result
+    except Exception as e:
+        print(time)
+        print(time.split(":"))
+        raise e
 
 
 def get_result_and_margin(dataset: pd.DataFrame) -> pd.DataFrame:
@@ -125,10 +130,13 @@ class GamelogTableConfig(TableConfig):
         ("PTS", "id"): lambda x: uuid.uuid4(),
         ("Unnamed: 5", "home"): lambda cell: cell != "@",
     }
+
     DATA_TRANSFORMATIONS = [
         get_result_and_margin,
     ]
+
     DATETIME_COLUMNS = {"Date": "%Y-%m-%d"}
+
     STAT_AUGMENTATIONS = {
         "PA": "PTS+AST",
         "PR": "PTS+TRB",
@@ -140,7 +148,7 @@ class GamelogTableConfig(TableConfig):
     QUERY_SAVE_COLUMNS = {"player_id": "player_id"}
     COLUMN_ORDERING = ["player_id"]
 
-    # LOG_LEVEL = logging.WARNING
+    NAN_VALUES = constants.NAN_VALUES
 
     def __init__(self, **kwargs):
         kwargs.setdefault("name", "Gamelogs")

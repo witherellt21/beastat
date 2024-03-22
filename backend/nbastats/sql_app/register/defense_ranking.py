@@ -11,4 +11,4 @@ class DefenseRankingTable(BaseTable):
     PKS = ["team", "stat"]
 
 
-DefenseRankings = DefenseRankingTable(DB)
+# DefenseRankings = DefenseRankingTable(DB)

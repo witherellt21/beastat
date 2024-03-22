@@ -1,0 +1,10 @@
+*/__pycache__
+__pycache__/*
+
+**/scraper_app*
+**/start_scraper*
+**/scraper
+**/Dockerfile.scraper*
+
+*/spa_app*
+*/spa

@@ -12,4 +12,4 @@ class LineupTable(BaseTable):
     PKS = ["game_id", "team_id"]
 
 
-Lineups = LineupTable(DB)
+# Lineups = LineupTable(DB)

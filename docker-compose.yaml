@@ -1,18 +1,18 @@
 version: '3.8'
 
 services:
-  nbastats-db:
+  db:
     image: "postgres:9.6-alpine"
-    container_name: nbastats-db
-    volumes:
-      - ./postgres-data:/var/lib/postgresql/data
+    container_name: beastat_db
+    # volumes:
+    #   - ./postgres-data:/var/lib/postgresql/data
     ports:
       - ${DB_PORT}:5432
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_PORT: $DB_PORT
+      # POSTGRES_PORT: $DB_PORT
     restart: on-failure
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U nbastats -d nbastats" ]
@@ -20,21 +20,43 @@ services:
       timeout: 5s
       retries: 5
 
-  nbastats-app:
+  scraper-app:
     build:
       context: ./backend
-      dockerfile: Dockerfile
-    container_name: nbastats-app
+      dockerfile: Dockerfile.scraper
+    container_name: beastat_scraper
     # volumes:
     #   - server:/app/backend
+    env_file:
+      - path: ./.env
+        required: true
     ports:
-      - 3001:8080
+      - ${SCRAPER_PORT}:8080
     links:
-      - nbastats-db
+      - db
     depends_on:
-      nbastats-db:
+      db:
         condition: service_healthy
     restart: on-failure
+
+  # web-app:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile.app
+  #   container_name: beastat-app
+  #   env_file:
+  #     - path: ./.env
+  #       required: true
+  #   # volumes:
+  #   #   - server:/app/backend
+  #   ports:
+  #     - ${WEB_PORT}:8080
+  #   links:
+  #     - db
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #   restart: on-failure
 
 
 # volumes:

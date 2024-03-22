@@ -32,23 +32,23 @@ class TeamTable(BaseTable):
             return None
 
 
-Teams = TeamTable(DB)
+# Teams = TeamTable(DB)
 
-# print(os.getcwd())
-try:
-    with open("sql_app/static_data/teams.json", "r") as teams_file:
-        new_data = {}
-        team_data = json.load(teams_file)
-        for name, abbreviations in team_data.items():
-            Teams.update_or_insert_record(
-                data={
-                    "id": uuid.uuid4(),
-                    "abbr": abbreviations[0],
-                    "name": name,
-                    "alt_abbrs": abbreviations[1:],
-                }
-            )
-except FileNotFoundError as e:
-    logger.warning(f"Unable to download team data. {e}")
+# # print(os.getcwd())
+# try:
+#     with open("sql_app/static_data/teams.json", "r") as teams_file:
+#         new_data = {}
+#         team_data = json.load(teams_file)
+#         for name, abbreviations in team_data.items():
+#             Teams.update_or_insert_record(
+#                 data={
+#                     "id": uuid.uuid4(),
+#                     "abbr": abbreviations[0],
+#                     "name": name,
+#                     "alt_abbrs": abbreviations[1:],
+#                 }
+#             )
+# except FileNotFoundError as e:
+#     logger.warning(f"Unable to download team data. {e}")
 # with open("./sql_app/static_data/teams_new.json", "w") as teams_new:
 #     json.dump(new_data, teams_new)

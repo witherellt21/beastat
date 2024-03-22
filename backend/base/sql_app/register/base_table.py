@@ -18,6 +18,16 @@ class AdvancedQuery(BaseSerializer):
     in_: dict[str, list[Union[str, int, float, datetime]]] = {}
 
 
+# def sort_dependencies(table: "Type[BaseTable]", models: ):
+#     print(f"Creating table for {table.__name__}.")
+
+#     dependencies = table.DEPENDENCIES
+#     for dependency in dependencies:
+#         sort_dependencies(dependency)
+
+# table.db.create_tables([table.model_class])
+
+
 class BaseTable:
     MODEL_CLASS: Type[Model]
     SERIALIZER_CLASS: Type[BaseSerializer]
@@ -26,7 +36,8 @@ class BaseTable:
     READ_SERIALIZER_CLASS: Optional[Type[BaseSerializer]] = None
     PKS: list[str] = ["id"]
 
-    DEPENDENCIES: list[Type[Model]] = []
+    # DEPENDENCIES: list[Type[Model]] = []
+    DEPENDENCIES: list[Type["BaseTable"]] = []
 
     def __init__(self, db: peewee.Database):
         if not self.model_class:
@@ -40,10 +51,14 @@ class BaseTable:
         # if self.db:
         if not self.db == None:
             print(f"Creating table for {self.__class__.__name__}.")
-            dependencies = self.__class__.DEPENDENCIES
-            self.db.create_tables([*dependencies, self.model_class])
+            # dependencies = self.__class__.DEPENDENCIES
+            # for dependency in dependencies:
+            #     dependency(self.db)
+            self.db.create_tables([self.model_class])
         else:
+            # logger.warning("DB not connected. Cannot perform operations on the table.")
             raise Exception("DB not connected. Cannot perform operations on the table.")
+            # pass
 
     @property
     def serializer_class(self) -> Type[BaseSerializer]:

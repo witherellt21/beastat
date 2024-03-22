@@ -12,4 +12,4 @@ class MatchupTable(BaseTable):
     PKS = ["game_id", "position"]
 
 
-Matchups = MatchupTable(DB)
+# Matchups = MatchupTable(DB)

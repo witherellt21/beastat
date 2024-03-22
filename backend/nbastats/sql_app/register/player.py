@@ -37,4 +37,4 @@ class PlayerTable(BaseTable):
         return data.set_index(self.model_class._meta.primary_key.name) if not data.empty else data  # type: ignore
 
 
-Players = PlayerTable(DB)
+# Players = PlayerTable(DB)

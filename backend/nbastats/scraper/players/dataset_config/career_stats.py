@@ -5,7 +5,8 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 from base.scraper import BaseHTMLDatasetConfig, QueryArgs, TableConfig
-from nbastats.scraper.util.string_helpers import convert_season_to_year
+from nbastats.global_implementations import constants
+from nbastats.global_implementations.string_helpers import convert_season_to_year
 from nbastats.scraper.util.team_helpers import get_team_id_by_abbr
 from nbastats.sql_app.register import CareerStatss
 from pandas.core.api import DataFrame as DataFrame
@@ -66,6 +67,8 @@ class CareerStatsTableConfig(TableConfig):
         "FG_perc": {"": np.nan},
         "eFG_perc": {"": np.nan},
     }
+
+    NAN_VALUES = constants.NAN_VALUES
 
     QUERY_SAVE_COLUMNS = {"player_id": "player_id"}
     REQUIRED_FIELDS = ["Season", "G", "Tm"]

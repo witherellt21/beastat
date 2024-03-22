@@ -24,7 +24,7 @@ def get_team_id_from_career_stats(career_stats_data: pd.DataFrame) -> pd.DataFra
     return data
 
 
-player_info_scraper = BaseScraper(log_level=logging.INFO)
+player_scraper = BaseScraper(name="PlayerScraper", log_level=logging.INFO)
 
 player_table_config = PlayerInfoTableConfig(name="PlayerInfos")
 career_stats_table_config = CareerStatsTableConfig(name="CareerStats")
@@ -72,9 +72,9 @@ player_table_config.add_inheritance(
 )
 
 
-player_info_scraper.add_dataset_config(gamelog_dataset_config)
-player_info_scraper.add_dataset_config(player_dataset_config)
-player_info_scraper.add_dataset_config(career_stats_dataset_config)
+player_scraper.add_dataset_config(gamelog_dataset_config)
+player_scraper.add_dataset_config(player_dataset_config)
+player_scraper.add_dataset_config(career_stats_dataset_config)
 
 # print(player_info_scraper._dataset_configs)
 # for dataset_config in player_info_scraper._dataset_configs.values():

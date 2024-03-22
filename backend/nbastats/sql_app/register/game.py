@@ -4,8 +4,8 @@ from typing import Literal, Optional, overload
 
 import pandas as pd
 from base.sql_app.register import BaseTable
-from nbastats.sql_app.database import DB
 from nbastats.sql_app.models import Game, GameLine, Team
+from nbastats.sql_app.register.team import TeamTable
 from nbastats.sql_app.serializers import (
     GameLineSerializer,
     GameSerializer,
@@ -22,7 +22,7 @@ class GameTable(BaseTable):
     READ_SERIALIZER_CLASS = ReadGameSerializer
     PKS: list[str] = ["date_time", "home_id", "away_id"]
 
-    DEPENDENCIES = [Team]
+    DEPENDENCIES = [TeamTable]
 
     @overload
     def filter_by_datetime(
@@ -73,8 +73,8 @@ class GameLineTable(BaseTable):
     READ_SERIALIZER_CLASS = ReadGameLineSerializer
     PKS: list[str] = ["date_time", "home_id", "away_id"]
 
-    DEPENDENCIES = [Game]
+    DEPENDENCIES = [GameTable]
 
 
-Games = GameTable(DB)
-GameLines = GameLineTable(DB)
+# Games = GameTable(DB)
+# GameLines = GameLineTable(DB)

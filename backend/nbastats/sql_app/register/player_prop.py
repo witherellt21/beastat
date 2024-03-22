@@ -16,4 +16,4 @@ class PlayerPropTable(BaseTable):
     PKS = ["player_id", "stat"]
 
 
-PlayerProps = PlayerPropTable(DB)
+# PlayerProps = PlayerPropTable(DB)

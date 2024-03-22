@@ -9,7 +9,7 @@ from .dataset_config import (
     TodaysGamesDatasetConfig,
 )
 
-todays_games_scraper = BaseScraper(log_level=logging.DEBUG, download_rate=3)
+todays_games_scraper = BaseScraper(name="TodaysGamesScraper", download_rate=3)
 todays_games_dataset_config = TodaysGamesDatasetConfig(name="TodaysGamesDataset")
 
 gamelog_table_config = GameTableConfig()
