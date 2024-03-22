@@ -9,7 +9,7 @@ from urllib.error import HTTPError
 
 import numpy as np
 import pandas as pd
-from global_implementations import constants
+from nbastats.global_implementations import constants
 from old_scraper.util.dataset_helpers import (
     augment_dataframe,
     filter_dataframe,
