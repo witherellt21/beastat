@@ -4,7 +4,6 @@ import logging
 import re
 import string
 import uuid
-from operator import index
 from typing import Optional
 
 import pandas as pd
@@ -12,11 +11,8 @@ import requests
 from bs4 import BeautifulSoup, element
 from dateutil import parser
 from dateutil.tz import gettz
-from old_scraper.util.team_helpers import get_team_id_by_abbr
 from scraper.base import BaseHTMLDatasetConfig, TableConfig
-from sql_app.models import game
 from sql_app.register import Games, Lineups, Matchups
-from sql_app.serializers import GameSerializer
 from sql_app.util.db_helpers import get_player_id
 
 date_regex = r"(?:%s)\s\d\d,\s\d{4}" % "|".join(calendar.month_name)

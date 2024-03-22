@@ -5,6 +5,7 @@ from .game import (
     ReadGameLineSerializer,
     ReadGameSerializer,
 )
-from .matchup import MatchupReadSerializer
+from .gamelog import GamelogReadSerializer, GamelogSerializer
+from .matchup import MatchupReadSerializer, MatchupSerializer
 from .player import PlayerSerializer
 from .team import ReadTeamSerializer, TeamSerializer

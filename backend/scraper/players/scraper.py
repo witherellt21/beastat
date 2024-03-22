@@ -1,9 +1,9 @@
 import logging
 
 import pandas as pd
-from matplotlib import table
 from scraper.base import BaseScraper
-from scraper.configs import (
+
+from .dataset_config import (
     CareerStatsDatasetConfig,
     CareerStatsTableConfig,
     GamelogDatasetConfig,
