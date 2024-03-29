@@ -7,6 +7,8 @@ import peewee
 from peewee import Model
 from playhouse.shortcuts import model_to_dict
 from pydantic import BaseModel as BaseSerializer
+from pydantic import GetCoreSchemaHandler
+from pydantic_core import CoreSchema, core_schema
 
 logger = logging.getLogger("main")
 
@@ -59,6 +61,19 @@ class BaseTable:
             # logger.warning("DB not connected. Cannot perform operations on the table.")
             raise Exception("DB not connected. Cannot perform operations on the table.")
             # pass
+
+    @classmethod
+    def validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> "BaseTable":
+        if not isinstance(__input_value, cls):
+            raise ValueError(f"Expected BaseTable, received: {type(__input_value)}")
+        return __input_value
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        # return core_schema.no_info_after_validator_function(cls, handler(BaseTable))
+        return core_schema.with_info_plain_validator_function(cls.validate)
 
     @property
     def serializer_class(self) -> Type[BaseSerializer]:

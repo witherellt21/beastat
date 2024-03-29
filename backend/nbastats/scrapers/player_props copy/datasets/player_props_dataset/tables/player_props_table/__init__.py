@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime
 
 import pandas as pd
+from base.scraper import BaseHTMLDatasetConfig, TableConfig
 from base.sql_app.register import AdvancedQuery
 from nbastats.sql_app.register import Games, PlayerProps, Players
 from nbastats.sql_app.serializers import ReadPlayerSerializer
@@ -150,11 +151,8 @@ def set_statuses(dataset: pd.DataFrame) -> pd.DataFrame:
     return dataset
 
 
-IDENTIFICATION_FUNCTION = lambda tables: pd.concat(tables)
-SQL_TABLE = PlayerProps
-NAME = "PlayerPropsTable"
-
 CONFIG = {
+    "name": "PlayerPropsTable",
     "rename_columns": {
         "PLAYER": "name",
     },
@@ -178,6 +176,6 @@ CONFIG = {
     "data_transformations": [get_player_props, set_statuses],
     "query_save_columns": {"stat": "stat_subcategory"},
     "required_columns": ["player_id"],
-    # "identification_function": lambda tables: pd.concat(tables),
-    # "sql_table": PlayerProps,
+    "identification_function": lambda tables: pd.concat(tables),
+    "sql_table": PlayerProps,
 }

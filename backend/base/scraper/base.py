@@ -4,10 +4,20 @@ import traceback
 from collections.abc import Callable
 from functools import reduce
 from time import sleep, time
-from typing import Any, Literal, Optional, Type, TypeAlias
+from typing import Any, Literal, NotRequired, Optional, Type, TypeAlias, Unpack
 
 import numpy as np
 import pandas as pd
+
+# from nbastats.manage import TableConfigArgs
+# from base.scraper.base import (
+#     DatasetConfigKwargs,
+#     QueryArgs,
+#     QuerySet,
+#     ScraperKwargs,
+#     TableConfigArgs,
+# )
+from base.scraper.pydantic_validator import PydanticValidatorMixin
 from base.scraper.util.dependency_tree_helpers import (
     DependencyKwargs,
     DependentObject,
@@ -18,9 +28,7 @@ from base.util.dataset_helpers import augment_dataframe, filter_dataframe
 from click import Option
 from pandas._typing import Dtype
 from pydantic.fields import FieldInfo
-
-QueryArgs: TypeAlias = dict[str, Any]
-QuerySet: TypeAlias = list[QueryArgs]
+from typing_extensions import TypedDict
 
 DEFAULT_LOG_FORMATTER = logging.Formatter(
     "[{levelname:^10}] [ {asctime} ] [{threadName:^20}]  {message}",
@@ -30,6 +38,45 @@ DEFAULT_LOG_FORMATTER = logging.Formatter(
 
 STREAM_HANDLER = logging.StreamHandler()
 STREAM_HANDLER.setFormatter(DEFAULT_LOG_FORMATTER)
+
+QueryArgs: TypeAlias = dict[str, Any]
+QuerySet: TypeAlias = list[QueryArgs]
+
+
+class TableConfigArgs(TypedDict):
+    # identification_function: Callable[[list[pd.DataFrame]], Optional[pd.DataFrame]]
+    # sql_table: BaseTable
+
+    datetime_columns: NotRequired[dict[str, str]]
+
+    # Adds column labled by key using a synctatic string or a callable function with argument that accepts the full dataset.
+    stat_augmentations: NotRequired[
+        dict[str, str | Callable[[pd.DataFrame], pd.Series]]
+    ]
+
+    # Select specific rows from the dataset based on callable filter functions
+    filters: NotRequired[list[Callable]]
+    rename_columns: NotRequired[dict[str, str]]
+    rename_values: NotRequired[dict[str, dict[Any, Any]]]
+    nan_values: NotRequired[list[str]]
+
+    # A function to tranform a specific column (key) on a dataset by a callable function (value) uses apply method
+    transformations: NotRequired[dict[str | tuple[str, str], Callable[[Any], Any]]]
+    required_fields: NotRequired[list[str]]
+    query_save_columns: NotRequired[dict[str, str]]
+    href_save_map: NotRequired[dict[str, str]]
+
+
+class DatasetConfigKwargs(TypedDict):
+    # base_download_url: str
+    # name: str
+    table_configs: NotRequired[Optional[dict[str, "TableConfig"]]]
+    default_query_set: NotRequired[Optional[QuerySet]]
+
+
+class ScraperKwargs(TypedDict):
+    log_level: NotRequired[int]
+    download_rate: NotRequired[int]
 
 
 def combine_lists_of_dicts(*lists):
@@ -74,7 +121,9 @@ class TableInheritance:
         )
 
 
-class TableConfig(DependentObject["TableConfig", "DependencyKwargs"]):
+class TableConfig(
+    DependentObject["TableConfig", "DependencyKwargs"], PydanticValidatorMixin
+):
     # This could maybe come from the table itself, then overriden by this
     DATETIME_COLUMNS: dict[str, str] = {}
 
@@ -97,12 +146,26 @@ class TableConfig(DependentObject["TableConfig", "DependencyKwargs"]):
 
     def __init__(
         self,
-        *,
+        # identification_function: Callable[[list[pd.DataFrame]], Optional[pd.DataFrame]],
+        # sql_table: BaseTable,
         identification_function: Callable[[list[pd.DataFrame]], Optional[pd.DataFrame]],
         sql_table: BaseTable,
-        **kwargs,
+        name: str,
+        # name: [str],
+        # datetime_columns: dict[str, str],
+        # stat_augmentations: dict[str, str | Callable[[pd.DataFrame], pd.Series]],
+        # filters: list[Callable],
+        # rename_columns: dict[str, str],
+        # rename_values: dict[str, dict[Any, Any]],
+        # nan_values: list[str],
+        # transformations: dict[str | tuple[str, str], Callable[[Any], Any]],
+        # required_fields: list[str],
+        # query_save_columns: dict[str, str],
+        # href_save_map: dict[str, str],
+        **kwargs: Unpack[TableConfigArgs],
+        # **kwargs,
     ):
-        name = kwargs.get("name", self.__class__.__name__)
+        # name = kwargs.get("name", self.__class__.__name__)
         super().__init__(name=name, validator=DependencyKwargs)
 
         self._sql_table = sql_table
@@ -219,26 +282,28 @@ class DatasetConfigDependencyKwargs(DependencyKwargs):
 
 
 class BaseHTMLDatasetConfig(
-    DependentObject["BaseHTMLDatasetConfig", "DatasetConfigDependencyKwargs"]
+    DependentObject["BaseHTMLDatasetConfig", "DatasetConfigDependencyKwargs"],
+    PydanticValidatorMixin,
 ):
 
     def __init__(
         self,
         *,
+        name: str,
         base_download_url: str,
-        table_configs: Optional[dict[str, TableConfig]] = None,
-        default_query_set: Optional[QuerySet] = None,
-        **kwargs,
+        # table_configs: Optional[dict[str, TableConfig]] = None,
+        # default_query_set: Optional[QuerySet] = None,
+        **kwargs: Unpack[DatasetConfigKwargs],
     ):
-        name = kwargs.get("name", self.__class__.__name__)
-
         super().__init__(name=name, validator=DatasetConfigDependencyKwargs)
-        # constants specified in intantiation
-        self._table_configs: dict[str, TableConfig] = table_configs or {}
 
-        self._default_query_set: Optional[QuerySet] = default_query_set
         self._base_download_url: str = base_download_url
 
+        # constants specified in intantiation
+        self._table_configs: dict[str, TableConfig] = kwargs.get("table_configs") or {}
+        self._default_query_set: Optional[QuerySet] = (
+            kwargs.get("default_query_set") or []
+        )
         self.nested_datasets: list["BaseHTMLDatasetConfig"] = []
 
         self.data_source: Literal["cached", "downloaded"] = "downloaded"
@@ -349,9 +414,7 @@ class DatasetDependency:
 
 class BaseScraper(threading.Thread):
 
-    def __init__(
-        self, *, name: str, log_level: int = logging.INFO, download_rate: int = 5
-    ) -> None:
+    def __init__(self, *, name: str, **kwargs: Unpack[ScraperKwargs]) -> None:
         threading.Thread.__init__(self, name=name)
 
         self._dataset_configs: dict[str, BaseHTMLDatasetConfig] = {}
@@ -360,10 +423,10 @@ class BaseScraper(threading.Thread):
         self.RUNNING: Literal[False, True] = True
 
         self.logger = logging.getLogger(name)
-        self.logger.setLevel(log_level)
+        self.logger.setLevel(kwargs.get("log_level", logging.INFO))
         self.logger.addHandler(STREAM_HANDLER)
 
-        self.download_rate = download_rate
+        self.download_rate = kwargs.get("download_rate", 5)
         self.last_download_time = time()
 
     def set_log_level(self, log_level: int):
