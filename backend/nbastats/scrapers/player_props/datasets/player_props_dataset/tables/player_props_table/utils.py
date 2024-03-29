@@ -1,22 +1,15 @@
-import logging
 import re
-import uuid
 from datetime import datetime
 
 import pandas as pd
-from base.scraper import BaseHTMLDatasetConfig, TableConfig
 from base.sql_app.register import AdvancedQuery
 from nbastats.sql_app.register import Games, PlayerProps, Players
 from nbastats.sql_app.serializers import ReadPlayerSerializer
-from nbastats.sql_app.util.db_helpers import get_player_id
 
 plus_minus_match = re.compile(r"−|\+")
 minus_match = re.compile(r"−")
 plus_match = re.compile(r"\+")
-
 line_split_match = r"^[^\d]*"
-
-logger = logging.getLogger("main")
 
 
 def get_player_props(dataset: pd.DataFrame) -> pd.DataFrame:
@@ -149,33 +142,3 @@ def set_statuses(dataset: pd.DataFrame) -> pd.DataFrame:
         locked_lines = merged[merged["id_y"].isna()]["id_x"].values
 
     return dataset
-
-
-CONFIG = {
-    "name": "PlayerPropsTable",
-    "rename_columns": {
-        "PLAYER": "name",
-    },
-    "rename_values": {
-        "stat": {
-            "points": "PTS",
-            "assists": "AST",
-            "threes": "THP",
-            "rebounds": "TRB",
-            "pts-+-reb-+-ast": "PRA",
-            "pts-+-reb": "PR",
-            "pts-+-ast": "PA",
-            "ast-+-reb": "RA",
-        }
-    },
-    "transformations": {
-        ("name", "player_id"): lambda name: get_player_id(player_name=name),
-        ("name", "id"): lambda x: uuid.uuid4(),
-        ("player_id", "game_id"): lambda player_id: get_game_id(player_id=player_id),
-    },
-    "data_transformations": [get_player_props, set_statuses],
-    "query_save_columns": {"stat": "stat_subcategory"},
-    "required_columns": ["player_id"],
-    "identification_function": lambda tables: pd.concat(tables),
-    "sql_table": PlayerProps,
-}

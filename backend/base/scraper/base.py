@@ -75,6 +75,7 @@ class DatasetConfigKwargs(TypedDict):
 
 
 class ScraperKwargs(TypedDict):
+    datasets: NotRequired[dict[str, "BaseHTMLDatasetConfig"]]
     log_level: NotRequired[int]
     download_rate: NotRequired[int]
 
@@ -417,7 +418,9 @@ class BaseScraper(threading.Thread):
     def __init__(self, *, name: str, **kwargs: Unpack[ScraperKwargs]) -> None:
         threading.Thread.__init__(self, name=name)
 
-        self._dataset_configs: dict[str, BaseHTMLDatasetConfig] = {}
+        self._dataset_configs: dict[str, BaseHTMLDatasetConfig] = (
+            kwargs.get("datasets") or {}
+        )
         self._configured: bool = False
 
         self.RUNNING: Literal[False, True] = True
