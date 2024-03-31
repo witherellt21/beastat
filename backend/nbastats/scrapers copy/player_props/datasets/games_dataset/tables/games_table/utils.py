@@ -3,7 +3,7 @@ from datetime import datetime
 
 import pandas as pd
 from base.sql_app.register import AdvancedQuery
-from nbastats.sql_app.register import Games, PlayerProps, Players
+from nbastats.sql_app.register import BasicInfo, Games, PlayerProps
 from nbastats.sql_app.serializers import ReadPlayerSerializer
 
 plus_minus_match = re.compile(r"−|\+")
@@ -101,7 +101,7 @@ def get_player_props(dataset: pd.DataFrame) -> pd.DataFrame:
 
 
 def get_game_id(*, player_id: str):
-    player: ReadPlayerSerializer = Players.get_record(query={"id": player_id})  # type: ignore
+    player: ReadPlayerSerializer = BasicInfo.get_record(query={"id": player_id})  # type: ignore
     todays_games: pd.DataFrame = Games.filter_by_datetime(
         min_datetime=datetime.today(), as_df=True
     )

@@ -4,7 +4,7 @@ from typing import Optional
 import pandas as pd
 from base.scraper import BaseHTMLDatasetConfig, QueryArgs, TableConfig
 from nbastats.global_implementations import constants
-from nbastats.sql_app.register import Players
+from nbastats.sql_app.register import BasicInfo
 from pandas.core.api import DataFrame as DataFrame
 from unidecode import unidecode
 
@@ -52,7 +52,7 @@ class PlayerInfoTableConfig(TableConfig):
     def __init__(self, **kwargs):
         super().__init__(
             identification_function=has_player_column,
-            sql_table=Players,
+            sql_table=BasicInfo,
             **kwargs,
         )
 
@@ -65,9 +65,11 @@ class PlayerInfoTableConfig(TableConfig):
 
             if last_initial:
 
-                data = Players.get_players_with_last_initial(last_initial=last_initial)
+                data = BasicInfo.get_players_with_last_initial(
+                    last_initial=last_initial
+                )
 
-                foreign_keys = Players.get_foreign_relationships()
+                foreign_keys = BasicInfo.get_foreign_relationships()
 
                 foreign_keys_remap = {
                     foreign_key: f"{foreign_key}_id" for foreign_key in foreign_keys

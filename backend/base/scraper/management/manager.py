@@ -49,8 +49,8 @@ class FileConfigInheritanceType(TypedDict):
 
 class ScraperConfigFileParams(BaseModel):
     NAME: str
-    DEPENDENCIES: dict[str, FileConfigDependencyType]
-    INHERITANCES: dict[tuple[str, str], FileConfigInheritanceType]
+    DEPENDENCIES: dict[str, FileConfigDependencyType] = {}
+    INHERITANCES: dict[tuple[str, str], FileConfigInheritanceType] = {}
     CONFIG: ScraperKwargs = {}
 
 
@@ -174,13 +174,9 @@ def load_scrapers(path: str = ".") -> list[BaseScraper]:
     list_modules = ignore_modules(modules=list_modules)
 
     for module_name in list_modules:
-        if not module_name == "player_props":
-            continue
 
         is_dir = is_dir_module(module_path=path + os.sep + module_name)
         is_file = is_file_module(module_name=module_name)
-
-        # print("HERE")
 
         if is_dir:
             datasets = load_datasets(path + os.sep + module_name + os.sep + "datasets")
@@ -193,15 +189,9 @@ def load_scrapers(path: str = ".") -> list[BaseScraper]:
             scraper_settings = imp.load_source("module", path + os.sep + module_name)
             datasets = {}
 
-        # print(datasets)
         scraper_settings_config = scraper_settings.__dict__.copy()
-        # scraper_settings_config["DATASETS"] = datasets
-
-        # pp.pprint(scraper_settings_config.get("CONFIG"))
-
         try:
             scraper_config = ScraperConfigFileParams(**scraper_settings_config)
-            # obj.CONFIG["datasets"] = datasets
 
         except ValidationError as exc:
             raise exc
@@ -237,8 +227,6 @@ def load_scrapers(path: str = ".") -> list[BaseScraper]:
         )
 
         scrapers.append(scraper)
-
-    # print(scrapers)
 
     return scrapers
 

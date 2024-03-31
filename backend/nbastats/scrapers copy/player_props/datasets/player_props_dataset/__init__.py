@@ -15,3 +15,5 @@ CONFIG = {
         {"stat_category": "combos", "stat_subcategory": "ast-+-reb"},
     ],
 }
+
+DEPENDENCIES = ["GamesDataset"]

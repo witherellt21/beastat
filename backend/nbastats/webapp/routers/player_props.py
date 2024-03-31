@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from fastapi import APIRouter
 from nbastats.global_implementations import constants
-from nbastats.sql_app.register import Gamelogs, PlayerProps, Players
+from nbastats.sql_app.register import BasicInfo, PlayerBoxScores, PlayerProps
 
 # from pydantic.utils import deep_update
 from nbastats.sql_app.register.gamelog import GamelogQuery
@@ -44,8 +44,8 @@ def get_hitrate(
         filters, {"equal_to": {"player_id": player_id}, "less_than": {stat: value}}
     )
 
-    over_count = Gamelogs.count_records(query=GamelogQuery(**over_query))
-    under_count = Gamelogs.count_records(query=GamelogQuery(**under_query))
+    over_count = PlayerBoxScores.count_records(query=GamelogQuery(**over_query))
+    under_count = PlayerBoxScores.count_records(query=GamelogQuery(**under_query))
 
     total_count = over_count + under_count
 
@@ -72,7 +72,7 @@ def list_all_active_props():
 
     for player_id, lines in player_lines:
 
-        avg_mp = Gamelogs.average_column(player_id, "MP", 10)
+        avg_mp = PlayerBoxScores.average_column(player_id, "MP", 10)
 
         if not avg_mp:
             print(player_id)
@@ -108,7 +108,7 @@ def list_all_active_props():
             .to_dict(orient="index")
         )
 
-        player_info = Players.get_record(query={"id": player_id})
+        player_info = BasicInfo.get_record(query={"id": player_id})
 
         if player_info:
             player_data["player"] = player_info.model_dump()

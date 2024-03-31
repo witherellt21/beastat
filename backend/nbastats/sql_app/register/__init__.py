@@ -14,11 +14,11 @@ from .player_prop import PlayerPropTable
 from .team import TeamTable
 
 Teams = TeamTable(DB)
-Players = PlayerTable(DB)
-CareerStatss = CareerStatsTable(DB)
+BasicInfo = PlayerTable(DB)
+SeasonAveragess = CareerStatsTable(DB)
 Games = GameTable(DB)
 GameLines = GameLineTable(DB)
-Gamelogs = GamelogTable(DB)
+PlayerBoxScores = GamelogTable(DB)
 Lineups = LineupTable(DB)
 Matchups = MatchupTable(DB)
 PlayerProps = PlayerPropTable(DB)

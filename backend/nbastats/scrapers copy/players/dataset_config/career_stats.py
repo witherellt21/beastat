@@ -8,7 +8,7 @@ from base.scraper import BaseHTMLDatasetConfig, QueryArgs, TableConfig
 from nbastats.global_implementations import constants
 from nbastats.global_implementations.string_helpers import convert_season_to_year
 from nbastats.scrapers.util.team_helpers import get_team_id_by_abbr
-from nbastats.sql_app.register import CareerStatss
+from nbastats.sql_app.register import SeasonAveragess
 from pandas.core.api import DataFrame as DataFrame
 
 IS_SEASON = re.compile(r"^\d{4}")
@@ -41,7 +41,7 @@ class CareerStatsTableConfig(TableConfig):
     }
 
     # DROP_ROWS = {"Tm": }
-    PRE_FILTERS = [lambda dataframe: bool(IS_SEASON.match(dataframe["Season"]))]
+    # PRE_FILTERS = [lambda dataframe: bool(IS_SEASON.match(dataframe["Season"]))]
 
     _exception_msgs = {
         "load_data": f"Error reading saved player overview from csv.",
@@ -76,7 +76,7 @@ class CareerStatsTableConfig(TableConfig):
     def __init__(self, **kwargs):
         super().__init__(
             identification_function=has_season_column,
-            sql_table=CareerStatss,
+            sql_table=SeasonAveragess,
             **kwargs,
         )
 
@@ -86,11 +86,11 @@ class CareerStatsTableConfig(TableConfig):
 
         else:
 
-            data = CareerStatss.filter_records(
+            data = SeasonAveragess.filter_records(
                 query={"player_id": query_args.get("player_id")}, as_df=True
             )
 
-            foreign_keys = CareerStatss.get_foreign_relationships()
+            foreign_keys = SeasonAveragess.get_foreign_relationships()
 
             foreign_keys_remap = {
                 foreign_key: f"{foreign_key}_id" for foreign_key in foreign_keys

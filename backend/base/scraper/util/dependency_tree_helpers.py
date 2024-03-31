@@ -22,8 +22,8 @@ class DependentObject(Generic[DO, DK]):
         self.validator: Type[DK] = validator
         self.dependencies: list[Dependency[DO, DK]] = []
 
-    def __str__(self):
-        return self.name
+    # def __str__(self):
+    #     return self.name
 
     @property
     def name(self):

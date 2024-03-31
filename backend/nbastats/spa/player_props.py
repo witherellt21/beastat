@@ -1,23 +1,24 @@
 import datetime
 
-from sklearn.tree import DecisionTreeClassifier
-from sql_app.register import Games, Gamelogs
-from sql_app.register.gamelog import GamelogQuery
-
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.linear_model import Lasso, LinearRegression
-from sklearn.preprocessing import LabelEncoder, StandardScaler, OneHotEncoder
-from sklearn.model_selection import GridSearchCV
-
 import pandas as pd
-
-from sklearn.preprocessing import MultiLabelBinarizer
+from sklearn.linear_model import Lasso, LinearRegression
+from sklearn.model_selection import GridSearchCV
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import (
+    LabelEncoder,
+    MultiLabelBinarizer,
+    OneHotEncoder,
+    StandardScaler,
+)
+from sklearn.tree import DecisionTreeClassifier
+from sql_app.register import Games, PlayerBoxScores
+from sql_app.register.gamelog import GamelogQuery
 
 
 def get_teammate_played(player_id, date, team):
     # query = GamelogQuery(equal_to={"player_id": player_id, "Date": date, "Tm": team})
 
-    player_game_report = Gamelogs.get_record(
+    player_game_report = PlayerBoxScores.get_record(
         query={"player_id": player_id, "Date": date, "Tm": team}
     )
 
@@ -25,7 +26,7 @@ def get_teammate_played(player_id, date, team):
 
 
 def get_teammates_in_game(player_id, date, team):
-    df = Gamelogs.filter_records(
+    df = PlayerBoxScores.filter_records(
         query={"Date": date, "Tm": team}, as_df=True, recurse=False
     )
 
@@ -40,7 +41,7 @@ def predict_player_prop(player_id: str, stat: str, line: float) -> bool:
         equal_to={"player_id": player_id},
         greater_than={"Date": datetime.datetime(2023, 6, 1)},
     )
-    df = Gamelogs.filter_records_advanced(query=query)
+    df = PlayerBoxScores.filter_records_advanced(query=query)
     df = df.dropna(subset=["GS"])
     df = df.sort_values("Date")
 

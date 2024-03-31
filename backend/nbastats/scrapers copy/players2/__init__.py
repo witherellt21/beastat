@@ -2,10 +2,15 @@ import logging
 
 from base.scraper.base import ScraperKwargs
 
-NAME = "PlayerPropsScraper"
+NAME = "Players"
+
 CONFIG: ScraperKwargs = {
-    "active": False,
+    "active": True,
     "log_level": logging.INFO,
-    "download_rate": 2,
+    "download_rate": 5,
     "align": "inline",
 }
+
+DEPENDENCIES = {}
+
+INHERITANCES = {}

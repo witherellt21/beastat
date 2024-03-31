@@ -7,7 +7,12 @@ from base.util.dataset_helpers import filter_with_bounds
 from base.util.string_helpers import find_closest_match
 from exceptions import DBNotFoundException
 from nbastats.global_implementations.string_helpers import convert_season_to_year
-from nbastats.sql_app.register import CareerStatss, Gamelogs, Matchups, Players
+from nbastats.sql_app.register import (
+    BasicInfo,
+    Matchups,
+    PlayerBoxScores,
+    SeasonAveragess,
+)
 from nbastats.sql_app.serializers import (
     GamelogSerializer,
     MatchupReadSerializer,
@@ -26,10 +31,10 @@ def get_matchup_gamelog(
     if not matchup:
         return []
 
-    home_player_df: pd.DataFrame = Gamelogs.filter_records(
+    home_player_df: pd.DataFrame = PlayerBoxScores.filter_records(
         query={"player_id": matchup.home_player_id}, as_df=True  # type: ignore
     )
-    away_player_df: pd.DataFrame = Gamelogs.filter_records(
+    away_player_df: pd.DataFrame = PlayerBoxScores.filter_records(
         query={"player_id": matchup.away_player_id}, as_df=True  # type: ignore
     )
 
@@ -98,7 +103,7 @@ def filter_gamelog(*, player_id: str, query: GamelogFilter) -> pd.DataFrame:
     if query.matchups_only:
         gamelog: pd.DataFrame = get_matchup_gamelog_by_player_id(player_id=player_id)
     else:
-        gamelog: pd.DataFrame = Gamelogs.filter_records(
+        gamelog: pd.DataFrame = PlayerBoxScores.filter_records(
             query={"player_id": player_id}, as_df=True
         )
 
@@ -178,7 +183,7 @@ def filter_gamelog(*, player_id: str, query: GamelogFilter) -> pd.DataFrame:
                     f"No player id found for teammate: {teammate}."
                 )
 
-            teammate_gamelogs = Gamelogs.filter_records(
+            teammate_gamelogs = PlayerBoxScores.filter_records(
                 query={"player_id": teammate_id}, as_df=True
             )
 
@@ -203,7 +208,7 @@ def filter_gamelog(*, player_id: str, query: GamelogFilter) -> pd.DataFrame:
     if query.withTeammates:
         for teammate_id in query.withTeammates:
 
-            teammate_gamelogs = Gamelogs.filter_records(
+            teammate_gamelogs = PlayerBoxScores.filter_records(
                 query={"player_id": teammate_id}, as_df=True
             )
 
@@ -248,10 +253,10 @@ def get_matchup_gamelog_by_player_id(*, player_id: str) -> pd.DataFrame:
     else:
         return pd.DataFrame()
 
-    home_player_df: pd.DataFrame = Gamelogs.filter_records(
+    home_player_df: pd.DataFrame = PlayerBoxScores.filter_records(
         query={"player_id": matchup.home_player.id}, as_df=True  # type: ignore
     )
-    away_player_df: pd.DataFrame = Gamelogs.filter_records(
+    away_player_df: pd.DataFrame = PlayerBoxScores.filter_records(
         query={"player_id": matchup.away_player.id}, as_df=True  # type: ignore
     )
 
@@ -298,13 +303,13 @@ def get_matchup_gamelog_by_player_id(*, player_id: str) -> pd.DataFrame:
 
 def get_player_id(*, player_name: str) -> Optional[str]:
     # Try to get the player's id given their name
-    player: PlayerSerializer = Players.get_record(query={"name": player_name})  # type: ignore
+    player: PlayerSerializer = BasicInfo.get_record(query={"name": player_name})  # type: ignore
 
     # if no player found, try to get the closes match to their name
     if not player:
         # player_name = PLAYER_NICKNAMES.get(player_name, player_name)
 
-        player_names: list[str] = Players.get_column_values(column="name")
+        player_names: list[str] = BasicInfo.get_column_values(column="name")
 
         player_name_match: Optional[str] = find_closest_match(
             value=player_name, search_list=player_names
@@ -316,13 +321,13 @@ def get_player_id(*, player_name: str) -> Optional[str]:
             return None
 
         # Get the player id for the closest name match
-        player: PlayerSerializer = Players.get_record(query={"name": player_name_match})  # type: ignore
+        player: PlayerSerializer = BasicInfo.get_record(query={"name": player_name_match})  # type: ignore
 
     return player.id
 
 
 def get_player_active_seasons(*, player_id: str) -> list[int]:
-    career_stats = CareerStatss.filter_records(
+    career_stats = SeasonAveragess.filter_records(
         query={"player_id": player_id}, as_df=True
     )
 

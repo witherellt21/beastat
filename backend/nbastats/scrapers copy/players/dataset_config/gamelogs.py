@@ -7,7 +7,7 @@ import pandas as pd
 from base.scraper import BaseHTMLDatasetConfig, QueryArgs, TableConfig
 from nbastats.global_implementations import constants
 from nbastats.sql_app.models import Game, Gamelog
-from nbastats.sql_app.register import Gamelogs, Games
+from nbastats.sql_app.register import Games, PlayerBoxScores
 from nbastats.sql_app.serializers import ReadGameSerializer
 from playhouse.shortcuts import model_to_dict
 from pydantic import UUID4
@@ -155,7 +155,7 @@ class GamelogTableConfig(TableConfig):
 
         super().__init__(
             identification_function=has_30_columns,
-            sql_table=Gamelogs,
+            sql_table=PlayerBoxScores,
             **kwargs,
         )
 
@@ -185,7 +185,7 @@ class GamelogTableConfig(TableConfig):
 
             gamelogs_from_season = pd.DataFrame(rows)
 
-            foreign_keys = Gamelogs.get_foreign_relationships()
+            foreign_keys = PlayerBoxScores.get_foreign_relationships()
 
             foreign_keys_remap = {
                 foreign_key: f"{foreign_key}_id" for foreign_key in foreign_keys

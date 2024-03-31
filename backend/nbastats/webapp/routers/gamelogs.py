@@ -4,7 +4,7 @@ import traceback
 import exceptions
 from fastapi import APIRouter, HTTPException, status
 from nbastats.global_implementations import constants
-from nbastats.sql_app.register import CareerStatss
+from nbastats.sql_app.register import SeasonAveragess
 from nbastats.sql_app.util.db_helpers import GamelogFilter, filter_gamelog
 
 logger = logging.getLogger("main")
@@ -47,7 +47,7 @@ async def get_gamelog_by_player_id(
         last_10_avg["GS"] = last_10["GS"].sum()
         last_3_avg["GS"] = last_3["GS"].sum()
 
-        career_averages = CareerStatss.get_record(
+        career_averages = SeasonAveragess.get_record(
             query={"player_id": player_id, "Season": float(constants.CURRENT_SEASON)}
         )
 
