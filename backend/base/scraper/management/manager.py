@@ -14,6 +14,7 @@ from base.scraper.base import (
     TableConfig,
     TableConfigArgs,
 )
+from base.scraper.util.util import camel_to_snake_case
 from base.sql_app.register.base_table import BaseTable
 from pydantic import BaseModel, ValidationError
 from typing_extensions import TypedDict
@@ -240,3 +241,98 @@ def load_scrapers(path: str = ".") -> list[BaseScraper]:
     # print(scrapers)
 
     return scrapers
+
+
+def add_scraper(name: str, path: str = "."):
+    # os.makedirs()
+    snake_case_name = camel_to_snake_case(name)
+    scraper_dir = path + os.sep + snake_case_name
+    os.mkdir(scraper_dir)
+
+    with open(scraper_dir + os.sep + "__init__.py", "w") as init_file:
+        with open(
+            str(Path(__file__).parent)
+            + os.sep
+            + "file_configs"
+            + os.sep
+            + "scraper.config",
+            "r",
+        ) as example_init_file:
+            example_config = example_init_file.read()
+
+        init_file.write(example_config)
+        init_file.close()
+
+    os.mkdir(scraper_dir + os.sep + "datasets")
+
+
+def add_dataset(scraper_name: str, name: str, path: str = "."):
+    # os.makedirs()
+    scraper_dir = path + os.sep + camel_to_snake_case(scraper_name)
+    if not os.path.isdir(scraper_dir):
+        raise Exception(f"Scraper {scraper_name} does not exist in the path: {path}.")
+
+    datasets_dir = scraper_dir + os.sep + "datasets"
+    if not os.path.isdir(datasets_dir):
+        os.mkdir(datasets_dir)
+
+    dataset_name = camel_to_snake_case(name)
+    dataset_dir = datasets_dir + os.sep + dataset_name
+
+    os.mkdir(dataset_dir)
+
+    with open(dataset_dir + os.sep + "__init__.py", "w") as init_file:
+        with open(
+            str(Path(__file__).parent)
+            + os.sep
+            + "file_configs"
+            + os.sep
+            + "dataset.config",
+            "r",
+        ) as example_init_file:
+            example_config = example_init_file.read()
+
+        init_file.write(example_config)
+        init_file.close()
+
+    os.mkdir(dataset_dir + os.sep + "tables")
+
+
+def add_table(scraper_name: str, dataset_name: str, name: str, path: str = "."):
+    # os.makedirs()
+    scraper_dir = path + os.sep + camel_to_snake_case(scraper_name)
+    if not os.path.isdir(scraper_dir):
+        raise Exception(f"Scraper {scraper_name} does not exist in the path: {path}.")
+
+    dataset_dir = (
+        scraper_dir + os.sep + "datasets" + os.sep + camel_to_snake_case(dataset_name)
+    )
+    if not os.path.isdir(dataset_dir):
+        raise Exception(
+            f"Dataset {dataset_name} does not exist for the scraper {scraper_name} in the path: {path}."
+        )
+
+    tables_dir = dataset_dir + os.sep + "tables"
+    if not os.path.isdir(tables_dir):
+        os.mkdir(tables_dir)
+
+    table_name = camel_to_snake_case(name)
+    table_dir = tables_dir + os.sep + table_name
+
+    os.mkdir(table_dir)
+
+    with open(table_dir + os.sep + "__init__.py", "w") as init_file:
+        with open(
+            str(Path(__file__).parent)
+            + os.sep
+            + "file_configs"
+            + os.sep
+            + "table.config",
+            "r",
+        ) as example_init_file:
+            example_config = example_init_file.read()
+
+        init_file.write(example_config)
+        init_file.close()
+
+    # os.mkdir(dataset_dir + os.sep + "tables")
