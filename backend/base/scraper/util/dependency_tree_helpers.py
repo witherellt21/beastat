@@ -11,6 +11,9 @@ class Dependency(Generic[DO, DK]):
         self.source: DO = source
         self.meta = meta
 
+    def __str__(self):
+        return f"{str(self.source)}: {self.meta}"
+
 
 class DependentObject(Generic[DO, DK]):
 
@@ -18,6 +21,9 @@ class DependentObject(Generic[DO, DK]):
         self._name = name
         self.validator: Type[DK] = validator
         self.dependencies: list[Dependency[DO, DK]] = []
+
+    def __str__(self):
+        return self.name
 
     @property
     def name(self):

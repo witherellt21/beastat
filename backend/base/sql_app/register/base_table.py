@@ -4,10 +4,12 @@ from typing import Any, Literal, Optional, Type, Union, overload
 
 import pandas as pd
 import peewee
+from pandas._typing import Dtype
 from peewee import Model
 from playhouse.shortcuts import model_to_dict
 from pydantic import BaseModel as BaseSerializer
 from pydantic import GetCoreSchemaHandler
+from pydantic.fields import FieldInfo
 from pydantic_core import CoreSchema, core_schema
 
 logger = logging.getLogger("main")
@@ -129,6 +131,27 @@ class BaseTable:
 
     @overload
     def filter_records(self, *, query: dict) -> list[BaseSerializer]: ...
+
+    def get_column_types(self, *, ignore_columns: list[str]) -> dict[str, Dtype]:
+        """
+        Get a dictionary mapping of each field: type pairing in the table.
+        """
+        table_columns: dict[str, FieldInfo] = (
+            self.table_entry_serializer_class.model_fields
+        )
+        table_types: dict[str, Any] = {
+            k: v.annotation for k, v in table_columns.items()
+        }
+
+        column_types: dict[str, Dtype] = {}
+        for column, dtype in table_types.items():
+            if column in ignore_columns:
+                continue
+            else:
+                union_args: Optional[list[Type]] = getattr(dtype, "__args__", None)
+                column_types[column] = union_args[0] if union_args else dtype
+
+        return column_types
 
     def get_foreign_relationships(self) -> list[str]:
         # return get_foreign_key_fields(self.model_class)

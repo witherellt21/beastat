@@ -1,9 +1,8 @@
-NAME = "PlayerPropsDataset"
+NAME = "GamesDataset"
 
 BASE_DOWNLOAD_URL = "http://sportsbook.draftkings.com/nba-player-props?category=player-{stat_category}&subcategory={stat_subcategory}"
 
 CONFIG = {
-    # "dependencies": ["GamesDataset"],
     "default_query_set": [
         {"stat_category": "points", "stat_subcategory": "points"},
         {"stat_category": "assists", "stat_subcategory": "assists"},
@@ -15,5 +14,3 @@ CONFIG = {
         {"stat_category": "combos", "stat_subcategory": "ast-+-reb"},
     ],
 }
-
-DEPENDENCIES = ["GamesDataset"]

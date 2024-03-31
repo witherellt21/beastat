@@ -4,7 +4,7 @@ import traceback
 from collections.abc import Callable
 from functools import reduce
 from time import sleep, time
-from typing import Any, Literal, NotRequired, Optional, Type, TypeAlias, Unpack
+from typing import Any, Literal, NotRequired, Optional, Type, TypeAlias, Union, Unpack
 
 import numpy as np
 import pandas as pd
@@ -26,6 +26,7 @@ from base.scraper.util.dependency_tree_helpers import (
 from base.sql_app.register import BaseTable
 from base.util.dataset_helpers import augment_dataframe, filter_dataframe
 from click import Option
+from fastapi import dependencies
 from pandas._typing import Dtype
 from pydantic.fields import FieldInfo
 from typing_extensions import TypedDict
@@ -70,6 +71,7 @@ class TableConfigArgs(TypedDict):
 class DatasetConfigKwargs(TypedDict):
     # base_download_url: str
     # name: str
+    # dependencies: NotRequired[list[str]]
     table_configs: NotRequired[Optional[dict[str, "TableConfig"]]]
     default_query_set: NotRequired[Optional[QuerySet]]
 
@@ -78,6 +80,8 @@ class ScraperKwargs(TypedDict):
     datasets: NotRequired[dict[str, "BaseHTMLDatasetConfig"]]
     log_level: NotRequired[int]
     download_rate: NotRequired[int]
+    active: NotRequired[bool]
+    align: NotRequired[Union[Literal["nested"], Literal["inline"]]]
 
 
 def combine_lists_of_dicts(*lists):
@@ -86,25 +90,6 @@ def combine_lists_of_dicts(*lists):
         reduce(lambda d1, d2: {**d1, **d2}, dicts) for dicts in zip(*lists)
     ]
     return combined_list
-
-
-def get_column_types_for_table(
-    *, table: BaseTable, ignore_columns: list[str]
-) -> dict[str, Dtype]:
-    table_columns: dict[str, FieldInfo] = (
-        table.table_entry_serializer_class.model_fields
-    )
-    table_types: dict[str, Any] = {k: v.annotation for k, v in table_columns.items()}
-
-    column_types: dict[str, Dtype] = {}
-    for column, dtype in table_types.items():
-        if column in ignore_columns:
-            continue
-        else:
-            union_args: Optional[list[Type]] = getattr(dtype, "__args__", None)
-            column_types[column] = union_args[0] if union_args else dtype
-
-    return column_types
 
 
 class TableInheritance:
@@ -120,6 +105,9 @@ class TableInheritance:
         self.inheritance_function: Callable[[pd.DataFrame], pd.DataFrame] = (
             inheritance_function
         )
+
+    def __str__(self):
+        return f"{self.source.name} : {self.inheritance_function}"
 
 
 class TableConfig(
@@ -147,26 +135,11 @@ class TableConfig(
 
     def __init__(
         self,
-        # identification_function: Callable[[list[pd.DataFrame]], Optional[pd.DataFrame]],
-        # sql_table: BaseTable,
         identification_function: Callable[[list[pd.DataFrame]], Optional[pd.DataFrame]],
         sql_table: BaseTable,
         name: str,
-        # name: [str],
-        # datetime_columns: dict[str, str],
-        # stat_augmentations: dict[str, str | Callable[[pd.DataFrame], pd.Series]],
-        # filters: list[Callable],
-        # rename_columns: dict[str, str],
-        # rename_values: dict[str, dict[Any, Any]],
-        # nan_values: list[str],
-        # transformations: dict[str | tuple[str, str], Callable[[Any], Any]],
-        # required_fields: list[str],
-        # query_save_columns: dict[str, str],
-        # href_save_map: dict[str, str],
         **kwargs: Unpack[TableConfigArgs],
-        # **kwargs,
     ):
-        # name = kwargs.get("name", self.__class__.__name__)
         super().__init__(name=name, validator=DependencyKwargs)
 
         self._sql_table = sql_table
@@ -182,8 +155,7 @@ class TableConfig(
             + list(self.__class__.STAT_AUGMENTATIONS.keys())
             + [self.primary_key]
         )
-        self.column_types = get_column_types_for_table(
-            table=self._sql_table,
+        self.column_types = self._sql_table.get_column_types(
             ignore_columns=ignore_columns,
         )
 
@@ -292,8 +264,6 @@ class BaseHTMLDatasetConfig(
         *,
         name: str,
         base_download_url: str,
-        # table_configs: Optional[dict[str, TableConfig]] = None,
-        # default_query_set: Optional[QuerySet] = None,
         **kwargs: Unpack[DatasetConfigKwargs],
     ):
         super().__init__(name=name, validator=DatasetConfigDependencyKwargs)
@@ -315,6 +285,9 @@ class BaseHTMLDatasetConfig(
             self.static = False
         else:
             self.static = True
+
+    def __str__(self):
+        return self.name
 
     @property
     def base_download_url(self) -> str:
@@ -398,19 +371,19 @@ class BaseHTMLDatasetConfig(
         return pd.read_html(url, extract_links="body")
 
 
-class DatasetDependency:
-    def __init__(
-        self,
-        *,
-        source: "BaseHTMLDatasetConfig",
-        table_name: str,
-        query_set_provider: Callable[[pd.DataFrame], list[dict[str, str]]],
-    ) -> None:
-        self.source: "BaseHTMLDatasetConfig" = source
-        self.table_name: str = table_name
-        self.query_set_provider: Callable[[pd.DataFrame], list[dict[str, str]]] = (
-            query_set_provider
-        )
+# class DatasetDependency:
+#     def __init__(
+#         self,
+#         *,
+#         source: "BaseHTMLDatasetConfig",
+#         table_name: str,
+#         query_set_provider: Callable[[pd.DataFrame], list[dict[str, str]]],
+#     ) -> None:
+#         self.source: "BaseHTMLDatasetConfig" = source
+#         self.table_name: str = table_name
+#         self.query_set_provider: Callable[[pd.DataFrame], list[dict[str, str]]] = (
+#             query_set_provider
+#         )
 
 
 class BaseScraper(threading.Thread):
@@ -423,7 +396,7 @@ class BaseScraper(threading.Thread):
         )
         self._configured: bool = False
 
-        self.RUNNING: Literal[False, True] = True
+        self.RUNNING: Literal[False, True] = kwargs.get("active", True)
 
         self.logger = logging.getLogger(name)
         self.logger.setLevel(kwargs.get("log_level", logging.INFO))
@@ -431,6 +404,8 @@ class BaseScraper(threading.Thread):
 
         self.download_rate = kwargs.get("download_rate", 5)
         self.last_download_time = time()
+
+        self.alignment = kwargs.get("align", "inline")
 
     def set_log_level(self, log_level: int):
         self.logger.setLevel(log_level)
@@ -441,7 +416,7 @@ class BaseScraper(threading.Thread):
         """
         self._dataset_configs[dataset_config.name] = dataset_config
 
-    def configure(self, *, nested_download: bool = False):
+    def configure(self):
         """
         Configure the dataset_configurations based on dependency tree.
         Must be run before the datascraper starts.
@@ -453,7 +428,7 @@ class BaseScraper(threading.Thread):
         for dataset_name in sorted:
             self._dataset_configs[dataset_name]._configure()
 
-        if nested_download:
+        if self.alignment == "nested":
             current_config = dataset_configs[sorted[0]] = self._dataset_configs[
                 sorted[0]
             ]
@@ -713,7 +688,7 @@ class BaseScraper(threading.Thread):
 
     def execute(self):
         """
-        Make a forward pass downloaded and saving each dataset in
+        Make a forward pass downloading and saving each dataset in
         the scraper's configuration. To add more datasets, use the 'add_dataset'
         method.
         """

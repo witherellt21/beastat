@@ -8,6 +8,7 @@ import pandas as pd
 from base.scraper.base import (
     BaseHTMLDatasetConfig,
     BaseScraper,
+    DatasetConfigDependencyKwargs,
     DatasetConfigKwargs,
     ScraperKwargs,
     TableConfig,
@@ -15,6 +16,7 @@ from base.scraper.base import (
 )
 from base.sql_app.register.base_table import BaseTable
 from pydantic import BaseModel, ValidationError
+from typing_extensions import TypedDict
 
 pp = PrettyPrinter(depth=4)
 
@@ -29,14 +31,26 @@ class TableConfigFileParams(BaseModel):
 class DatasetConfigFileParams(BaseModel):
     BASE_DOWNLOAD_URL: str
     NAME: str
+    # DEPENDENCIES: list[str]
     CONFIG: DatasetConfigKwargs = {}
-    TABLES: dict[str, TableConfig]
+
+
+class FileConfigDependencyType(TypedDict):
+    source_name: str
+    source_table_name: str
+    query_set_provider: Callable[[pd.DataFrame], list[dict[str, str]]]
+
+
+class FileConfigInheritanceType(TypedDict):
+    source: tuple[str, str]
+    inheritance_function: Callable[[pd.DataFrame], pd.DataFrame]
 
 
 class ScraperConfigFileParams(BaseModel):
     NAME: str
+    DEPENDENCIES: dict[str, FileConfigDependencyType]
+    INHERITANCES: dict[tuple[str, str], FileConfigInheritanceType]
     CONFIG: ScraperKwargs = {}
-    DATASETS: dict[str, BaseHTMLDatasetConfig]
 
 
 module_ignore = ["__init__.py", "__pycache__", "util"]
@@ -67,7 +81,7 @@ def load_tables(path: str) -> dict[str, TableConfig]:
         is_file = is_file_module(module_name=module_name)
         is_dir = is_dir_module(module_path=path + os.sep + module_name)
 
-        print(module_name)
+        # print(module_name)
 
         if is_dir:
             table_settings = imp.load_source(
@@ -77,7 +91,7 @@ def load_tables(path: str) -> dict[str, TableConfig]:
         elif is_file:
             table_settings = imp.load_source("module", path + os.sep + module_name)
 
-        table_settings_config = table_settings.__dict__
+        table_settings_config = table_settings.__dict__.copy()
 
         try:
             obj = TableConfigFileParams(**table_settings_config)
@@ -94,6 +108,8 @@ def load_tables(path: str) -> dict[str, TableConfig]:
 
         tables[table.name] = table
 
+    # print(tables)
+
     return tables
 
 
@@ -107,23 +123,29 @@ def load_datasets(path: str = ".") -> dict[str, BaseHTMLDatasetConfig]:
         is_dir = is_dir_module(module_path=path + os.sep + module_name)
         is_file = is_file_module(module_name=module_name)
 
-        print(module_name)
+        # print(module_name)
 
         if is_dir:
+            tables = load_tables(path + os.sep + module_name + os.sep + "tables")
+
             dataset_settings = imp.load_source(
                 "module", path + os.sep + module_name + os.sep + "__init__.py"
             )
-            tables = load_tables(path + os.sep + module_name + os.sep + "tables")
 
         elif is_file:
             dataset_settings = imp.load_source("module", path + os.sep + module_name)
             tables = []
 
-        dataset_settings_config = dataset_settings.__dict__
-        dataset_settings_config["TABLES"] = tables
+        dataset_settings_config = dataset_settings.__dict__.copy()
+        # dataset_settings_config = tables
+        # dataset_settings_config[]
+
+        # pp.pprint(dataset_settings_config)
 
         try:
             obj = DatasetConfigFileParams(**dataset_settings_config)
+            obj.CONFIG["table_configs"] = tables
+            # pp.pprint(obj.model_dump())
 
         except ValidationError as exc:
             raise exc
@@ -136,7 +158,7 @@ def load_datasets(path: str = ".") -> dict[str, BaseHTMLDatasetConfig]:
 
         datasets[dataset.name] = dataset
 
-    print(datasets)
+    # print(datasets)
 
     return datasets
 
@@ -157,36 +179,64 @@ def load_scrapers(path: str = ".") -> list[BaseScraper]:
         is_dir = is_dir_module(module_path=path + os.sep + module_name)
         is_file = is_file_module(module_name=module_name)
 
-        print("HERE")
+        # print("HERE")
 
         if is_dir:
+            datasets = load_datasets(path + os.sep + module_name + os.sep + "datasets")
+
             scraper_settings = imp.load_source(
                 "module", path + os.sep + module_name + os.sep + "__init__.py"
             )
-            datasets = load_datasets(path + os.sep + module_name + os.sep + "datasets")
 
         elif is_file:
             scraper_settings = imp.load_source("module", path + os.sep + module_name)
-            datasets = []
+            datasets = {}
 
-        scraper_settings_config = scraper_settings.__dict__
-        scraper_settings_config["DATASETS"] = datasets
+        # print(datasets)
+        scraper_settings_config = scraper_settings.__dict__.copy()
+        # scraper_settings_config["DATASETS"] = datasets
 
-        pp.pprint(scraper_settings_config.get("CONFIG"))
+        # pp.pprint(scraper_settings_config.get("CONFIG"))
 
         try:
-            obj = ScraperConfigFileParams(**scraper_settings_config)
+            scraper_config = ScraperConfigFileParams(**scraper_settings_config)
+            # obj.CONFIG["datasets"] = datasets
 
         except ValidationError as exc:
             raise exc
 
-        print(obj.CONFIG)
+        for base_dataset_name, dependency_config in scraper_config.DEPENDENCIES.items():
+            base_dataset = datasets[base_dataset_name]
+            source_dataset = datasets[dependency_config["source_name"]]
+
+            base_dataset.add_dependency(
+                source=source_dataset,
+                meta_data={
+                    "table_name": dependency_config["source_table_name"],
+                    "query_set_provider": dependency_config["query_set_provider"],
+                },
+            )
+
+        for base_table_name, inheritance_config in scraper_config.INHERITANCES.items():
+            base_table = datasets[base_table_name[0]]._table_configs[base_table_name[1]]
+            source_table = datasets[inheritance_config["source"][0]]._table_configs[
+                inheritance_config["source"][1]
+            ]
+
+            base_table.add_inheritance(
+                source=source_table,
+                inheritance_function=inheritance_config["inheritance_function"],
+            )
+
+        scraper_config.CONFIG["datasets"] = datasets
 
         scraper = BaseScraper(
-            name=obj.NAME,
-            **obj.CONFIG,
+            name=scraper_config.NAME,
+            **scraper_config.CONFIG,
         )
 
         scrapers.append(scraper)
+
+    # print(scrapers)
 
     return scrapers
