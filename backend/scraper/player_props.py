@@ -29,7 +29,11 @@ logger = logging.getLogger("main")
 def get_player_props(dataset: pd.DataFrame) -> pd.DataFrame:
     def split_line_column_by_regex(column, regex):
         data: pd.DataFrame = dataset[column].str.split(regex, expand=True)
-        data: pd.DataFrame = data.dropna(subset=1)
+
+        if 1 in data.columns:
+            data: pd.DataFrame = data.dropna(subset=1)
+        else:
+            return pd.DataFrame()
 
         # favored_over_data[0] = favored_over_data[0].astype(str)
         data[0] = data[0].str.split(line_split_match, expand=True, regex=True)[1]
@@ -50,17 +54,19 @@ def get_player_props(dataset: pd.DataFrame) -> pd.DataFrame:
             column=column, regex=minus_match
         )
 
-        # Set the "implied_odds" based on the betting odds
-        unfavored_prop_data["implied_odds"] = (
-            100 / (unfavored_prop_data[1] + 100) * 100
-        ).round(2)
+        if not unfavored_prop_data.empty:
+            # Set the "implied_odds" based on the betting odds
+            unfavored_prop_data["implied_odds"] = (
+                100 / (unfavored_prop_data[1] + 100) * 100
+            ).round(2)
 
-        favored_prop_data["implied_odds"] = (
-            favored_prop_data[1] / (favored_prop_data[1] + 100) * 100
-        ).round(2)
+        if not favored_prop_data.empty:
+            favored_prop_data["implied_odds"] = (
+                favored_prop_data[1] / (favored_prop_data[1] + 100) * 100
+            ).round(2)
 
-        # Invert the value for favored lines
-        favored_prop_data[1] = -favored_prop_data[1]
+            # Invert the value for favored lines
+            favored_prop_data[1] = -favored_prop_data[1]
 
         # Pull the favored and unfavored datasets back together
         full_data: pd.DataFrame = pd.concat(
