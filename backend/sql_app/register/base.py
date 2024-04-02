@@ -1,3 +1,4 @@
+import time
 import peewee
 import logging
 
@@ -30,6 +31,8 @@ class BaseTable:
     READ_SERIALIZER_CLASS: Optional[Type[BaseSerializer]] = None
     PKS: list[str] = ["id"]
 
+    DEPENDENCIES: list[Type[BaseModel]] = []
+
     def __init__(self, db: peewee.Database):
         if not self.model_class:
             raise Exception("Must specify the MODEL_CLASS class attribute.")
@@ -38,10 +41,12 @@ class BaseTable:
 
         self.db = db
 
+        # self.model_class.Meta.db_table =
         # if self.db:
         if not self.db == None:
             print(f"Creating table for {self.__class__.__name__}.")
-            self.db.create_tables([self.model_class])
+            dependencies = self.__class__.DEPENDENCIES
+            self.db.create_tables([*dependencies, self.model_class])
 
     @property
     def serializer_class(self) -> Type[BaseSerializer]:
@@ -133,9 +138,37 @@ class BaseTable:
         """
         Return all rows matching the search query.
         """
+        # start = time.time()
         records: list[BaseModel] = self.model_class.select().where(
             *[getattr(self.model_class, key) == value for key, value in query.items()]
         )
+        # print(time.time() - start)
+
+        # Serialize rows and convert to desired output type
+        serialized_objects = []
+        for record in records:
+            # if as_df:
+            # serialized_objects.append(model_to_dict(record, recurse=False))
+            # else:
+            serialized = self.read_serializer_class(**model_to_dict(record))
+            serialized_objects.append(serialized.model_dump() if as_df else serialized)
+
+        return pd.DataFrame(serialized_objects) if as_df else serialized_objects
+
+    def filter_records_by_literal(
+        self,
+        *,
+        query: dict = {},
+        as_df: bool = False,
+    ) -> list[BaseSerializer] | pd.DataFrame:
+        """
+        Return all rows matching the search query.
+        """
+        # start = time.time()
+        records: list[BaseModel] = self.model_class.select().where(
+            *[getattr(self.model_class, key) == value for key, value in query.items()]
+        )
+        # print(time.time() - start)
 
         # Serialize rows and convert to desired output type
         serialized_objects = []

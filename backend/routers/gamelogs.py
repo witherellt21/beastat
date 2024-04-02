@@ -1,19 +1,13 @@
 import traceback
 from fastapi import HTTPException, status
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter
 
-import pandas as pd
-from typing import Optional, Unpack, List
 from helpers.db_helpers import (
-    get_matchup_gamelog_by_player_id,
     filter_gamelog,
-    GamelogQuery,
+    GamelogFilter,
 )
-from sql_app.register.gamelog import Gamelogs
 from sql_app.register.career_stats import CareerStatss
 from global_implementations import constants
-from pydantic import BaseModel
-from pydantic.dataclasses import dataclass
 
 import logging
 import exceptions
@@ -21,14 +15,6 @@ import exceptions
 logger = logging.getLogger("main")
 
 router = APIRouter()
-
-
-# class GamelogQuery(BaseModel):
-#     query: Optional[str] = None
-#     limit: int = 50
-#     matchups_only: bool = False
-#     startyear: int = 2024
-#     # without_teammates: List[str] = Query([])
 
 
 ############################
@@ -39,7 +25,7 @@ router = APIRouter()
 @router.post("/{player_id}")
 async def get_gamelog_by_player_id(
     player_id: str,
-    query: GamelogQuery,
+    query: GamelogFilter,
 ):
     try:
         gamelog = filter_gamelog(player_id=player_id, query=query)

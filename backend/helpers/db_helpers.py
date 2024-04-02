@@ -85,7 +85,7 @@ class BoundedQuery(BaseModel):
     # bounding:
 
 
-class GamelogQuery(BaseModel):
+class GamelogFilter(BaseModel):
     # query: Optional[str] = None
     minutes_played: BoundedQuery = BoundedQuery()
     limit: int
@@ -99,7 +99,7 @@ class GamelogQuery(BaseModel):
     withTeammates: list[str] = []
 
 
-def filter_gamelog(*, player_id: str, query: GamelogQuery) -> pd.DataFrame:
+def filter_gamelog(*, player_id: str, query: GamelogFilter) -> pd.DataFrame:
     if query.matchups_only:
         gamelog: pd.DataFrame = get_matchup_gamelog_by_player_id(player_id=player_id)
     else:

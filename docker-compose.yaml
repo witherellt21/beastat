@@ -4,8 +4,8 @@ services:
   nbastats-db:
     image: "postgres:9.6-alpine"
     container_name: nbastats-db
-    # volumes:
-    #   - nbastats-data:/var/lib/postgresql/data
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
     ports:
       - 5432:5432
     environment:
