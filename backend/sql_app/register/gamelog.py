@@ -1,3 +1,4 @@
+import datetime
 import peewee
 import pandas as pd
 from pydantic import BaseModel
@@ -12,8 +13,8 @@ from numbers import Number
 
 
 class GamelogQuery(BaseModel):
-    greater_than: dict[str, int | float] = {}
-    less_than: dict[str, int | float] = {}
+    greater_than: dict[str, int | float | datetime.datetime] = {}
+    less_than: dict[str, int | float | datetime.datetime] = {}
     equal_to: dict[str, Any] = {}
 
 

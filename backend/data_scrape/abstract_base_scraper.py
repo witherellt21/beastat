@@ -135,6 +135,7 @@ class AbstractBaseScraper(ABC, threading.Thread):
             )
 
         self.table: BaseTable = table
+
         self.primary_key: str = self.table.model_class._meta.primary_key.name  # type: ignore
 
         self.column_types: Optional[dict[str, Dtype]] = kwargs.get(

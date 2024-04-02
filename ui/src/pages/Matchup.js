@@ -23,7 +23,7 @@ function Matchup() {
 
 
     useEffect(() => {
-        axios.get(`http://localhost:3001/matchups/${id}`).then(async (response) => {
+        axios.get(`${process.env.REACT_APP_BEASTAT_API_BASE_URL}/matchups/${id}`).then(async (response) => {
             setMatchup(response.data)
 
         }).catch((err) => {
@@ -38,7 +38,7 @@ function Matchup() {
     useEffect(() => {
 
         if (matchupLoaded && matchup != {}) {
-            axios.get(`http://localhost:3001/player-props/${matchup?.home_player?.id}`)
+            axios.get(`${process.env.REACT_APP_BEASTAT_API_BASE_URL}/player-props/${matchup?.home_player?.id}`)
                 .then((response) => {
                     setHomePropLines(response.data)
                 })
@@ -46,7 +46,7 @@ function Matchup() {
                     console.log(error)
                     return null;
                 });
-            axios.get(`http://localhost:3001/player-props/${matchup?.away_player?.id}`)
+            axios.get(`${process.env.REACT_APP_BEASTAT_API_BASE_URL}/player-props/${matchup?.away_player?.id}`)
                 .then((response) => {
                     setAwayPropLines(response.data)
                 })
@@ -55,7 +55,7 @@ function Matchup() {
                     return null;
                 });
 
-            axios.get(`http://localhost:3001/defense-rankings/game/${matchup?.game?.id}/${matchup?.position}`)
+            axios.get(`${process.env.REACT_APP_BEASTAT_API_BASE_URL}/defense-rankings/game/${matchup?.game?.id}/${matchup?.position}`)
                 .then((response) => {
                     setDefenseRankings(response.data)
                 })
@@ -64,7 +64,7 @@ function Matchup() {
                     return null;
                 });
 
-            axios.get(`http://localhost:3001/career-stats/${matchup?.home_player?.id}/season/2024`)
+            axios.get(`${process.env.REACT_APP_BEASTAT_API_BASE_URL}/career-stats/${matchup?.home_player?.id}/season/2024`)
                 .then((response) => {
                     setHomePlayerSeasonAverages(response.data)
                 })
@@ -72,7 +72,7 @@ function Matchup() {
                     console.log(error)
                     return null;
                 });
-            axios.get(`http://localhost:3001/career-stats/${matchup?.away_player?.id}/season/2024`)
+            axios.get(`${process.env.REACT_APP_BEASTAT_API_BASE_URL}/career-stats/${matchup?.away_player?.id}/season/2024`)
                 .then((response) => {
                     setAwayPlayerSeasonAverages(response.data)
                 })
@@ -81,7 +81,7 @@ function Matchup() {
                     return null;
                 });
 
-            axios.get(`http://localhost:3001/lineups/${matchup?.game?.id}`)
+            axios.get(`${process.env.REACT_APP_BEASTAT_API_BASE_URL}/lineups/${matchup?.game?.id}`)
                 .then((response) => {
                     setLineups(response.data)
                 })

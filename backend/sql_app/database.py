@@ -1,11 +1,9 @@
 from peewee import PostgresqlDatabase
+import os
 
-try:
-    DB = PostgresqlDatabase(
-        "nbastats", user="nbastats", password="nbastats", host="nbastats-db", port=5432
-    )
 
-    DB.connect()
-except:
-    DB = None
-    print("Unable to connect to DB.")
+DB = PostgresqlDatabase(
+    "nbastats", user="nbastats", password="nbastats", host="localhost", port=5432
+)
+
+DB.connect()

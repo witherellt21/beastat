@@ -47,6 +47,8 @@ class BaseTable:
             print(f"Creating table for {self.__class__.__name__}.")
             dependencies = self.__class__.DEPENDENCIES
             self.db.create_tables([*dependencies, self.model_class])
+        else:
+            raise Exception("DB not connect. Cannot perform operations on the table.")
 
     @property
     def serializer_class(self) -> Type[BaseSerializer]:

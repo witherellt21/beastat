@@ -10,7 +10,8 @@ function Home() {
     let navigate = useNavigate();
 
     useEffect(() => {
-        axios.get("http://192.168.183.216:3001/matchups/byGame").then((response) => {
+        console.log(process.env.REACT_APP_BEASTAT_API_BASE_URL)
+        axios.get(`${process.env.REACT_APP_BEASTAT_API_BASE_URL}/matchups/byGame`).then((response) => {
             setGames(response.data);
         });
         setIsLoading(false)
