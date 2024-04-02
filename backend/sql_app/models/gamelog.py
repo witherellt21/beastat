@@ -15,8 +15,8 @@ class Gamelog(BaseModel):
     G = FloatField(null=True)
     Date = DateField()
     Age = CharField()
-    Tm = CharField()
-    Opp = CharField()
+    Tm = CharField()  # link to team
+    Opp = CharField()  # link to team
     home = BooleanField()
     result = CharField()
     margin = IntegerField()

@@ -2,7 +2,7 @@ from typing import Any
 import logging
 
 DATA_SCRAPE: dict[str, dict[str, Any]] = {
-    "PlayerInfo": {"status": False},
+    "Player": {"status": False},
     "DefenseRankings": {"status": True},
     "PlayerProps": {"status": True},
     "Lineups": {"status": True},
@@ -10,5 +10,5 @@ DATA_SCRAPE: dict[str, dict[str, Any]] = {
         "status": False,
         "options": {"identifier_source": "all", "log_level": logging.INFO},
     },
-    "Gamelogs": {"status": False, "options": {"identifier_source": "all"}},
+    "Gamelogs": {"status": True, "options": {"identifier_source": "all"}},
 }

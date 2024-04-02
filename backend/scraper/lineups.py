@@ -1,5 +1,5 @@
-from data_scrape.abstract_base_scraper import AbstractBaseScraper
-from helpers.db_helpers import get_player_id
+from scraper.abstract_base_scraper import AbstractBaseScraper
+from sql_app.util.db_helpers import get_player_id
 from sql_app.register.lineup import Lineups
 from sql_app.register.matchup import Matchups
 from sql_app.register.game import Games

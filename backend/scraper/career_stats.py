@@ -9,12 +9,12 @@ import os
 import re
 
 # Package imports
-from data_scrape.abstract_base_scraper import AbstractBaseScraper
-from data_scrape.test.main_tester_functions import test_scraper_thread
-from helpers.string_helpers import convert_season_to_year
+from scraper.abstract_base_scraper import AbstractBaseScraper
+from scraper.test.main_tester_functions import test_scraper_thread
+from scraper.util.string_helpers import convert_season_to_year
 from sql_app.register.career_stats import CareerStatss
 from sql_app.register.matchup import Matchups
-from sql_app.register.player_info import PlayerInfos, Players
+from sql_app.register.player_info import Players
 
 from typing import Unpack, Literal, TypedDict, Iterable, Optional
 

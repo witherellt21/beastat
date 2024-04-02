@@ -2,8 +2,8 @@ from datetime import datetime
 import pandas as pd
 import re
 
-from data_scrape.abstract_base_scraper import AbstractBaseScraper
-from helpers.db_helpers import get_player_id
+from scraper.abstract_base_scraper import AbstractBaseScraper
+from sql_app.util.db_helpers import get_player_id
 from sql_app.register.player_prop import PropLines
 from sql_app.register import Games
 from sql_app.register.player_info import Players

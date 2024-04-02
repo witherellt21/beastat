@@ -1,25 +1,25 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import matchups
-from routers import gamelogs
-from routers import player_props
-from routers import defense_rankings
-from routers import career_stats
-from routers import lineups
-from routers import games
-from routers import players
+from webapp.routers import matchups
+from webapp.routers import gamelogs
+from webapp.routers import player_props
+from webapp.routers import defense_rankings
+from webapp.routers import career_stats
+from webapp.routers import lineups
+from webapp.routers import games
+from webapp.routers import players
 from fastapi.logger import logger
 
-from data_scrape.career_stats import CareerStatsScraper
-from data_scrape.gamelog import GamelogScraper
-from data_scrape.lineups import LineupScraper
-from data_scrape.player_props import PlayerPropsScraper
-from data_scrape.player_info import PlayerInfoScraper
-from data_scrape.defense_rankings_scraper import DefenseRankingsScraper
+from scraper.career_stats import CareerStatsScraper
+from scraper.gamelog import GamelogScraper
+from scraper.lineups import LineupScraper
+from scraper.player_props import PlayerPropsScraper
+from scraper.player_info import PlayerScraper
+from scraper.defense_rankings_scraper import DefenseRankingsScraper
 
 import logging
 import threading
-import config
+import webapp.config as config
 
 main_formatter = logging.Formatter(
     "[{levelname:^10}] [ {asctime} ] [{threadName:^20}]  {message}",
@@ -36,8 +36,8 @@ main_logger.addHandler(main_stream_handler)
 
 
 # TODO: MASSIVE work needs to be done in keeping these scrapers asynchronous in case data is missing
-if config.DATA_SCRAPE.get("PlayerInfo", {}).get("status"):
-    player_info_scraper = PlayerInfoScraper()
+if config.DATA_SCRAPE.get("Player", {}).get("status"):
+    player_info_scraper = PlayerScraper()
     player_info_scraper.setDaemon(True)
     player_info_scraper.start()
 

@@ -2,19 +2,20 @@ import datetime
 import peewee
 import pandas as pd
 from pydantic import BaseModel
+from typing import Optional
 from sql_app.models.gamelog import Gamelog
 from sql_app.models.player_info import Player
 from sql_app.serializers.gamelog import GamelogSerializer, GamelogReadSerializer
 from sql_app.database import DB
 from sql_app.register.base import BaseTable
 from playhouse.shortcuts import model_to_dict
-from typing import TypedDict, Any
+from typing import TypedDict, Any, Union
 from numbers import Number
 
 
 class GamelogQuery(BaseModel):
-    greater_than: dict[str, int | float | datetime.datetime] = {}
-    less_than: dict[str, int | float | datetime.datetime] = {}
+    greater_than: dict[str, Union[int, float, datetime.datetime]] = {}
+    less_than: dict[str, Union[int, float, datetime.datetime]] = {}
     equal_to: dict[str, Any] = {}
 
 
@@ -72,15 +73,42 @@ class GamelogTable(BaseTable):
         # Serialize rows and convert to desired output type
         return count
 
-    def func(self, player_id):
-        # query = Gamelog.select().where(
-        #     Gamelog.player == player_id, Gamelog.MP > 30, Gamelog.MP < 30.2
-        # )
+    def filter_records_advanced(
+        self,
+        query: Optional[GamelogQuery] = None,
+        columns: list[str] = [],
+        confuse: bool = False,
+        limit: Optional[int] = None,
+    ) -> pd.DataFrame:
+        search = self.model_class.select()
 
-        for obj in query:
-            print(model_to_dict(obj))
+        if query:
+            search = search.where(
+                *[
+                    getattr(self.model_class, key) == value
+                    for key, value in query.equal_to.items()
+                ],
+                *[
+                    getattr(self.model_class, key) > value
+                    for key, value in query.greater_than.items()
+                ],
+                *[
+                    getattr(self.model_class, key) < value
+                    for key, value in query.less_than.items()
+                ],
+            )
 
-        return None
+        if confuse:
+            search = search.order_by(peewee.fn.Random())
+
+        if limit is not None:
+            search = search.limit(limit)
+
+        rows = []
+        for row in search:
+            rows.append(model_to_dict(row, recurse=False))
+
+        return pd.DataFrame(rows)
 
 
 # try:

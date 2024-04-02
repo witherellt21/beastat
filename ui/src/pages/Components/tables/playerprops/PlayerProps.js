@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom';
 import {
     flexRender,
     useReactTable,
@@ -9,6 +10,7 @@ import { playerPropsColumns } from './columns'
 
 
 function PlayerPropsTable({ playerPropsData }) {
+    let navigate = useNavigate();
 
     const [sorting, setSorting] = useState([{
         desc: true,
@@ -62,11 +64,16 @@ function PlayerPropsTable({ playerPropsData }) {
                         return (
                             <tr key={row.id}>
                                 {row.getVisibleCells()?.map((cell) => {
+                                    // console.log(cell.column)
                                     return <td key={cell.id} className={'border border-gray-300 text-xs ' + `
 
                                     `}>
                                         <div className='py-1'>
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                            {cell.column.id === 'player'
+                                                ? <button onClick={() => { navigate(`/player/${cell.getValue().id}`) }}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</button>
+                                                // ? flexRender(cell.column.columnDef.cell, cell.getContext())
+                                                : flexRender(cell.column.columnDef.cell, cell.getContext())
+                                            }
                                         </div>
                                     </td>;
                                 })}

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import Home from "./pages/Home";
 import Matchup from "./pages/Matchup"
 import Props from './pages/Props';
+import Player from './pages/Player';
 
 
 function App() {
@@ -37,6 +38,7 @@ function App() {
           <Route path="/" exact Component={Home} />
           <Route path="/matchup/:id" exact Component={Matchup} />
           <Route path="/props" exact Component={Props} />
+          <Route path="/player/:id" exact Component={Player} />
           {/* <Route path="/matchup/:id" exact Component={Matchup} /> */}
         </Routes>
       </Router>

@@ -4,8 +4,8 @@ from sql_app.models.base import BaseModel
 
 
 class DefenseRanking(BaseModel):
-    team = CharField()
-    team_abr = CharField()
+    team = CharField()  # link to team
+    # team_abr = CharField()
     stat = CharField()
     ALL = IntegerField()
     PG = IntegerField()
