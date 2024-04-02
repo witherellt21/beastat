@@ -4,7 +4,6 @@ from typing import Any, Optional, Union
 import pandas as pd
 import peewee
 from base.sql_app.register import AdvancedQuery, BaseTable
-from nbastats.sql_app.database import DB
 from nbastats.sql_app.models import Game, Gamelog
 from nbastats.sql_app.register.player import PlayerTable
 from nbastats.sql_app.serializers import GamelogReadSerializer, GamelogSerializer

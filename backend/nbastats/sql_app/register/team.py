@@ -5,7 +5,6 @@ from typing import Optional
 
 import peewee
 from base.sql_app.register import BaseTable
-from nbastats.sql_app.database import DB
 from nbastats.sql_app.models import Team
 from nbastats.sql_app.serializers import ReadTeamSerializer, TeamSerializer
 from playhouse.shortcuts import model_to_dict
@@ -34,7 +33,7 @@ class TeamTable(BaseTable):
 
 # Teams = TeamTable(DB)
 
-# # print(os.getcwd())
+# # # print(os.getcwd())
 # try:
 #     with open("sql_app/static_data/teams.json", "r") as teams_file:
 #         new_data = {}
@@ -50,5 +49,5 @@ class TeamTable(BaseTable):
 #             )
 # except FileNotFoundError as e:
 #     logger.warning(f"Unable to download team data. {e}")
-# with open("./sql_app/static_data/teams_new.json", "w") as teams_new:
-#     json.dump(new_data, teams_new)
+# # with open("./sql_app/static_data/teams_new.json", "w") as teams_new:
+# #     json.dump(new_data, teams_new)

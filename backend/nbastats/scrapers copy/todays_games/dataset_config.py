@@ -223,8 +223,10 @@ class TodaysGamesDatasetConfig(BaseHTMLDatasetConfig):
 
             # home_team_id = get_team_id_by_abbr(home_team_abbr)
             # away_team_id = get_team_id_by_abbr(away_team_abbr)
+            game_id = uuid.uuid4()
 
             game_entry = {
+                "id": game_id,
                 "date_time": game_date_time,
                 "home_id": home_team_abbr,
                 "away_id": away_team_abbr,
@@ -270,7 +272,7 @@ class TodaysGamesDatasetConfig(BaseHTMLDatasetConfig):
                     lineup_status.text if lineup_status else "Expected Lineup"
                 )
                 away_team_lineup = get_team_lineup(lineup_div=away_lineup_div)
-                print(away_team_lineup)
+                # print(away_team_lineup)
             else:
                 continue
 
@@ -279,7 +281,7 @@ class TodaysGamesDatasetConfig(BaseHTMLDatasetConfig):
             if home_team_lineup:
                 home_team_data: dict = {
                     "id": uuid.uuid4(),
-                    # "game_id": game.id,
+                    "game_id": game_id,
                     "team_id": home_team_abbr,
                     "status": home_lineup_status,
                     **home_team_lineup,
@@ -292,7 +294,7 @@ class TodaysGamesDatasetConfig(BaseHTMLDatasetConfig):
             if away_team_lineup:
                 away_team_data: dict = {
                     "id": uuid.uuid4(),
-                    # "game_id": game.id,
+                    "game_id": game_id,
                     "team_id": away_team_abbr,
                     "status": away_lineup_status,
                     **away_team_lineup,
@@ -312,7 +314,7 @@ class TodaysGamesDatasetConfig(BaseHTMLDatasetConfig):
 
                 matchup = {
                     "id": uuid.uuid4(),
-                    # "game_id": game.id,
+                    "game_id": game_id,
                     "position": position.split("_")[0],
                     "home_player_id": player_id,
                     "away_player_id": away_team_lineup[position],

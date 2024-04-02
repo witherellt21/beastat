@@ -3,16 +3,25 @@ from .career_stats import (
     CareerStatsSerializer,
     CareerStatsTableEntrySerializer,
 )
-from .defense_ranking import DefenseRankingSerializer, ReadDefenseRankingSerializer
+from .defense_ranking import (
+    DefenseRankingSerializer,
+    DefenseRankingTableEntrySerializer,
+    ReadDefenseRankingSerializer,
+)
 from .game import (
     GameLineSerializer,
     GameSerializer,
+    GameTableEntrySerializer,
     ReadGameLineSerializer,
     ReadGameSerializer,
 )
 from .gamelog import GamelogReadSerializer, GamelogSerializer
-from .lineup import LineupReadSerializer, LineupSerializer
-from .matchup import MatchupReadSerializer, MatchupSerializer
+from .lineup import LineupReadSerializer, LineupSerializer, LineupTableEntrySerializer
+from .matchup import (
+    MatchupReadSerializer,
+    MatchupSerializer,
+    MatchupTableEntrySerializer,
+)
 from .player import PlayerSerializer, PlayerTableEntrySerializer, ReadPlayerSerializer
 from .player_prop import (
     PlayerPropSerializer,

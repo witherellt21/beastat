@@ -1,5 +1,4 @@
 from base.sql_app.register import BaseTable
-from nbastats.sql_app.database import DB
 from nbastats.sql_app.models import PropLine
 from nbastats.sql_app.serializers import (
     PlayerPropSerializer,

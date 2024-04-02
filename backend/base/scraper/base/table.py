@@ -30,6 +30,7 @@ class TableInheritance:
 
 class TableConfigArgs(TypedDict):
     datetime_columns: NotRequired[dict[str, str]]
+    json_columns: NotRequired[list[str]]
 
     # Adds column labled by key using a synctatic string or a callable function with argument that accepts the full dataset.
     stat_augmentations: NotRequired[
@@ -115,7 +116,6 @@ class TableConfig(
         )
         self.href_save_map = kwargs.get("href_save_map", self.__class__.HREF_SAVE_MAP)
 
-        print(kwargs)
         self.cached_query_generator = kwargs.get(
             "cached_query_generator", self.__class__.CACHED_QUERY_GENERATOR
         )
@@ -124,15 +124,24 @@ class TableConfig(
         ignore_columns = (
             list(self.datetime_columns.keys())
             + list(self.stat_augmentations.keys())
+            + kwargs.get("json_columns", [])
             + [self.primary_key]
         )
-        self.column_types = self._sql_table.get_column_types(
-            ignore_columns=ignore_columns,
+        self.column_types, self.non_required_column_types = (
+            self._sql_table.get_column_types(
+                ignore_columns=ignore_columns,
+            )
         )
 
-        self.desired_columns = list(
-            sql_table.table_entry_serializer_class.model_fields.keys()
-        )
+        # self.desired_columns = list(
+        #     sql_table.table_entry_serializer_class.model_fields.keys()
+        # )
+        desired_columns = []
+        for column in sql_table.table_entry_serializer_class.model_fields.keys():
+            if column not in self.non_required_column_types.keys():
+                desired_columns.append(column)
+
+        self.desired_columns = desired_columns
 
         self.data = pd.DataFrame()
         self.staged_data = pd.DataFrame()

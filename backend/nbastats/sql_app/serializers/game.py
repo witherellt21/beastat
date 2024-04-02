@@ -23,7 +23,7 @@ class GameSerializer(BaseSerializer):
 
 
 class ReadGameSerializer(BaseSerializer):
-    id: UUID4
+    id: str
     date_time: datetime
     home: ReadTeamSerializer
     away: ReadTeamSerializer
@@ -34,9 +34,20 @@ class ReadGameSerializer(BaseSerializer):
     timestamp: datetime
 
 
+class GameTableEntrySerializer(BaseSerializer):
+    id: str
+    date_time: datetime
+    home_id: str
+    away_id: str
+    home_score: Optional[int] = None
+    away_score: Optional[int] = None
+    winner: Optional[Annotated[str, StringConstraints(min_length=3, max_length=3)]] = None  # type: ignore
+    victory_margin: Optional[int] = None
+
+
 class GameLineSerializer(BaseSerializer):
-    game_id: UUID4
-    favored_team_id: UUID4
+    game_id: str
+    favored_team_id: str
     line: float
     spread: float
     over_under: float

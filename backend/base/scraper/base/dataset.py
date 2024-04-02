@@ -24,6 +24,7 @@ def combine_lists_of_dicts(*lists):
 class DatasetConfigKwargs(TypedDict):
     table_configs: NotRequired[Optional[dict[str, "TableConfig"]]]
     default_query_set: NotRequired[Optional[QuerySet]]
+    extract_tables: NotRequired[Callable[[str], list[pd.DataFrame]]]
 
 
 class DatasetConfigDependencyKwargs(DependencyKwargs):
@@ -55,6 +56,10 @@ class BaseHTMLDatasetConfig(
         self.nested_datasets: list["BaseHTMLDatasetConfig"] = []
 
         self.data_source: Literal["cached", "downloaded"] = "downloaded"
+
+        self._extract_tables = kwargs.get(
+            "extract_tables", lambda url: pd.read_html(url, extract_links="body")
+        )
 
         args_expected: int = self.base_download_url.count("{}")
 
@@ -145,4 +150,5 @@ class BaseHTMLDatasetConfig(
                 table_config.data_source = "downloaded"
 
     def extract_tables(self, url: str) -> list[pd.DataFrame]:
-        return pd.read_html(url, extract_links="body")
+        return self._extract_tables(url)
+        # return pd.read_html(url, extract_links="body")

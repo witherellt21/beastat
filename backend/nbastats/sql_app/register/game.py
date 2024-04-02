@@ -9,6 +9,7 @@ from nbastats.sql_app.register.team import TeamTable
 from nbastats.sql_app.serializers import (
     GameLineSerializer,
     GameSerializer,
+    GameTableEntrySerializer,
     ReadGameLineSerializer,
     ReadGameSerializer,
 )
@@ -18,7 +19,7 @@ from playhouse.shortcuts import model_to_dict
 class GameTable(BaseTable):
     MODEL_CLASS = Game
     SERIALIZER_CLASS = GameSerializer
-    TABLE_ENTRY_SERIALIZER_CLASS = GameSerializer
+    TABLE_ENTRY_SERIALIZER_CLASS = GameTableEntrySerializer
     READ_SERIALIZER_CLASS = ReadGameSerializer
     PKS: list[str] = ["date_time", "home_id", "away_id"]
 
@@ -34,20 +35,20 @@ class GameTable(BaseTable):
         self, *, min_datetime: datetime, as_df: Literal[False]
     ) -> list[GameSerializer]: ...
 
-    def insert_record(self, *, data: dict) -> Optional[GameSerializer]:
-        """
-        Insert a row into the database.
-        """
-        validated_data: GameSerializer = GameSerializer(
-            id=uuid.uuid4(), **data, timestamp=datetime.now()
-        )
+    # def insert_record(self, *, data: dict) -> Optional[GameSerializer]:
+    #     """
+    #     Insert a row into the database.
+    #     """
+    #     validated_data: GameSerializer = GameSerializer(
+    #         id=uuid.uuid4(), **data, timestamp=datetime.now()
+    #     )
 
-        result: Game = self.model_class.create(**validated_data.model_dump())
+    #     result: Game = self.model_class.create(**validated_data.model_dump())
 
-        if result:
-            return validated_data
-        else:
-            return None
+    #     if result:
+    #         return validated_data
+    #     else:
+    #         return None
 
     def filter_by_datetime(
         self, *, min_datetime: datetime, as_df: bool = False

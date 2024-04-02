@@ -14,11 +14,19 @@ class MatchupSerializer(BaseSerializer):
 
 
 class MatchupReadSerializer(BaseSerializer):
-    id: UUID4
+    id: str
     game: ReadGameSerializer
     position: str
     home_player: PlayerSerializer
     away_player: PlayerSerializer
+
+
+class MatchupTableEntrySerializer(BaseSerializer):
+    id: str
+    game_id: str
+    position: str
+    home_player_id: str
+    away_player_id: str
 
 
 class MatchupUpdateSerializer(BaseSerializer):

@@ -10,7 +10,7 @@ from .util import get_team_id_from_career_stats
 NAME = "Players"
 
 CONFIG: ScraperKwargs = {
-    "active": True,
+    "active": False,
     "log_level": logging.INFO,
     "download_rate": 5,
     "align": "nested",

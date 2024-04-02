@@ -143,7 +143,8 @@ class BaseScraper(threading.Thread):
                 data = self.identify_table(table_config=table_config, tables=tables)
 
                 if data is None:
-                    raise ValueError("No matching table found.")
+                    # print(tables)
+                    raise ValueError(f"No matching table found for {table_name}.")
 
                 # Add any of the query arguments to the dataframe if desired.
                 for (
@@ -159,7 +160,7 @@ class BaseScraper(threading.Thread):
                     # table_config.data_source = "downloaded"
                     self.logger.info(f"Downloaded data for {table_config.name}.")
                 except Exception as e:
-                    raise Exception(f"{config.name}: {e}")
+                    raise Exception(f"{table_config.name}: {e}")
 
                 # return data
 
