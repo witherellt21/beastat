@@ -6,4 +6,6 @@ from .dataset import (
     QuerySet,
 )
 from .scraper import BaseScraper, ScraperKwargs
-from .table import TableConfig, TableConfigArgs
+
+# from .table import TableConfig, TableConfigArgs
+from .table2 import TableConfig, TableConfigArgs

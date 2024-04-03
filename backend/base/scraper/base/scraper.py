@@ -6,7 +6,7 @@ from typing import Literal, NotRequired, Optional, Union, Unpack
 
 import numpy as np
 import pandas as pd
-from base.scraper.base.table import TableConfig
+from base.scraper.base.table2 import TableConfig
 from base.scraper.base.util import QueryArgs, QuerySet
 from base.scraper.util.dependency_tree_helpers import topological_sort_dependency_tree
 from typing_extensions import TypedDict
@@ -150,7 +150,7 @@ class BaseScraper(threading.Thread):
                 for (
                     df_column,
                     query_key,
-                ) in table_config.query_save_columns.items():
+                ) in table_config.table_serializer.query_arg_fields.items():
                     if query_args and query_key in query_args:
                         data[df_column] = query_args[query_key]
 

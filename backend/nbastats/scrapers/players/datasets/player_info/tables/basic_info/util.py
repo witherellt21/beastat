@@ -5,7 +5,7 @@ from base.scraper.base.util import QueryArgs
 from nbastats.sql_app.register import BasicInfo
 
 
-def convert_height_to_inches(*, height: str) -> int:
+def convert_height_to_inches(height: str) -> int:
     feet, inches = height.split("-")
     return int(feet) * 12 + int(inches)
 

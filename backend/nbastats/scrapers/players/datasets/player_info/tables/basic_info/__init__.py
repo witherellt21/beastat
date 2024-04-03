@@ -1,11 +1,48 @@
+import uuid
+
+from base.scraper.base.table_entry_serializers import (
+    BaseTableEntrySerializer,
+    CharField,
+    DatetimeField,
+    HTMLSaveField,
+    IntegerField,
+    RenameField,
+    TransformationField,
+)
 from nbastats.global_implementations import constants
 from nbastats.scrapers.players.datasets.player_info.tables.basic_info.util import (
     convert_height_to_inches,
     get_cached_player_info_data,
     has_player_column,
 )
-from sql_app.register import BasicInfo
+from nbastats.sql_app.register import BasicInfo
 from unidecode import unidecode
+
+
+class PlayerInfoTableEntrySerializer(BaseTableEntrySerializer):
+    # id = CharField(default=uuid.uuid4)
+    team_id = CharField(null=True, default=None)
+    player_link = HTMLSaveField("Player")
+
+    id = TransformationField(
+        str,
+        lambda link: link.rsplit("/", 1)[1].split(".")[0],
+        from_columns=["player_link"],
+    )
+    name = TransformationField(
+        str, lambda name: unidecode(name), from_columns=["Player"]
+    )
+    active_from = RenameField("From", type=int)
+    active_to = RenameField(
+        "To", type=int, filters=[lambda x: x == constants.CURRENT_SEASON]
+    )
+    position = RenameField("Pos", type=str)
+    height = TransformationField(int, convert_height_to_inches, from_columns=["Ht"])
+    weight = RenameField("Wt", type=int, replace_values={"": 0})
+    birth_date = DatetimeField(format="%B %d, %Y", from_column="Birth Date")
+
+
+print(PlayerInfoTableEntrySerializer().html_save_fields)
 
 NAME = "BasicInfo"
 
@@ -13,28 +50,8 @@ SQL_TABLE = BasicInfo
 
 IDENTIFICATION_FUNCTION = has_player_column
 
+TABLE_SERIALIZER = PlayerInfoTableEntrySerializer()
+
 CONFIG = {
-    "filters": [lambda dataframe: dataframe["active_to"] == constants.CURRENT_SEASON],
-    "datetime_columns": {"birth_date": "%B %d, %Y"},
-    "rename_columns": {
-        "Player": "name",
-        "From": "active_from",
-        "To": "active_to",
-        "Pos": "position",
-        "Ht": "height",
-        "Wt": "weight",
-        "Birth Date": "birth_date",
-    },
-    "rename_values": {"weight": {"": 0}},
-    "transformations": {
-        "name": lambda name: unidecode(name),
-        "height": lambda height: convert_height_to_inches(height=height),
-        ("player_link", "id"): lambda link: link.rsplit("/", 1)[1].split(".")[0],
-        ("name", "team_id"): lambda row: None,
-    },
-    "data_transformations": [],
-    "query_save_columns": {},
-    "required_columns": [],
-    "href_save_map": {"Player": "player_link"},
     "cached_query_generator": get_cached_player_info_data,
 }

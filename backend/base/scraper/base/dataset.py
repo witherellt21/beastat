@@ -2,14 +2,14 @@ from functools import reduce
 from typing import Callable, Literal, NotRequired, Optional, Unpack
 
 import pandas as pd
-from base.scraper.base.table import TableConfig
+from base.scraper.base.table2 import TableConfig
 from base.scraper.base.util import QueryArgs, QuerySet
-from base.scraper.pydantic_validator import PydanticValidatorMixin
 from base.scraper.util.dependency_tree_helpers import (
     DependencyKwargs,
     DependentObject,
     topological_sort_dependency_tree,
 )
+from base.util.pydantic_validator import PydanticValidatorMixin
 from typing_extensions import TypedDict
 
 
@@ -105,7 +105,7 @@ class BaseHTMLDatasetConfig(
 
                 if dependency_data.empty:
                     raise Exception(
-                        f"Dataset {self.__class__.__name__} processed before dependency {dependency.source.__class__.__name__}."
+                        f"Dataset {self.name} processed before dependency {dependency.source.name}."
                     )
 
                 query_set_extractions.append(

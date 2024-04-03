@@ -36,7 +36,6 @@ class BaseTable:
     MODEL_CLASS: Type[Model]
     SERIALIZER_CLASS: Type[BaseSerializer]
     UPDATE_SERIALIZER_CLASS: Type[BaseSerializer]
-    TABLE_ENTRY_SERIALIZER_CLASS: Type[BaseSerializer]
     READ_SERIALIZER_CLASS: Optional[Type[BaseSerializer]] = None
     PKS: list[str] = ["id"]
 
@@ -80,10 +79,6 @@ class BaseTable:
     @property
     def serializer_class(self) -> Type[BaseSerializer]:
         return self.__class__.SERIALIZER_CLASS
-
-    @property
-    def table_entry_serializer_class(self) -> Type[BaseSerializer]:
-        return self.__class__.TABLE_ENTRY_SERIALIZER_CLASS
 
     @property
     def update_serializer_class(self) -> Type[BaseSerializer]:
@@ -131,48 +126,6 @@ class BaseTable:
 
     @overload
     def filter_records(self, *, query: dict) -> list[BaseSerializer]: ...
-
-    def get_column_types(
-        self, *, ignore_columns: list[str]
-    ) -> tuple[dict[str, Dtype], dict[str, Dtype]]:
-        """
-        Get a dictionary mapping of each field: type pairing in the table.
-        """
-        table_columns: dict[str, FieldInfo] = (
-            self.table_entry_serializer_class.model_fields
-        )
-        table_types: dict[str, Any] = {
-            k: v.annotation for k, v in table_columns.items()
-        }
-
-        # print(table_types)
-
-        column_types: dict[str, Dtype] = {}
-        non_required_column_types: dict[str, Dtype] = {}
-        for column, dtype in table_types.items():
-            # if column == "home_score":
-            #     print(column, dtype)
-            #     print(dtype.__origin__)
-            #     print(dtype.__args__)
-            #     print(type(None))
-
-            multipart = getattr(dtype, "__args__", [])
-
-            if column in ignore_columns:
-                continue
-            # elif getattr(dtype, "__origin__", None) == Optional:
-            #     continue
-            elif type(None) in multipart:
-                # print(column, dtype)
-                non_required_column_types[column] = multipart[0]
-            else:
-
-                union_args: Optional[list[Type]] = getattr(dtype, "__args__", None)
-                if dtype == list[dict[str, str]]:
-                    union_args = None
-                column_types[column] = union_args[0] if union_args else dtype
-
-        return (column_types, non_required_column_types)
 
     def get_foreign_relationships(self) -> list[str]:
         # return get_foreign_key_fields(self.model_class)

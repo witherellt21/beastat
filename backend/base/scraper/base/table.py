@@ -3,11 +3,13 @@ from typing import Any, Callable, Literal, NotRequired, Optional, Unpack
 import numpy as np
 import pandas as pd
 from base.scraper.base.util import QueryArgs
-from base.scraper.pydantic_validator import PydanticValidatorMixin
 from base.scraper.util.dependency_tree_helpers import DependencyKwargs, DependentObject
 from base.sql_app.register.base_table import BaseTable
 from base.util.dataset_helpers import augment_dataframe, filter_dataframe
+from base.util.pydantic_validator import PydanticValidatorMixin
 from typing_extensions import TypedDict
+
+from .table_entry_serializers import BaseTableEntrySerializer
 
 
 class TableInheritance:
@@ -48,6 +50,9 @@ class TableConfigArgs(TypedDict):
     required_fields: NotRequired[list[str]]
     query_save_columns: NotRequired[dict[str, str]]
     href_save_map: NotRequired[dict[str, str]]
+
+    # serializer
+    serializer: NotRequired[BaseTableEntrySerializer]
 
     # cache_generator
     cached_query_generator: NotRequired[Callable[[Optional[QueryArgs]], pd.DataFrame]]
@@ -118,6 +123,10 @@ class TableConfig(
 
         self.cached_query_generator = kwargs.get(
             "cached_query_generator", self.__class__.CACHED_QUERY_GENERATOR
+        )
+
+        self.table_entry_serializer = kwargs.get(
+            "table_entry_serializer", self._sql_table.serializer_class
         )
 
         # If we still don't have column types, get them from the table

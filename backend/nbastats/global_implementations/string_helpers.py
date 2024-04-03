@@ -1,6 +1,7 @@
 import re
 from typing import Optional
 
+import numpy as np
 from unidecode import unidecode
 
 RENAME = {
@@ -31,28 +32,40 @@ def get_player_id_from_name(*, player_name: str) -> str:
         raise Exception(f"Error getting player id for {player_name}. {e}")
 
 
-def convert_season_to_year(*, season: str) -> Optional[int]:
-    try:
-        # Split the year to fetch the millenium and year
-        year_range = season.split("-")
+def convert_season_to_year(season: str | int | float) -> int | float:
+    if type(season) == float:
+        try:
+            return int(season)
+        except:
+            return season
 
-        if len(year_range) != 2:
-            try:
-                return int(float(season))
-            except ValueError:
-                return None
-        else:
-            start_year = year_range[0]
-            end_year = year_range[1]
+    elif type(season) == int:
+        return season
 
-        year_prefix = start_year[:2]
-        year_suffix = end_year
+    elif type(season) == str:
+        try:
+            # Split the year to fetch the millenium and year
+            year_range = season.split("-")
 
-        # Correct for seasons that span accross milleniums
-        if end_year == "00":
-            year_prefix = str(int(year_prefix) + 1)
+            if len(year_range) != 2:
+                try:
+                    return int(float(season))
+                except ValueError:
+                    return np.nan
+            else:
+                start_year = year_range[0]
+                end_year = year_range[1]
 
-        # Concatenate the millenium and year and convert to int
-        return int(year_prefix + year_suffix)
-    except Exception as e:
-        raise Exception(f"Error converting {season} to a year: {e}")
+            year_prefix = start_year[:2]
+            year_suffix = end_year
+
+            # Correct for seasons that span accross milleniums
+            if end_year == "00":
+                year_prefix = str(int(year_prefix) + 1)
+
+            # Concatenate the millenium and year and convert to int
+            return int(year_prefix + year_suffix)
+        except Exception as e:
+            raise Exception(f"Error converting {season} to a year: {e}")
+    else:
+        raise Exception("'season' must be of type str, int, or float.")

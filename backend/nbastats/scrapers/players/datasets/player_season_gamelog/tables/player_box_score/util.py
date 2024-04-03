@@ -1,4 +1,6 @@
 import datetime
+import re
+import uuid
 from typing import Optional
 
 import pandas as pd
@@ -8,6 +10,7 @@ from nbastats.scrapers.util.team_helpers import get_team_id_by_abbr
 from nbastats.sql_app.models import Game, Gamelog
 from nbastats.sql_app.register import Games, PlayerBoxScores
 from nbastats.sql_app.serializers import ReadGameSerializer
+from pandera.typing import Series
 from playhouse.shortcuts import model_to_dict
 from pydantic import UUID4
 
@@ -26,16 +29,23 @@ def convert_minutes_to_float(time: str) -> float:
         raise e
 
 
-def get_result_and_margin(dataset: pd.DataFrame) -> pd.DataFrame:
+def get_result_and_margin(result: str) -> Series[str]:
     """
     Split the result column into win/loss and margin of victory.
     """
-    result_split = dataset["Unnamed: 7"].str.split(r"\s\(\+*", expand=True, regex=True)
-    result_split[1] = result_split[1].str.strip(")")
-    dataset["result"] = result_split[0]
-    dataset["margin"] = result_split[1]
+    result_split: list[str] = re.split(r"\s\(\+*", result)
+    result_split[1] = result_split[1].strip(")")
 
-    return dataset
+    return pd.Series([result_split[0], result_split[1]])  # type: ignore
+
+
+def get_closest_games(data: pd.DataFrame) -> pd.Series:
+    # # Drop games where the player did not play
+    data = data.dropna(subset="G")
+    data = data.sort_values("Date")
+
+    days_rest = data["Date"].diff().apply(lambda diff: diff.days)
+    return days_rest
 
 
 def get_days_rest(dataset: pd.DataFrame) -> pd.Series:
@@ -65,30 +75,24 @@ def get_days_rest(dataset: pd.DataFrame) -> pd.Series:
     return dataset["Date"].apply(lambda date: get_closest_game(date, dataset))
 
 
-def get_game_ids(dataset: pd.DataFrame) -> pd.Series:
-    def get_game_id(
-        date: datetime.datetime, team: str, opponent: str, home: bool
-    ) -> UUID4:
-        home_team = team if home else opponent
-        away_team = opponent if home else team
+def get_game_id(row: pd.Series) -> str:
 
-        home_team_id = get_team_id_by_abbr(home_team)
-        away_team_id = get_team_id_by_abbr(away_team)
+    home_team = row["Tm"] if row["home"] else row["Opp"]
+    away_team = row["Opp"] if row["home"] else row["Tm"]
 
-        game: ReadGameSerializer = Games.update_or_insert_record(
-            data={"date_time": date, "home_id": home_team_id, "away_id": away_team_id}
-        )  # type: ignore
+    home_team_id = get_team_id_by_abbr(home_team)
+    away_team_id = get_team_id_by_abbr(away_team)
 
-        return game.id
-
-    game_id = dataset.apply(
-        lambda row: get_game_id(
-            row["Date"], row["Tm"], row["Opp"], row["home"]
-        ),  # type: ignore
-        axis=1,
+    game: ReadGameSerializer = Games.update_or_insert_record(
+        data={
+            "id": uuid.uuid4(),
+            "date_time": row["Date"],
+            "home_id": home_team_id,
+            "away_id": away_team_id,
+        }
     )  # type: ignore
 
-    return game_id
+    return game.id
 
 
 def has_30_columns(tables: list[pd.DataFrame]) -> Optional[pd.DataFrame]:

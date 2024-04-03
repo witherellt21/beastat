@@ -1,5 +1,6 @@
 import imp
 import os
+from csv import excel_tab
 from pathlib import Path
 from pprint import PrettyPrinter
 from typing import Callable, Optional
@@ -14,6 +15,7 @@ from base.scraper.base import (
     TableConfig,
     TableConfigArgs,
 )
+from base.scraper.base.table_entry_serializers import BaseTableEntrySerializer
 from base.scraper.util.util import camel_to_snake_case
 from base.sql_app.register.base_table import BaseTable
 from pydantic import BaseModel, ValidationError
@@ -26,6 +28,7 @@ class TableConfigFileParams(BaseModel):
     IDENTIFICATION_FUNCTION: Callable[[list[pd.DataFrame]], Optional[pd.DataFrame]]
     SQL_TABLE: BaseTable
     NAME: str
+    TABLE_SERIALIZER: BaseTableEntrySerializer
     CONFIG: TableConfigArgs = {}
 
 
@@ -98,12 +101,13 @@ def load_tables(path: str) -> dict[str, TableConfig]:
             obj = TableConfigFileParams(**table_settings_config)
 
         except ValidationError as exc:
-            raise exc
+            raise Exception(f"ConfigurationError for file {module_name}: {exc}")
 
         table = TableConfig(
             identification_function=obj.IDENTIFICATION_FUNCTION,
             sql_table=obj.SQL_TABLE,
             name=obj.NAME,
+            table_serializer=obj.TABLE_SERIALIZER,
             **obj.CONFIG,
         )
 
@@ -174,6 +178,9 @@ def load_scrapers(path: str = ".") -> list[BaseScraper]:
     list_modules = ignore_modules(modules=list_modules)
 
     for module_name in list_modules:
+
+        if module_name != "players":
+            continue
 
         is_dir = is_dir_module(module_path=path + os.sep + module_name)
         is_file = is_file_module(module_name=module_name)
