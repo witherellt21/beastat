@@ -2,7 +2,7 @@ import logging
 
 from core.scraper.base import ScraperKwargs
 
-NAME = "PlayerPropsScraper"
+NAME = "DraftKings"
 CONFIG: ScraperKwargs = {
     "active": False,
     "log_level": logging.INFO,
