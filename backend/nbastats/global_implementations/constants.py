@@ -23,6 +23,7 @@ AUGMENTED_STATS: dict[str, str] = {
     "PRA": "PTS+TRB+AST",
 }
 NAN_VALUES: list[str] = [
+    "",
     "Player Suspended",
     "Not With Team",
     "Did Not Dress",

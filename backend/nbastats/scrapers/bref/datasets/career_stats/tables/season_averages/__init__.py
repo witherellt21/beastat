@@ -13,7 +13,7 @@ from core.scraper.base.table_form import (
 from core.util.nullables import sum_nullables
 from nbastats.global_implementations import constants
 from nbastats.global_implementations.string_helpers import convert_season_to_year
-from nbastats.scrapers.players.datasets.career_stats.tables.season_averages.util import (
+from nbastats.scrapers.bref.datasets.career_stats.tables.season_averages.util import (
     get_cached_player_season_averages_data,
     has_season_column,
 )

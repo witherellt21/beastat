@@ -10,7 +10,7 @@ from core.scraper.base.table_form import (
     TransformationField,
 )
 from nbastats.global_implementations import constants
-from nbastats.scrapers.players.datasets.player_info.tables.basic_info.util import (
+from nbastats.scrapers.bref.datasets.player_info.tables.basic_info.util import (
     convert_height_to_inches,
     get_cached_player_info_data,
     has_player_column,

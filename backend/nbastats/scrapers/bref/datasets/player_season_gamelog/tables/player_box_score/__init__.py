@@ -15,7 +15,7 @@ from core.scraper.base.table_form import (
 )
 from core.util.nullables import sum_nullables
 from nbastats.global_implementations import constants
-from nbastats.scrapers.players.datasets.player_season_gamelog.tables.player_box_score.util import *
+from nbastats.scrapers.bref.datasets.player_season_gamelog.tables.player_box_score.util import *
 from nbastats.sql_app.register import PlayerBoxScores
 
 
