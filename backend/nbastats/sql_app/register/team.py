@@ -1,6 +1,4 @@
-import json
 import logging
-import uuid
 from typing import Optional
 
 import peewee
@@ -16,7 +14,6 @@ class TeamTable(BaseTable):
     MODEL_CLASS = Team
     SERIALIZER_CLASS = TeamSerializer
     READ_SERIALIZER_CLASS = ReadTeamSerializer
-    TABLE_ENTRY_SERIALIZER_CLASS = TeamSerializer
     PKS = ["name"]
 
     def get_team_by_abbr(self, team_abbr: str) -> Optional[ReadTeamSerializer]:
@@ -29,25 +26,3 @@ class TeamTable(BaseTable):
 
         except peewee.DoesNotExist as e:
             return None
-
-
-# Teams = TeamTable(DB)
-
-# # # print(os.getcwd())
-# try:
-#     with open("sql_app/static_data/teams.json", "r") as teams_file:
-#         new_data = {}
-#         team_data = json.load(teams_file)
-#         for name, abbreviations in team_data.items():
-#             Teams.update_or_insert_record(
-#                 data={
-#                     "id": uuid.uuid4(),
-#                     "abbr": abbreviations[0],
-#                     "name": name,
-#                     "alt_abbrs": abbreviations[1:],
-#                 }
-#             )
-# except FileNotFoundError as e:
-#     logger.warning(f"Unable to download team data. {e}")
-# # with open("./sql_app/static_data/teams_new.json", "w") as teams_new:
-# #     json.dump(new_data, teams_new)

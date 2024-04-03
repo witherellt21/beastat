@@ -21,14 +21,6 @@ class MatchupReadSerializer(BaseSerializer):
     away_player: PlayerSerializer
 
 
-class MatchupTableEntrySerializer(BaseSerializer):
-    id: str
-    game_id: str
-    position: str
-    home_player_id: str
-    away_player_id: str
-
-
 class MatchupUpdateSerializer(BaseSerializer):
     game: ReadGameSerializer
     position: str

@@ -21,18 +21,6 @@ class PlayerSerializer(BaseSerializer):
     timestamp: datetime.datetime  # timestamp in epoch
 
 
-class PlayerTableEntrySerializer(BaseSerializer):
-    id: str
-    team_id: Optional[str]
-    name: str
-    active_from: int
-    active_to: int
-    position: str
-    height: int
-    weight: int
-    birth_date: datetime.date
-
-
 class ReadPlayerSerializer(BaseSerializer):
     id: str
     team: Optional[ReadTeamSerializer]

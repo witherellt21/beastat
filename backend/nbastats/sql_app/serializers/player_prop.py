@@ -29,8 +29,3 @@ class ReadPlayerPropSerializer(BaseSerializer):
     over_implied: float
     under_implied: float
     player: Optional[PlayerSerializer]
-
-
-class PlayerPropTableEntrySerializer(PlayerPropSerializer):
-    game_id: str
-    status: int

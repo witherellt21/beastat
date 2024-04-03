@@ -31,25 +31,8 @@ class TableInheritance:
 
 
 class TableConfigArgs(TypedDict):
-    datetime_columns: NotRequired[dict[str, str]]
-    json_columns: NotRequired[list[str]]
-
-    # Adds column labled by key using a synctatic string or a callable function with argument that accepts the full dataset.
-    stat_augmentations: NotRequired[
-        dict[str, str | Callable[[pd.DataFrame], pd.Series]]
-    ]
-
-    # Select specific rows from the dataset based on callable filter functions
-    filters: NotRequired[list[Callable]]
-    rename_columns: NotRequired[dict[str, str]]
-    rename_values: NotRequired[dict[str, dict[Any, Any]]]
+    # values that should be considered nan for the table
     nan_values: NotRequired[list[str]]
-
-    # A function to tranform a specific column (key) on a dataset by a callable function (value) uses apply method
-    transformations: NotRequired[dict[str | tuple[str, str], Callable[[Any], Any]]]
-    required_fields: NotRequired[list[str]]
-    query_save_columns: NotRequired[dict[str, str]]
-    href_save_map: NotRequired[dict[str, str]]
 
     # serializer
     serializer: NotRequired[BaseTableEntrySerializer]
@@ -61,25 +44,9 @@ class TableConfigArgs(TypedDict):
 class TableConfig(
     DependentObject["TableConfig", DependencyKwargs], PydanticValidatorMixin
 ):
-    # This could maybe come from the table itself, then overriden by this
-    DATETIME_COLUMNS: dict[str, str] = {}
 
-    # Adds column labled by key using a synctatic string or a callable function with argument that accepts the full dataset.
-    STAT_AUGMENTATIONS: dict[str, str | Callable[[pd.DataFrame], pd.Series]] = {}
-
-    # Select specific rows from the dataset based on callable filter functions
-    FILTERS: list[Callable] = []
-    RENAME_COLUMNS: dict[str, str] = {}
-    RENAME_VALUES: dict[str, dict[Any, Any]] = {}
     NAN_VALUES: list[str] = []
 
-    # A function to tranform a specific column (key) on a dataset by a callable function (value) uses apply method
-    TRANSFORMATIONS: dict[str | tuple[str, str], Callable[[Any], Any]] = {}
-
-    REQUIRED_FIELDS: list[str] = []
-    QUERY_SAVE_COLUMNS: dict[str, str] = {}
-
-    HREF_SAVE_MAP: dict[str, str] = {}
     CACHED_QUERY_GENERATOR: Callable[[Optional[QueryArgs]], pd.DataFrame] = (
         lambda x: pd.DataFrame()
     )
@@ -89,74 +56,32 @@ class TableConfig(
         identification_function: Callable[[list[pd.DataFrame]], Optional[pd.DataFrame]],
         sql_table: BaseTable,
         name: str,
+        table_serializer: BaseTableEntrySerializer,
         **kwargs: Unpack[TableConfigArgs],
     ):
         super().__init__(name=name, validator=DependencyKwargs)
 
         self._sql_table = sql_table
         self._identification_function = identification_function
+        self._table_serializer = table_serializer
 
-        # extract info from the given dataset
         self.primary_key: str = self._sql_table.model_class._meta.primary_key.name  # type: ignore
-        self.datetime_columns = kwargs.get(
-            "datetime_columns", self.__class__.DATETIME_COLUMNS
-        )
-        self.stat_augmentations = kwargs.get(
-            "stat_augmentations", self.__class__.STAT_AUGMENTATIONS
-        )
-        self.filters = kwargs.get("filters", self.__class__.FILTERS)
-        self.rename_columns = kwargs.get(
-            "rename_columns", self.__class__.RENAME_COLUMNS
-        )
-        self.rename_values = kwargs.get("rename_values", self.__class__.RENAME_VALUES)
-        self.nan_values = kwargs.get("nan_values", self.__class__.NAN_VALUES)
-        self.transformations = kwargs.get(
-            "transformations", self.__class__.TRANSFORMATIONS
-        )
-        self.required_fields = kwargs.get(
-            "required_fields", self.__class__.REQUIRED_FIELDS
-        )
-        self.query_save_columns = kwargs.get(
-            "query_save_columns", self.__class__.QUERY_SAVE_COLUMNS
-        )
-        self.href_save_map = kwargs.get("href_save_map", self.__class__.HREF_SAVE_MAP)
 
+        # # extract info from the given dataset
+        self.nan_values = kwargs.get("nan_values", self.__class__.NAN_VALUES)
         self.cached_query_generator = kwargs.get(
             "cached_query_generator", self.__class__.CACHED_QUERY_GENERATOR
         )
-
-        self.table_entry_serializer = kwargs.get(
-            "table_entry_serializer", self._sql_table.serializer_class
-        )
-
-        # If we still don't have column types, get them from the table
-        ignore_columns = (
-            list(self.datetime_columns.keys())
-            + list(self.stat_augmentations.keys())
-            + kwargs.get("json_columns", [])
-            + [self.primary_key]
-        )
-        self.column_types, self.non_required_column_types = (
-            self._sql_table.get_column_types(
-                ignore_columns=ignore_columns,
-            )
-        )
-
-        # self.desired_columns = list(
-        #     sql_table.table_entry_serializer_class.model_fields.keys()
-        # )
-        desired_columns = []
-        for column in sql_table.table_entry_serializer_class.model_fields.keys():
-            if column not in self.non_required_column_types.keys():
-                desired_columns.append(column)
-
-        self.desired_columns = desired_columns
 
         self.data = pd.DataFrame()
         self.staged_data = pd.DataFrame()
         self.data_source: Literal["cached", "downloaded"] = "downloaded"
 
         self.inheritances: list[TableInheritance] = []
+
+    @property
+    def table_serializer(self):
+        return self._table_serializer
 
     def cached_data(self, *, query_args: Optional[QueryArgs] = None) -> pd.DataFrame:
         if query_args == None:
@@ -184,53 +109,17 @@ class TableConfig(
             return pd.DataFrame()
 
         for column in data.columns:
-            if column in self.href_save_map:
-                data[self.href_save_map[column]] = data[column].apply(lambda x: x[1])
+            if column in self.table_serializer.html_save_fields:
+                data[self.table_serializer.html_save_fields[column]] = data[
+                    column
+                ].apply(lambda x: x[1])
             data[column] = data[column].apply(lambda x: x[0] if type(x) == tuple else x)
 
         data = data.replace(self.nan_values, np.nan, regex=True)
 
-        # Rename columns to desired names
-        data = data.rename(columns=self.rename_columns)
+        for name, field in self.table_serializer.get_fields().items():
+            data = field.execute(data)
 
-        # Replace row values with desired row values
-        data = data.replace(self.rename_values)
-
-        # Drop rows with nan where field is required
-        data = data.dropna(subset=self.required_fields)
-
-        # Apply all transformations to the dataset
-        for column, transformation in self.transformations.items():
-            if type(column) == tuple:
-                from_column, to_column = column
-            else:
-                from_column = to_column = column
-
-            data[to_column] = data[from_column].apply(transformation)
-
-        data = data.dropna(subset=self.required_fields)
-
-        # Convert the columns to the desired types
-        if self.column_types:
-            try:
-                data = data.astype(self.column_types)
-            except pd.errors.IntCastingNaNError as e:
-                # self.logger.warning(e)
-                print(e)
-
-        # Convert datetime columns appropriately
-        for key, dt_format in self.datetime_columns.items():
-            data[key] = pd.to_datetime(data[key], format=dt_format)
-
-        # Add additional columns to augment the dataset and clean the unnecessary ones out
-        data = augment_dataframe(dataframe=data, augmentations=self.stat_augmentations)
-
-        # Apply any filters to the dataset
-        data = filter_dataframe(dataframe=data, filters=self.filters)
-
-        data = data.dropna(subset=self.required_fields)
-
-        data = data[self.desired_columns]
         if self.primary_key in list(data.columns):
             data = data.set_index(self.primary_key)
 

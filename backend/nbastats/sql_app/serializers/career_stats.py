@@ -85,7 +85,3 @@ class CareerStatsReadSerializer(BaseSerializer):
     PR: Optional[float]
     RA: Optional[float]
     PRA: Optional[float]
-
-
-class CareerStatsTableEntrySerializer(CareerStatsSerializer):
-    Tm_id: str

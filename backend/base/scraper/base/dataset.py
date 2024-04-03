@@ -2,7 +2,6 @@ from functools import reduce
 from typing import Callable, Literal, NotRequired, Optional, Unpack
 
 import pandas as pd
-from base.scraper.base.table2 import TableConfig
 from base.scraper.base.util import QueryArgs, QuerySet
 from base.scraper.util.dependency_tree_helpers import (
     DependencyKwargs,
@@ -11,6 +10,8 @@ from base.scraper.util.dependency_tree_helpers import (
 )
 from base.util.pydantic_validator import PydanticValidatorMixin
 from typing_extensions import TypedDict
+
+from backend.base.scraper.base.table import TableConfig
 
 
 def combine_lists_of_dicts(*lists):

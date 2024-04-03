@@ -25,15 +25,3 @@ class ReadDefenseRankingSerializer(BaseSerializer):
     SF: int
     PF: int
     C: int
-
-
-class DefenseRankingTableEntrySerializer(BaseSerializer):
-    id: str
-    team_id: str
-    stat: str
-    ALL: int
-    PG: int
-    SG: int
-    SF: int
-    PF: int
-    C: int

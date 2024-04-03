@@ -30,17 +30,3 @@ class LineupReadSerializer(BaseSerializer):
     PF: PlayerSerializer
     C: PlayerSerializer
     injuries: list[dict[str, str]] = []
-
-
-class LineupTableEntrySerializer(BaseSerializer):
-    id: str
-    game_id: str
-    team_id: str
-    status: str
-    PG_id: str
-    SG_id: str
-    SF_id: str
-    PF_id: str
-    C_id: str
-    injuries: list[dict[str, str]] = []
-    # Bench: Optional[list]

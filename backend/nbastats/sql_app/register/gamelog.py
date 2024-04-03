@@ -21,7 +21,6 @@ class GamelogTable(BaseTable):
     MODEL_CLASS = Gamelog
     SERIALIZER_CLASS = GamelogSerializer
     READ_SERIALIZER_CLASS = GamelogReadSerializer
-    TABLE_ENTRY_SERIALIZER_CLASS = GamelogSerializer
     PKS = ["player_id", "game_id"]
 
     DEPENDENCIES = [PlayerTable]
@@ -115,47 +114,3 @@ class GamelogTable(BaseTable):
             rows.append(model_to_dict(row, recurse=False))
 
         return pd.DataFrame(rows)
-
-    # def filter_records_advanced(
-    #     self,
-    #     query: Optional[GamelogQuery] = None,
-    #     columns: list[str] = [],
-    #     confuse: bool = False,
-    #     limit: Optional[int] = None,
-    # ) -> pd.DataFrame:
-    #     search = self.model_class.select()
-
-    #     if query:
-    #         search = search.join(Game).where(
-    #             *[
-    #                 getattr(self.model_class, key) == value
-    #                 for key, value in query.equal_to.items()
-    #             ],
-    #             *[
-    #                 getattr(self.model_class, key) > value
-    #                 for key, value in query.greater_than.items()
-    #             ],
-    #             *[
-    #                 getattr(self.model_class, key) < value
-    #                 for key, value in query.less_than.items()
-    #             ],
-    #         )
-
-    #     if confuse:
-    #         search = search.order_by(peewee.fn.Random())
-
-    #     if limit is not None:
-    #         search = search.limit(limit)
-
-    #     rows = []
-    #     for row in search:
-    #         print(row)
-    #         rows.append(model_to_dict(row, recurse=False))
-
-    #     return pd.DataFrame(rows)
-
-
-# try:
-# Gamelogs = GamelogTable(DB)
-# except peewee.OperationalError as e:
-#     print("Unable to connect to database for Gamelog.")
