@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 
 import pandas as pd
-from base.sql_app.register import AdvancedQuery
+from core.sql_app.register import AdvancedQuery
 from nbastats.sql_app.register import BasicInfo, Games, PlayerProps
 from nbastats.sql_app.serializers import ReadPlayerSerializer
 

@@ -2,14 +2,13 @@ from typing import Any, Callable, Literal, NotRequired, Optional, Unpack
 
 import numpy as np
 import pandas as pd
-from base.scraper.base.util import QueryArgs
-from base.scraper.util.dependency_tree_helpers import DependencyKwargs, DependentObject
-from base.sql_app.register.base_table import BaseTable
-from base.util.dataset_helpers import augment_dataframe, filter_dataframe
-from base.util.pydantic_validator import PydanticValidatorMixin
+from core.scraper.base.util import QueryArgs
+from core.scraper.util.dependency_tree_helpers import DependencyKwargs, DependentObject
+from core.sql_app.register.base_table import BaseTable
+from core.util.pydantic_validator import PydanticValidatorMixin
 from typing_extensions import TypedDict
 
-from .table_entry_serializers import BaseTableEntrySerializer
+from .table_form import BaseTableForm
 
 
 class TableInheritance:
@@ -35,7 +34,7 @@ class TableConfigArgs(TypedDict):
     nan_values: NotRequired[list[str]]
 
     # serializer
-    serializer: NotRequired[BaseTableEntrySerializer]
+    serializer: NotRequired[BaseTableForm]
 
     # cache_generator
     cached_query_generator: NotRequired[Callable[[Optional[QueryArgs]], pd.DataFrame]]
@@ -56,7 +55,7 @@ class TableConfig(
         identification_function: Callable[[list[pd.DataFrame]], Optional[pd.DataFrame]],
         sql_table: BaseTable,
         name: str,
-        table_serializer: BaseTableEntrySerializer,
+        table_serializer: BaseTableForm,
         **kwargs: Unpack[TableConfigArgs],
     ):
         super().__init__(name=name, validator=DependencyKwargs)

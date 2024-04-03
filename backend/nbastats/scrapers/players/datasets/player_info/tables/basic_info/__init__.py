@@ -1,7 +1,7 @@
 import uuid
 
-from base.scraper.base.table_entry_serializers import (
-    BaseTableEntrySerializer,
+from core.scraper.base.table_form import (
+    BaseTableForm,
     CharField,
     DatetimeField,
     HTMLSaveField,
@@ -19,7 +19,7 @@ from nbastats.sql_app.register import BasicInfo
 from unidecode import unidecode
 
 
-class PlayerInfoTableEntrySerializer(BaseTableEntrySerializer):
+class PlayerInfoTableEntrySerializer(BaseTableForm):
     # id = CharField(default=uuid.uuid4)
     team_id = CharField(null=True, default=None)
     player_link = HTMLSaveField("Player")

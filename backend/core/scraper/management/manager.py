@@ -1,23 +1,21 @@
 import imp
 import os
-from csv import excel_tab
 from pathlib import Path
 from pprint import PrettyPrinter
 from typing import Callable, Optional
 
 import pandas as pd
-from base.scraper.base import (
+from core.scraper.base import (
     BaseHTMLDatasetConfig,
     BaseScraper,
-    DatasetConfigDependencyKwargs,
     DatasetConfigKwargs,
     ScraperKwargs,
     TableConfig,
     TableConfigArgs,
 )
-from base.scraper.base.table_entry_serializers import BaseTableEntrySerializer
-from base.scraper.util.util import camel_to_snake_case
-from base.sql_app.register.base_table import BaseTable
+from core.scraper.base.table_form import BaseTableForm
+from core.sql_app.register.base_table import BaseTable
+from core.util.strings import camel_to_snake_case
 from pydantic import BaseModel, ValidationError
 from typing_extensions import TypedDict
 
@@ -28,14 +26,13 @@ class TableConfigFileParams(BaseModel):
     IDENTIFICATION_FUNCTION: Callable[[list[pd.DataFrame]], Optional[pd.DataFrame]]
     SQL_TABLE: BaseTable
     NAME: str
-    TABLE_SERIALIZER: BaseTableEntrySerializer
+    TABLE_SERIALIZER: BaseTableForm
     CONFIG: TableConfigArgs = {}
 
 
 class DatasetConfigFileParams(BaseModel):
     BASE_DOWNLOAD_URL: str
     NAME: str
-    # DEPENDENCIES: list[str]
     CONFIG: DatasetConfigKwargs = {}
 
 

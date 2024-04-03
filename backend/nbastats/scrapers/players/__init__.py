@@ -1,6 +1,6 @@
 import logging
 
-from base.scraper.base.scraper import ScraperKwargs
+from core.scraper.base.scraper import ScraperKwargs
 
 from .datasets.career_stats import NAME as CAREER_STATS
 from .datasets.player_info import NAME as PLAYERINFO

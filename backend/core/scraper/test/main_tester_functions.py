@@ -1,6 +1,6 @@
 import time
 
-from base.scraper import BaseScraper
+from core.scraper import BaseScraper
 
 
 def test_scraper_thread(*, scraper: BaseScraper, timeout: int = 10):

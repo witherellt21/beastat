@@ -6,11 +6,10 @@ from typing import Literal, NotRequired, Optional, Union, Unpack
 
 import numpy as np
 import pandas as pd
-from base.scraper.base.util import QueryArgs, QuerySet
-from base.scraper.util.dependency_tree_helpers import topological_sort_dependency_tree
+from core.scraper.base.table import TableConfig
+from core.scraper.base.util import QueryArgs, QuerySet
+from core.scraper.util.dependency_tree_helpers import topological_sort_dependency_tree
 from typing_extensions import TypedDict
-
-from backend.base.scraper.base.table import TableConfig
 
 from .dataset import BaseHTMLDatasetConfig
 

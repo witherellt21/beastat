@@ -1,7 +1,7 @@
 from typing import Optional
 
 import pandas as pd
-from base.scraper.base.util import QueryArgs
+from core.scraper.base.util import QueryArgs
 from nbastats.sql_app.register import SeasonAveragess
 
 

@@ -3,8 +3,8 @@ import traceback
 from typing import Literal, Optional
 
 import pandas as pd
-from base.util.dataset_helpers import filter_with_bounds
-from base.util.string_helpers import find_closest_match
+from core.util.dataset_helpers import filter_with_bounds
+from core.util.string_helpers import find_closest_match
 from exceptions import DBNotFoundException
 from nbastats.global_implementations.string_helpers import convert_season_to_year
 from nbastats.sql_app.register import (
@@ -326,40 +326,40 @@ def get_player_id(*, player_name: str) -> Optional[str]:
     return player.id
 
 
-def get_player_active_seasons(*, player_id: str) -> list[int]:
-    career_stats = SeasonAveragess.filter_records(
-        query={"player_id": player_id}, as_df=True
-    )
+# def get_player_active_seasons(*, player_id: str) -> list[int]:
+#     career_stats = SeasonAveragess.filter_records(
+#         query={"player_id": player_id}, as_df=True
+#     )
 
-    if career_stats.empty:
-        raise DBNotFoundException(
-            f"Could not find career stats for the given player: {player_id}"
-        )
+#     if career_stats.empty:
+#         raise DBNotFoundException(
+#             f"Could not find career stats for the given player: {player_id}"
+#         )
 
-    try:
-        # Filter the career stats to contain just the season averages
-        season_stats: pd.DataFrame = career_stats[
-            career_stats["Season"].str.contains(r"^\d{4}") == True
-        ]
-        season_stats: pd.DataFrame = season_stats.dropna()
+#     try:
+#         # Filter the career stats to contain just the season averages
+#         season_stats: pd.DataFrame = career_stats[
+#             career_stats["Season"].str.contains(r"^\d{4}") == True
+#         ]
+#         season_stats: pd.DataFrame = season_stats.dropna()
 
-        # Delete duplicate seasons (player played for multiple teams in same season)
-        season_stats: pd.DataFrame = season_stats.drop_duplicates(subset="Season")
+#         # Delete duplicate seasons (player played for multiple teams in same season)
+#         season_stats: pd.DataFrame = season_stats.drop_duplicates(subset="Season")
 
-        # Get the seasons active by converting seasons column to a value list
-        seasons_active: list[str] = season_stats["Season"].to_list()
+#         # Get the seasons active by converting seasons column to a value list
+#         seasons_active: list[str] = season_stats["Season"].to_list()
 
-        active_seasons: list[int] = []
-        for season in seasons_active:
-            as_year = convert_season_to_year(season=season)
+#         active_seasons: list[int] = []
+#         for season in seasons_active:
+#             as_year = convert_season_to_year(season=season)
 
-            if as_year:
-                active_seasons.append(as_year)
+#             if as_year:
+#                 active_seasons.append(as_year)
 
-        return active_seasons
+#         return active_seasons
 
-    except Exception as e:
-        raise Exception(f"{e.__class__.__name__}: {e}. \n {career_stats}. {player_id}")
+#     except Exception as e:
+#         raise Exception(f"{e.__class__.__name__}: {e}. \n {career_stats}. {player_id}")
 
 
 if __name__ == "__main__":

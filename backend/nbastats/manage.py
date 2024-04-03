@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from time import sleep
 
-from base.scraper.management.manager import (
+from core.scraper.management.manager import (
     add_dataset,
     add_scraper,
     add_table,

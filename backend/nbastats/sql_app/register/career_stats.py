@@ -1,4 +1,4 @@
-from base.sql_app.register import BaseTable
+from core.sql_app.register import BaseTable
 from nbastats.sql_app.models import CareerStats
 from nbastats.sql_app.register.player import PlayerTable
 from nbastats.sql_app.register.team import TeamTable

@@ -1,7 +1,7 @@
 import logging
 
 import pandas as pd
-from base.sql_app.register import BaseTable
+from core.sql_app.register import BaseTable
 from nbastats.sql_app.models import Player, PropLine
 from nbastats.sql_app.serializers import PlayerSerializer, ReadPlayerSerializer
 from playhouse.shortcuts import model_to_dict

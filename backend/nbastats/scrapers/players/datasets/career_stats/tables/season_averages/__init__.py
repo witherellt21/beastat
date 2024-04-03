@@ -1,8 +1,8 @@
 import uuid
 
 import numpy as np
-from base.scraper.base.table_entry_serializers import (
-    BaseTableEntrySerializer,
+from core.scraper.base.table_form import (
+    BaseTableForm,
     CharField,
     FloatField,
     IntegerField,
@@ -10,7 +10,7 @@ from base.scraper.base.table_entry_serializers import (
     RenameField,
     TransformationField,
 )
-from base.util.nullables import sum_nullables
+from core.util.nullables import sum_nullables
 from nbastats.global_implementations import constants
 from nbastats.global_implementations.string_helpers import convert_season_to_year
 from nbastats.scrapers.players.datasets.career_stats.tables.season_averages.util import (
@@ -21,7 +21,7 @@ from nbastats.scrapers.util.team_helpers import get_team_id_by_abbr
 from nbastats.sql_app.register import SeasonAveragess
 
 
-class SeasonAveragesTableEntrySerializer(BaseTableEntrySerializer):
+class SeasonAveragesTableEntrySerializer(BaseTableForm):
     id = CharField(default=uuid.uuid4)
     player_id = QueryArgField()
     Season = TransformationField(int, convert_season_to_year)

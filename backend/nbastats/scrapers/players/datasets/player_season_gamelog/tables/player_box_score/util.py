@@ -4,7 +4,7 @@ import uuid
 from typing import Optional
 
 import pandas as pd
-from base.scraper.base.util import QueryArgs
+from core.scraper.base.util import QueryArgs
 from nbastats.global_implementations import constants
 from nbastats.scrapers.util.team_helpers import get_team_id_by_abbr
 from nbastats.sql_app.models import Game, Gamelog

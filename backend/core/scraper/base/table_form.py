@@ -3,8 +3,8 @@ from datetime import datetime
 from typing import Any, Callable, Generic, NotRequired, Optional, Type, TypeVar, Unpack
 
 import pandas as pd
-from base.util.dataset_helpers import filter_dataframe
-from base.util.pydantic_validator import PydanticValidatorMixin
+from core.util.dataframes import filter_dataframe
+from core.util.pydantic_validator import PydanticValidatorMixin
 from pandera.typing import Series
 from typing_extensions import TypedDict
 
@@ -256,7 +256,7 @@ class AugmentationField(BaseField[Generic[T]]):
 # from peewee import Model
 
 
-class BaseTableEntrySerializer(PydanticValidatorMixin):
+class BaseTableForm(PydanticValidatorMixin):
 
     def __init__(self):
         """
@@ -411,5 +411,5 @@ class BaseTableEntrySerializer(PydanticValidatorMixin):
 
 
 if __name__ == "__main__":
-    fields = BaseTableEntrySerializer.get_fields()
-    fields = BaseTableEntrySerializer.get_required_fields()
+    fields = BaseTableForm.get_fields()
+    fields = BaseTableForm.get_required_fields()

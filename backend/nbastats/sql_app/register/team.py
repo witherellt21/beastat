@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 import peewee
-from base.sql_app.register import BaseTable
+from core.sql_app.register import BaseTable
 from nbastats.sql_app.models import Team
 from nbastats.sql_app.serializers import ReadTeamSerializer, TeamSerializer
 from playhouse.shortcuts import model_to_dict

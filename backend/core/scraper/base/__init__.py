@@ -2,8 +2,6 @@ from .dataset import (
     BaseHTMLDatasetConfig,
     DatasetConfigDependencyKwargs,
     DatasetConfigKwargs,
-    QueryArgs,
-    QuerySet,
 )
 from .scraper import BaseScraper, ScraperKwargs
 

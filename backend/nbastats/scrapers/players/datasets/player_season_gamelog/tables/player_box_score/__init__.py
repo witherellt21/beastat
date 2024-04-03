@@ -2,9 +2,9 @@ import uuid
 from typing import Type
 
 import numpy as np
-from base.scraper.base.table_entry_serializers import (
+from core.scraper.base.table_form import (
     AugmentationField,
-    BaseTableEntrySerializer,
+    BaseTableForm,
     CharField,
     DatetimeField,
     FloatField,
@@ -13,13 +13,13 @@ from base.scraper.base.table_entry_serializers import (
     RenameField,
     TransformationField,
 )
-from base.util.nullables import sum_nullables
+from core.util.nullables import sum_nullables
 from nbastats.global_implementations import constants
 from nbastats.scrapers.players.datasets.player_season_gamelog.tables.player_box_score.util import *
 from nbastats.sql_app.register import PlayerBoxScores
 
 
-class PlayerBoxScoreTableConfig(BaseTableEntrySerializer):
+class PlayerBoxScoreTableConfig(BaseTableForm):
     Rk = CharField(replace_values={"Rk": np.nan}, cache=False)
     id = CharField(default=uuid.uuid4)
     player_id = QueryArgField("player_id")

@@ -3,7 +3,7 @@
 # from pathlib import Path
 # from typing import Generator
 
-# from base.scraper import BaseScraper
+# from core.scraper import BaseScraper
 
 
 # def __load_all__(dir=".") -> dict[str, BaseScraper]:

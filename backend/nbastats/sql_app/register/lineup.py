@@ -1,4 +1,4 @@
-from base.sql_app.register import BaseTable
+from core.sql_app.register import BaseTable
 from nbastats.sql_app.models import Lineup
 from nbastats.sql_app.serializers import LineupReadSerializer, LineupSerializer
 

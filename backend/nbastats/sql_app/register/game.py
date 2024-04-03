@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Literal, Optional, overload
 
 import pandas as pd
-from base.sql_app.register import BaseTable
+from core.sql_app.register import BaseTable
 from nbastats.sql_app.models import Game, GameLine, Team
 from nbastats.sql_app.register.team import TeamTable
 from nbastats.sql_app.serializers import (
