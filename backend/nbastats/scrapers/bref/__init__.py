@@ -7,7 +7,7 @@ from .datasets.player_info import NAME as PLAYERINFO
 from .datasets.player_season_gamelog import NAME as GAMELOG
 from .util import get_team_id_from_career_stats
 
-NAME = "Players"
+NAME = "BasketballReference"
 
 CONFIG: ScraperKwargs = {
     "active": True,
