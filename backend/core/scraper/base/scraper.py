@@ -168,7 +168,7 @@ class BaseScraper(threading.Thread):
         """
         Save the data for the dataset and any nested datasets.
         """
-        self.logger.info("Saving data to database.")
+        self.logger.info(f"Saving data to database for dataset {dataset_config.name}.")
 
         # Use staging if there is backed up data that needs to be saved that was
         # waiting for a dependency
@@ -198,6 +198,8 @@ class BaseScraper(threading.Thread):
         table_config.staged_data = pd.DataFrame()
 
         data = data.fillna(np.nan).replace([np.nan], [None])
+
+        self.logger.info("\n" + str(data))
 
         for index, row in data.iterrows():
             row_data = row.to_dict()

@@ -1,6 +1,16 @@
 import traceback
 from datetime import datetime
-from typing import Any, Callable, Generic, NotRequired, Optional, Type, TypeVar, Unpack
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    NotRequired,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    Unpack,
+)
 
 import pandas as pd
 from core.util.dataframes import filter_dataframe
@@ -8,26 +18,11 @@ from core.util.pydantic_validator import PydanticValidatorMixin
 from pandera.typing import Series
 from typing_extensions import TypedDict
 
-
-def convert_minutes_to_float(time: str) -> float:
-    if not isinstance(time, str):
-        return time
-
-    try:
-        minutes, seconds = time.split(":")
-        result = int(minutes) + round(int(seconds) / 60, ndigits=1)
-        return result
-    except Exception as e:
-        print(time)
-        print(time.split(":"))
-        raise e
-
-
 T = TypeVar("T")
 
 
 class FieldKwargs(TypedDict):
-    default: NotRequired[Any]
+    default: NotRequired[Union[str, int, float, Callable[..., str]]]
 
 
 class BaseField(Generic[T]):
@@ -70,9 +65,13 @@ class BaseField(Generic[T]):
     def execute(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         try:
             if not self.required:
-                dataframe[self.field_name] = (
-                    self.default() if callable(self.default) else self.default
+
+                func = lambda x: (
+                    self.type(self.default())
+                    if callable(self.default)
+                    else self.default
                 )
+                dataframe[self.field_name] = dataframe.iloc[:, 0].apply(func)
 
             if self.replace_values:
                 dataframe = dataframe.replace({self.field_name: self.replace_values})

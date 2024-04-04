@@ -3,10 +3,22 @@ import re
 import uuid
 from typing import Optional
 
+import numpy as np
 import pandas as pd
+from core.scraper.base.table_form import (
+    AugmentationField,
+    BaseTableForm,
+    CharField,
+    DatetimeField,
+    FloatField,
+    QueryArgField,
+    RenameField,
+    TransformationField,
+)
 from core.scraper.base.util import QueryArgs
+from core.util.nullables import sum_nullables
 from nbastats.global_implementations import constants
-from nbastats.scrapers.util.team_helpers import get_team_id_by_abbr
+from nbastats.scrapers.db_wrappers.team import get_team_id_by_abbr
 from nbastats.sql_app.models import Game, Gamelog
 from nbastats.sql_app.register import Games, PlayerBoxScores
 from nbastats.sql_app.serializers import ReadGameSerializer
@@ -137,3 +149,79 @@ def get_cached_gamelog_query_data(query_args: QueryArgs):
         return gamelogs_from_season
 
     return pd.DataFrame()
+
+
+class PlayerBoxScoreTableConfig(BaseTableForm):
+    Rk = CharField(replace_values={"Rk": np.nan}, cache=False)
+    id = CharField(default=uuid.uuid4)
+    player_id = QueryArgField("player_id")
+    G = CharField(replace_values={"": np.nan}, null=True)
+    Date = DatetimeField(format="%Y-%m-%d", null=True)
+    Age = CharField()
+    home = TransformationField(
+        str, lambda cell: cell != "@", from_columns=["Unnamed: 5"], null=True
+    )
+    game_id = TransformationField(
+        str,
+        get_game_id,
+        from_columns=["Date", "Tm", "Opp", "home"],
+        to_columns=["game_id"],
+        null=True,
+    )
+    GS = CharField(null=True)
+    MP = TransformationField(float, convert_minutes_to_float, null=True)
+    FG = FloatField(null=True)
+    FGA = FloatField(null=True)
+    FG_perc = RenameField("FG%", type=float, null=True, replace_values={"": np.nan})
+    THP = RenameField("3P", type=float, null=True)
+    THPA = RenameField("3PA", type=float, null=True)
+    THP_perc = RenameField("3P%", type=float, null=True, replace_values={"": np.nan})
+    FT = FloatField(null=True)
+    FTA = FloatField(null=True)
+    FT_perc = RenameField("FT%", type=float, null=True, replace_values={"": np.nan})
+    result = TransformationField(
+        str,
+        get_result_and_margin,
+        from_columns=["Unnamed: 7"],
+        to_columns=["result", "margin"],
+    )
+    ORB = FloatField(null=True)
+    DRB = FloatField(null=True)
+    TRB = FloatField(null=True)
+    AST = FloatField(null=True)
+    STL = FloatField(null=True)
+    BLK = FloatField(null=True)
+    TOV = FloatField(null=True)
+    PF = FloatField(null=True)
+    PTS = FloatField(null=True)
+    GmSc = FloatField(null=True)
+    plus_minus = RenameField("+/-", type=float, null=True)
+    PA = TransformationField(
+        float,
+        lambda row: sum_nullables(row["PTS"], row["AST"]),
+        null=True,
+        from_columns=["PTS", "AST"],
+    )
+    PR = TransformationField(
+        float,
+        lambda row: sum_nullables(row["PTS"], row["TRB"]),
+        null=True,
+        from_columns=["PTS", "TRB"],
+    )
+    RA = TransformationField(
+        float,
+        lambda row: sum_nullables(row["TRB"], row["AST"]),
+        null=True,
+        from_columns=["TRB", "AST"],
+    )
+    PRA = TransformationField(
+        float,
+        lambda row: sum_nullables(row["PTS"], row["TRB"], row["AST"]),
+        null=True,
+        from_columns=["PTS", "TRB", "AST"],
+    )
+    days_rest = AugmentationField(
+        float,
+        get_closest_games,
+        null=True,
+    )
