@@ -1,7 +1,8 @@
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup, element
-from nbastats.scrapers.util.team_helpers import get_team_id_by_abbr
+from nbastats.global_implementations import constants
+from nbastats.scrapers.db_wrappers.team import get_team_id_by_abbr
 
 
 def scrape_data(url: str) -> list[pd.DataFrame] | None:
@@ -20,22 +21,11 @@ def scrape_data(url: str) -> list[pd.DataFrame] | None:
         return None
 
     dataframe = pd.DataFrame(
-        columns=[
-            "id",
-            "team_id",
-            "pos",
-            "PTS",
-            "REB",
-            "AST",
-            "THP",
-            "STL",
-            "BLK",
-            "TO",
-        ]
+        columns=["id", "team_id", "pos", "PTS", "REB", "AST", "THP", "STL", "BLK", "TO"]
     )
 
     class_base = "GC-0"
-    positions = ["ALL", "PG", "SG", "SF", "PF", "C"]
+    positions = ["ALL"] + constants.BASKETBALL_POSITIONS
     df_index = 0
     for position in positions:  # type: ignore
         defenses = body.find_all("tr", class_=f"{class_base} {position}")
