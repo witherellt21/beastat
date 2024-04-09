@@ -1,9 +1,9 @@
 from pydantic import UUID4
 from pydantic import BaseModel as BaseSerializer
 
-from .game import ReadGameSerializer
+from .game import GameReadSerializer
 from .player import PlayerSerializer
-from .team import ReadTeamSerializer
+from .team import TeamReadSerializer
 
 
 class LineupSerializer(BaseSerializer):
@@ -17,16 +17,24 @@ class LineupSerializer(BaseSerializer):
     PF_id: str
     C_id: str
     injuries: list[dict[str, str]] = []
-    # Bench: Optional[list]
 
 
-class LineupReadSerializer(BaseSerializer):
-    game: ReadGameSerializer
-    team: ReadTeamSerializer
-    status: str
+class LineupReadSerializer(LineupSerializer):
+    id: str
+
+    _game_id: UUID4
+    game: GameReadSerializer
+
+    _team_id: UUID4
+    team: TeamReadSerializer
+
+    _PG_id: str
+    _SG_id: str
+    _SF_id: str
+    _PF_id: str
+    _C_id: str
     PG: PlayerSerializer
     SG: PlayerSerializer
     SF: PlayerSerializer
     PF: PlayerSerializer
     C: PlayerSerializer
-    injuries: list[dict[str, str]] = []

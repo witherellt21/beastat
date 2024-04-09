@@ -5,7 +5,7 @@ import pandas as pd
 from core.sql_app.register import BaseTable
 from core.util.strings import find_closest_match
 from nbastats.sql_app.models import Player, PropLine
-from nbastats.sql_app.serializers import PlayerSerializer, ReadPlayerSerializer
+from nbastats.sql_app.serializers import PlayerReadSerializer, PlayerSerializer
 from playhouse.shortcuts import model_to_dict
 
 logger = logging.getLogger("main")
@@ -14,7 +14,7 @@ logger = logging.getLogger("main")
 class PlayerTable(BaseTable):
     MODEL_CLASS = Player
     SERIALIZER_CLASS = PlayerSerializer
-    READ_SERIALIZER_CLASS = ReadPlayerSerializer
+    READ_SERIALIZER_CLASS = PlayerReadSerializer
     PKS = ["id"]
 
     def get_with_prop_lines(self, *, query: dict):

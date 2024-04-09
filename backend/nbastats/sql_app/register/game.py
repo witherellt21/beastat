@@ -7,10 +7,10 @@ from core.sql_app.register import BaseTable
 from nbastats.sql_app.models import Game, GameLine, Team
 from nbastats.sql_app.register.team import TeamTable
 from nbastats.sql_app.serializers import (
+    GameLineReadSerializer,
     GameLineSerializer,
+    GameReadSerializer,
     GameSerializer,
-    ReadGameLineSerializer,
-    ReadGameSerializer,
 )
 from playhouse.shortcuts import model_to_dict
 
@@ -18,7 +18,7 @@ from playhouse.shortcuts import model_to_dict
 class GameTable(BaseTable):
     MODEL_CLASS = Game
     SERIALIZER_CLASS = GameSerializer
-    READ_SERIALIZER_CLASS = ReadGameSerializer
+    READ_SERIALIZER_CLASS = GameReadSerializer
     PKS: list[str] = ["date_time", "home_id", "away_id"]
 
     DEPENDENCIES = [TeamTable]
@@ -69,7 +69,7 @@ class GameLineTable(BaseTable):
     MODEL_CLASS = GameLine
     SERIALIZER_CLASS = GameLineSerializer
     TABLE_ENTRY_SERIALIZER_CLASS = GameLineSerializer
-    READ_SERIALIZER_CLASS = ReadGameLineSerializer
+    READ_SERIALIZER_CLASS = GameLineReadSerializer
     PKS: list[str] = ["date_time", "home_id", "away_id"]
 
     DEPENDENCIES = [GameTable]

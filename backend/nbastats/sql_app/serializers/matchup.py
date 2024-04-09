@@ -1,7 +1,7 @@
 from pydantic import UUID4
 from pydantic import BaseModel as BaseSerializer
 
-from .game import ReadGameSerializer
+from .game import GameReadSerializer
 from .player import PlayerSerializer
 
 
@@ -15,14 +15,14 @@ class MatchupSerializer(BaseSerializer):
 
 class MatchupReadSerializer(BaseSerializer):
     id: str
-    game: ReadGameSerializer
+    game: GameReadSerializer
     position: str
     home_player: PlayerSerializer
     away_player: PlayerSerializer
 
 
 class MatchupUpdateSerializer(BaseSerializer):
-    game: ReadGameSerializer
+    game: GameReadSerializer
     position: str
     home_player: PlayerSerializer
     away_player: PlayerSerializer

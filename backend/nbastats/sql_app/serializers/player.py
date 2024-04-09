@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import UUID4
 from pydantic import BaseModel as BaseSerializer
 
-from .team import ReadTeamSerializer
+from .team import TeamReadSerializer
 
 
 class PlayerSerializer(BaseSerializer):
@@ -21,29 +21,12 @@ class PlayerSerializer(BaseSerializer):
     timestamp: datetime.datetime  # timestamp in epoch
 
 
-class ReadPlayerSerializer(BaseSerializer):
+class PlayerReadSerializer(PlayerSerializer):
     id: str
-    team: Optional[ReadTeamSerializer]
-    name: str
-    nicknames: list[str] = []
-    active_from: int
-    active_to: int
-    position: str
-    height: int
-    weight: int
-    birth_date: datetime.date
-    timestamp: datetime.datetime  # timestamp in epoch
+
+    _team_id: Optional[UUID4]
+    team: Optional[TeamReadSerializer]
 
 
-class UpdatePlayerSerializer(BaseSerializer):
-    id: str
-    team: Optional[ReadTeamSerializer]
-    name: str
-    nicknames: list[str] = []
-    active_from: int
-    active_to: int
-    position: str
-    height: int
-    weight: int
-    birth_date: datetime.date
-    timestamp: datetime.datetime  # timestamp in epoch
+class PlayerUpdateSerializer(PlayerSerializer):
+    pass

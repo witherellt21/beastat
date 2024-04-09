@@ -8,7 +8,7 @@ from fastapi import APIRouter
 from nbastats import constants
 from nbastats.sql_app.register import BasicInfo, PlayerBoxScores, PlayerProps
 from nbastats.sql_app.register.gamelog import GamelogQuery
-from nbastats.sql_app.serializers import ReadPlayerPropSerializer
+from nbastats.sql_app.serializers import PlayerPropReadSerializer
 from nbastats.sql_app.util.db_helpers import GamelogFilter, filter_gamelog
 
 logger = logging.getLogger("main")
@@ -122,7 +122,7 @@ def list_all_active_props():
 
 @router.get("/{player_id}")
 async def get_props_by_player_id(player_id: str):
-    lines: list[ReadPlayerPropSerializer] = PlayerProps.filter_records(query={"player_id": player_id})  # type: ignore
+    lines: list[PlayerPropReadSerializer] = PlayerProps.filter_records(query={"player_id": player_id})  # type: ignore
 
     new_lines = {}
     for line in lines:
@@ -142,7 +142,7 @@ async def get_player_hitrates(
     player_id: str,
     query: GamelogFilter,
 ):
-    lines: list[ReadPlayerPropSerializer] = PlayerProps.filter_records(query={"player_id": player_id})  # type: ignore
+    lines: list[PlayerPropReadSerializer] = PlayerProps.filter_records(query={"player_id": player_id})  # type: ignore
 
     if not lines:
         print(f"No prop lines for player: {player_id}")

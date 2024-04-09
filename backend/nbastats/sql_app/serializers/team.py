@@ -12,5 +12,5 @@ class TeamSerializer(BaseSerializer):
     alt_abbrs: list[Annotated[str, StringConstraints(min_length=3, max_length=3)]] = []
 
 
-class ReadTeamSerializer(TeamSerializer):
-    pass
+class TeamReadSerializer(TeamSerializer):
+    id: str

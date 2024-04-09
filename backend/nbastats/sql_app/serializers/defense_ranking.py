@@ -1,7 +1,7 @@
 from pydantic import UUID4
 from pydantic import BaseModel as BaseSerializer
 
-from .team import ReadTeamSerializer
+from .team import TeamReadSerializer
 
 
 class DefenseRankingSerializer(BaseSerializer):
@@ -16,12 +16,8 @@ class DefenseRankingSerializer(BaseSerializer):
     C: int
 
 
-class ReadDefenseRankingSerializer(BaseSerializer):
-    team: ReadTeamSerializer
-    stat: str
-    ALL: int
-    PG: int
-    SG: int
-    SF: int
-    PF: int
-    C: int
+class DefenseRankingReadSerializer(DefenseRankingSerializer):
+    id: str
+
+    _team_id: UUID4
+    team: TeamReadSerializer

@@ -20,7 +20,7 @@ from lib.util import sum_nullables
 from nbastats import constants
 from nbastats.sql_app.models import Game, Gamelog
 from nbastats.sql_app.register import Games, PlayerBoxScores, Teams
-from nbastats.sql_app.serializers import ReadGameSerializer
+from nbastats.sql_app.serializers import GameReadSerializer
 from pandera.typing import Series
 from playhouse.shortcuts import model_to_dict
 
@@ -90,7 +90,7 @@ def get_game_id(row: pd.Series) -> str:
     home_team_id = Teams.get_team_id_or_nan(home_team, raise_exception=True)
     away_team_id = Teams.get_team_id_or_nan(away_team, raise_exception=True)
 
-    game: ReadGameSerializer = Games.update_or_insert_record(
+    game: GameReadSerializer = Games.update_or_insert_record(
         data={
             "id": uuid.uuid4(),
             "date_time": row["Date"],

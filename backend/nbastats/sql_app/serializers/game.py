@@ -5,7 +5,7 @@ from pydantic import UUID4
 from pydantic import BaseModel as BaseSerializer
 from pydantic import StringConstraints
 
-from .team import ReadTeamSerializer
+from .team import TeamReadSerializer
 
 
 class GameSerializer(BaseSerializer):
@@ -22,29 +22,33 @@ class GameSerializer(BaseSerializer):
     timestamp: datetime
 
 
-class ReadGameSerializer(BaseSerializer):
+class GameReadSerializer(GameSerializer):
+    # override fields
     id: str
-    date_time: datetime
-    home: ReadTeamSerializer
-    away: ReadTeamSerializer
-    home_score: Optional[int] = None
-    away_score: Optional[int] = None
-    winner: Optional[Annotated[str, StringConstraints(min_length=3, max_length=3)]] = None  # type: ignore
-    victory_margin: Optional[int] = None
-    timestamp: datetime
+
+    # exclude fields
+    _home_id: UUID4
+    _away_id: UUID4
+
+    # new fields
+    home: TeamReadSerializer
+    away: TeamReadSerializer
 
 
 class GameLineSerializer(BaseSerializer):
-    game_id: str
-    favored_team_id: str
+    id: UUID4
+    game_id: UUID4
+    favored_team_id: UUID4
     line: float
     spread: float
     over_under: float
 
 
-class ReadGameLineSerializer(BaseSerializer):
-    game: ReadGameSerializer
-    favored_team: ReadTeamSerializer
-    line: float
-    spread: float
-    over_under: float
+class GameLineReadSerializer(GameLineSerializer):
+
+    id: str
+
+    _game_id: UUID4
+    _favored_team_id: UUID4
+    game: GameReadSerializer
+    favored_team: TeamReadSerializer
