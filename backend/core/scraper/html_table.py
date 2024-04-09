@@ -131,7 +131,7 @@ class BaseHTMLTable(
             try:
                 data = field.execute(data)
             except Exception as e:
-                raise Exception(f"Error executing {name} for scraper {self.name}: {e}.")
+                raise Exception(f"Error executing {name} for table {self.name}: {e}.")
 
         if self.primary_key in list(data.columns):
             data = data.set_index(self.primary_key)

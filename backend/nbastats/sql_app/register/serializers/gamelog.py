@@ -4,7 +4,7 @@ from pydantic import UUID4
 from pydantic import BaseModel as BaseSerializer
 
 from .game import GameReadSerializer
-from .player import PlayerSerializer
+from .player import PlayerInsertSerializer
 
 
 class GamelogSerializer(BaseSerializer):
@@ -48,7 +48,7 @@ class GamelogReadSerializer(GamelogSerializer):
     id: str
 
     _player_id: str
-    player: PlayerSerializer
+    player: PlayerInsertSerializer
 
     _game_id: UUID4
     game: GameReadSerializer

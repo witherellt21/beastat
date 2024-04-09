@@ -9,8 +9,7 @@ from .game import GameLineTable, GameTable
 from .gamelog import GamelogTable
 from .lineup import LineupTable
 from .matchup import MatchupTable
-from .player import PlayerTable
-from .player_prop import PlayerPropTable
+from .player import PlayerPropTable, PlayerTable
 from .team import TeamTable
 
 Teams = TeamTable(DB)

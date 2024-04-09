@@ -8,10 +8,10 @@ from playhouse.shortcuts import model_to_dict
 
 from .models import Player, PropLine
 from .serializers import (
+    PlayerInsertSerializer,
     PlayerPropReadSerializer,
     PlayerPropSerializer,
     PlayerReadSerializer,
-    PlayerSerializer,
 )
 
 logger = logging.getLogger("main")
@@ -19,7 +19,7 @@ logger = logging.getLogger("main")
 
 class PlayerTable(BaseTable):
     MODEL_CLASS = Player
-    SERIALIZER_CLASS = PlayerSerializer
+    SERIALIZER_CLASS = PlayerInsertSerializer
     READ_SERIALIZER_CLASS = PlayerReadSerializer
     PKS = ["id"]
 
@@ -40,7 +40,7 @@ class PlayerTable(BaseTable):
 
     def get_player_id_from_name(self, player_name: str) -> Optional[str]:
         # Try to get the player's id given their name
-        player: PlayerSerializer = self.get_record(query={"name": player_name})  # type: ignore
+        player: PlayerInsertSerializer = self.get_record(query={"name": player_name})  # type: ignore
 
         # if no player found, try to get the closes match to their name
         if not player:
@@ -58,7 +58,7 @@ class PlayerTable(BaseTable):
                 return None
 
             # Get the player id for the closest name match
-            player: PlayerSerializer = self.get_record(query={"name": player_name_match})  # type: ignore
+            player: PlayerInsertSerializer = self.get_record(query={"name": player_name_match})  # type: ignore
 
         return player.id
 

@@ -4,6 +4,7 @@ from core.scraper import (
     BaseHTMLTableSerializer,
     CharField,
     DatetimeField,
+    FloatField,
     IntegerField,
     TransformationField,
 )
@@ -17,10 +18,10 @@ class GamesTableForm(BaseHTMLTableSerializer):
     # away: Annotated[str, StringConstraints(min_length=3, max_length=3)]  # type: ignore
     home_id = TransformationField(str, Teams.get_team_id_or_nan)
     away_id = TransformationField(str, Teams.get_team_id_or_nan)
-    home_score = IntegerField(null=True, default=None)
-    away_score = IntegerField(null=True, default=None)
+    home_score = FloatField(null=True, default=None)
+    away_score = FloatField(null=True, default=None)
     winner = CharField(null=True, default=None)  # type: ignore
-    victory_margin = IntegerField(null=True, default=None)
+    victory_margin = FloatField(null=True, default=None)
 
 
 NAME = "Games"

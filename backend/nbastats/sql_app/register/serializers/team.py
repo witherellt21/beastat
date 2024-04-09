@@ -13,4 +13,4 @@ class TeamSerializer(BaseSerializer):
 
 
 class TeamReadSerializer(TeamSerializer):
-    id: str
+    pass

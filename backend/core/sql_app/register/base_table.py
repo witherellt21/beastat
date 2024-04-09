@@ -20,16 +20,6 @@ class AdvancedQuery(BaseSerializer):
     in_: dict[str, list[Union[str, int, float, datetime]]] = {}
 
 
-# def sort_dependencies(table: "Type[BaseTable]", models: ):
-#     print(f"Creating table for {table.__name__}.")
-
-#     dependencies = table.DEPENDENCIES
-#     for dependency in dependencies:
-#         sort_dependencies(dependency)
-
-# table.db.create_tables([table.model_class])
-
-
 class BaseTable:
     MODEL_CLASS: Type[Model]
     SERIALIZER_CLASS: Type[BaseSerializer]
@@ -37,7 +27,6 @@ class BaseTable:
     READ_SERIALIZER_CLASS: Optional[Type[BaseSerializer]] = None
     PKS: list[str] = ["id"]
 
-    # DEPENDENCIES: list[Type[Model]] = []
     DEPENDENCIES: list[Type["BaseTable"]] = []
 
     def __init__(self, db: peewee.Database):
@@ -48,8 +37,6 @@ class BaseTable:
 
         self.db = db
 
-        # self.model_class.Meta.db_table =
-        # if self.db:
         if not self.db == None:
             print(f"Creating table for {self.__class__.__name__}.")
             # dependencies = self.__class__.DEPENDENCIES
@@ -57,9 +44,7 @@ class BaseTable:
             #     dependency(self.db)
             self.db.create_tables([self.model_class])
         else:
-            # logger.warning("DB not connected. Cannot perform operations on the table.")
             raise Exception("DB not connected. Cannot perform operations on the table.")
-            # pass
 
     @classmethod
     def validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> "BaseTable":
@@ -126,7 +111,6 @@ class BaseTable:
     def filter_records(self, *, query: dict) -> list[BaseSerializer]: ...
 
     def get_foreign_relationships(self) -> list[str]:
-        # return get_foreign_key_fields(self.model_class)
         foreign_keys = []
 
         for field_name, field in self.model_class._meta.fields.items():  # type: ignore
@@ -192,11 +176,9 @@ class BaseTable:
         """
         Return all rows matching the search query.
         """
-        # start = time.time()
         records: list[Model] = self.model_class.select().where(
             *[getattr(self.model_class, key) == value for key, value in query.items()]
         )
-        # print(time.time() - start)
 
         # Serialize rows and convert to desired output type
         serialized_objects = []

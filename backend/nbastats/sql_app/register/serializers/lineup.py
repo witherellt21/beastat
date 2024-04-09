@@ -2,7 +2,7 @@ from pydantic import UUID4
 from pydantic import BaseModel as BaseSerializer
 
 from .game import GameReadSerializer
-from .player import PlayerSerializer
+from .player import PlayerInsertSerializer
 from .team import TeamReadSerializer
 
 
@@ -33,8 +33,8 @@ class LineupReadSerializer(LineupSerializer):
     _SF_id: str
     _PF_id: str
     _C_id: str
-    PG: PlayerSerializer
-    SG: PlayerSerializer
-    SF: PlayerSerializer
-    PF: PlayerSerializer
-    C: PlayerSerializer
+    PG: PlayerInsertSerializer
+    SG: PlayerInsertSerializer
+    SF: PlayerInsertSerializer
+    PF: PlayerInsertSerializer
+    C: PlayerInsertSerializer

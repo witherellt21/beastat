@@ -1,16 +1,17 @@
 import datetime
+from typing import Annotated  # import Annotated
 from typing import Literal, Optional
 
 from pydantic import UUID4
 from pydantic import BaseModel as BaseSerializer
+from pydantic import Field
 
 from .game import GameSerializer
 from .team import TeamReadSerializer
 
 
-class PlayerSerializer(BaseSerializer):
+class BasePlayerSerializer(BaseSerializer):
     id: str
-    team_id: Optional[UUID4]
     name: str
     nicknames: list[str] = []
     active_from: int
@@ -22,14 +23,34 @@ class PlayerSerializer(BaseSerializer):
     timestamp: datetime.datetime  # timestamp in epoch
 
 
-class PlayerReadSerializer(PlayerSerializer):
-    id: str
+class PlayerInsertSerializer(BasePlayerSerializer):
+    team_id: Optional[UUID4]
 
-    _team_id: Optional[UUID4]
+
+class PlayerReadSerializer(BasePlayerSerializer):
     team: Optional[TeamReadSerializer]
 
+    # class Config:
+    #     # fields = {"team_id": {"exclude": True}}
+    #     exclude = ["team_id"]
 
-class PlayerUpdateSerializer(PlayerSerializer):
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+
+    #     for field in self.Config.exclude:
+    #         self.model_fields.pop(field)
+
+    # def json(self, **kwargs):
+    #     include = getattr(self.Config, "include", set())
+    #     if len(include) == 0:
+    #         include = None
+    #     exclude = getattr(self.Config, "exclude", set())
+    #     if len(exclude) == 0:
+    #         exclude = None
+    #     return super().json(include=include, exclude=exclude, **kwargs)
+
+
+class PlayerUpdateSerializer(PlayerInsertSerializer):
     pass
 
 
@@ -58,4 +79,4 @@ class PlayerPropReadSerializer(PlayerPropSerializer):
     game: GameSerializer
 
     _player_id: str
-    player: Optional[PlayerSerializer]
+    player: Optional[PlayerInsertSerializer]
