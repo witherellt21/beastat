@@ -5,20 +5,19 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from core.scraper.fields import (
+from core.scraper import (
     AugmentationField,
+    BaseHTMLTableSerializer,
     CharField,
     DatetimeField,
     FloatField,
-    IntegerField,
     QueryArgField,
+    QueryArgs,
     RenameField,
     TransformationField,
 )
-from core.scraper.html_table_serializer import BaseHTMLTableSerializer
-from core.scraper.util import QueryArgs
-from core.util.nullables import sum_nullables
-from nbastats.lib import constants
+from lib.util import sum_nullables
+from nbastats import constants
 from nbastats.sql_app.models import Game, Gamelog
 from nbastats.sql_app.register import Games, PlayerBoxScores, Teams
 from nbastats.sql_app.serializers import ReadGameSerializer

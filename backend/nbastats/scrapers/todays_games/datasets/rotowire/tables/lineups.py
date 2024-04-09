@@ -1,7 +1,7 @@
 import uuid
 
-from core.scraper.base.table_form import (
-    BaseTableForm,
+from core.scraper import (
+    BaseHTMLTableSerializer,
     CharField,
     ListField,
     TransformationField,
@@ -9,7 +9,7 @@ from core.scraper.base.table_form import (
 from nbastats.sql_app.register import Lineups, Teams
 
 
-class LineupTableForm(BaseTableForm):
+class LineupTableForm(BaseHTMLTableSerializer):
     id = CharField(default=uuid.uuid4)
     game_id = CharField()
     team_id = TransformationField(str, Teams.get_team_id_or_nan)

@@ -1,7 +1,7 @@
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup, element
-from nbastats.lib import constants
+from nbastats import constants
 from nbastats.sql_app.register import Teams
 
 

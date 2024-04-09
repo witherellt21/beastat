@@ -1,7 +1,7 @@
 import uuid
 
-from core.scraper.base.table_form import (
-    BaseTableForm,
+from core.scraper import (
+    BaseHTMLTableSerializer,
     CharField,
     DatetimeField,
     IntegerField,
@@ -10,7 +10,7 @@ from core.scraper.base.table_form import (
 from nbastats.sql_app.register import Games, Teams
 
 
-class GamesTableForm(BaseTableForm):
+class GamesTableForm(BaseHTMLTableSerializer):
     id = CharField(default=uuid.uuid4)
     date_time = DatetimeField(format="%Y-%m-%d")
     # home: Annotated[str, StringConstraints(min_length=3, max_length=3)]

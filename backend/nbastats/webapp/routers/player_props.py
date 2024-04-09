@@ -5,7 +5,7 @@ import logging
 import numpy as np
 import pandas as pd
 from fastapi import APIRouter
-from nbastats.lib import constants
+from nbastats import constants
 from nbastats.sql_app.register import BasicInfo, PlayerBoxScores, PlayerProps
 from nbastats.sql_app.register.gamelog import GamelogQuery
 from nbastats.sql_app.serializers import ReadPlayerPropSerializer

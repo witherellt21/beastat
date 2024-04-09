@@ -1,4 +1,4 @@
-from nbastats.scrapers.todays_games.datasets.todays_games.util import (
+from nbastats.scrapers.todays_games.datasets.rotowire.util import (
     extract_games_lineups_matchups,
 )
 

@@ -1,4 +1,4 @@
-from nbastats.lib import constants
+from nbastats import constants
 from nbastats.scrapers.bref.datasets.player_season_gamelog.tables.player_box_score.util import (
     PlayerBoxScoreTableConfig,
     get_cached_gamelog_query_data,

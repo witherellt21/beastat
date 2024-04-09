@@ -78,3 +78,42 @@ def list_difference(*, source: list[Any], to_remove: list[Any]):
             source.remove(item)
 
     return source
+
+
+def convert_season_to_year(season: str | int | float) -> int | float:
+    if type(season) == float:
+        try:
+            return int(season)
+        except:
+            return season
+
+    elif type(season) == int:
+        return season
+
+    elif type(season) == str:
+        try:
+            # Split the year to fetch the millenium and year
+            year_range = season.split("-")
+
+            if len(year_range) != 2:
+                try:
+                    return int(float(season))
+                except ValueError:
+                    return np.nan
+            else:
+                start_year = year_range[0]
+                end_year = year_range[1]
+
+            year_prefix = start_year[:2]
+            year_suffix = end_year
+
+            # Correct for seasons that span accross milleniums
+            if end_year == "00":
+                year_prefix = str(int(year_prefix) + 1)
+
+            # Concatenate the millenium and year and convert to int
+            return int(year_prefix + year_suffix)
+        except Exception as e:
+            raise Exception(f"Error converting {season} to a year: {e}")
+    else:
+        raise Exception("'season' must be of type str, int, or float.")

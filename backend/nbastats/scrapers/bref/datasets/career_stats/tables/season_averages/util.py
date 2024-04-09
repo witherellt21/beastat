@@ -13,8 +13,7 @@ from core.scraper import (
     RenameField,
     TransformationField,
 )
-from lib.util import sum_nullables
-from nbastats.lib.string_helpers import convert_season_to_year
+from lib.util import convert_season_to_year, sum_nullables
 from nbastats.sql_app.register import SeasonAveragess, Teams
 
 

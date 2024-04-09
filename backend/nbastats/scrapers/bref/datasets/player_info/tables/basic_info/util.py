@@ -1,16 +1,16 @@
 from typing import Optional
 
 import pandas as pd
-from core.scraper.fields import (
+from core.scraper import (
+    BaseHTMLTableSerializer,
     CharField,
     DatetimeField,
     HTMLSaveField,
+    QueryArgs,
     RenameField,
     TransformationField,
 )
-from core.scraper.html_table_serializer import BaseHTMLTableSerializer
-from core.scraper.util import QueryArgs
-from nbastats.lib import constants
+from nbastats import constants
 from nbastats.sql_app.register import BasicInfo
 from unidecode import unidecode
 

@@ -10,13 +10,10 @@ import requests
 from bs4 import BeautifulSoup, element
 from dateutil import parser
 from dateutil.tz import gettz
-from nbastats.scrapers.db_wrappers.team import get_team_id_by_abbr
-from nbastats.sql_app.register import Games
-from nbastats.sql_app.util.db_helpers import get_player_id
+from nbastats.sql_app.register import BasicInfo, Games, Teams
 
 date_regex = r"(?:%s)\s\d\d,\s\d{4}" % "|".join(calendar.month_name)
 TZ_INFOS = {"ET": gettz("America/New York"), "EST": gettz("America/New York")}
-# logger = logging.getLogger("main")
 
 
 def get_team_lineup(
@@ -46,7 +43,7 @@ def get_team_lineup(
                 player_name = player.a.text.split("\n")[-1]
 
             if player_idx <= 4:
-                player_id = get_player_id(player_name=player_name)
+                player_id = BasicInfo.get_player_id_from_name(player_name=player_name)
 
                 if not player_id:
                     # logger.error(
@@ -144,16 +141,11 @@ def extract_games_lineups_matchups(url: str) -> list[pd.DataFrame]:
         else:
             continue
 
-        # game_id = str(uuid.uuid4())
-
         game_entry = {
-            # "id": game_id,
             "date_time": game_date_time,
             "home_id": home_team_abbr,
             "away_id": away_team_abbr,
         }
-
-        # print(game_entry)
 
         game_line_divs = game_div.findAll("div", class_="lineup__odds-item")
 
@@ -170,7 +162,7 @@ def extract_games_lineups_matchups(url: str) -> list[pd.DataFrame]:
         existing_record = Games.get_record(
             query={
                 "date_time": game_date_time,
-                "home_id": get_team_id_by_abbr(home_team_abbr),
+                "home_id": Teams.get_team_id_or_nan(home_team_abbr),
             }
         )
 
@@ -178,9 +170,6 @@ def extract_games_lineups_matchups(url: str) -> list[pd.DataFrame]:
             existing_record.id if existing_record else str(uuid.uuid4())  # type: ignore
         )
         game_entry["id"] = game_id
-
-        print(game_id)
-        print(game_entry)
 
         games = pd.concat([games, pd.DataFrame([game_entry])], ignore_index=True)
 

@@ -1,1 +1,1 @@
-from .register import BaseTable
+from .register import AdvancedQuery, BaseTable

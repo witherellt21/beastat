@@ -1,4 +1,4 @@
-from nbastats.lib import constants
+from nbastats import constants
 from nbastats.scrapers.bref.datasets.career_stats.tables.season_averages.util import (
     SeasonAveragesTableEntrySerializer,
     get_cached_player_season_averages_data,

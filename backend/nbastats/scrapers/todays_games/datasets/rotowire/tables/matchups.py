@@ -1,7 +1,6 @@
 import uuid
 
-from core.scraper.fields import CharField
-from core.scraper.html_table_serializer import BaseHTMLTableSerializer
+from core.scraper import BaseHTMLTableSerializer, CharField
 from nbastats.sql_app.register import Matchups
 
 

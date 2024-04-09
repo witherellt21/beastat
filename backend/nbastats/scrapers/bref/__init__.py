@@ -1,6 +1,6 @@
 import logging
 
-from core.scraper.base.scraper import ScraperKwargs
+from core.scraper import WebScraperKwargs
 
 from .datasets.career_stats import NAME as CAREER_STATS
 from .datasets.player_info import NAME as PLAYERINFO
@@ -9,7 +9,7 @@ from .util import get_team_id_from_career_stats
 
 NAME = "BasketballReference"
 
-CONFIG: ScraperKwargs = {
+CONFIG: WebScraperKwargs = {
     "active": True,
     "log_level": logging.INFO,
     "download_rate": 5,

@@ -1,10 +1,10 @@
 import logging
 
-from core.scraper.base import ScraperKwargs
+from core.scraper import WebScraperKwargs
 
 NAME = "TodaysGames"
 
-CONFIG: ScraperKwargs = {
+CONFIG: WebScraperKwargs = {
     "active": True,
     "log_level": logging.INFO,
     "download_rate": 5,

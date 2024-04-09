@@ -15,13 +15,8 @@ SCRAPERS_DIR = str(Path(__file__).parent) + os.sep + "scrapers"
 
 def run_scrapers():
     scrapers = load_scrapers(SCRAPERS_DIR)
-    # print(scrapers)
 
     for scraper in scrapers:
-        # for dataset in scraper._dataset_configs.values():
-        #     # print([str(dependency) for dependency in dataset.dependencies])
-        #     for table in dataset._table_configs.values():
-        # print([str(inheritance) for inheritance in table.inheritances])
 
         if scraper.RUNNING:
             scraper.daemon = True

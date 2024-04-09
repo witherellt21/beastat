@@ -3,15 +3,15 @@ import uuid
 from datetime import datetime
 
 import pandas as pd
-from core.scraper.base.table_form import (
+from core.scraper import (
     AugmentationField,
-    BaseTableForm,
+    BaseHTMLTableSerializer,
     CharField,
     QueryArgField,
     RenameField,
     TransformationField,
 )
-from core.sql_app.register import AdvancedQuery
+from core.sql_app import AdvancedQuery
 from nbastats.sql_app.register import BasicInfo, Games, PlayerProps
 from nbastats.sql_app.serializers import ReadPlayerSerializer
 
@@ -152,7 +152,7 @@ def set_statuses(dataset: pd.DataFrame) -> pd.Series:
     return dataset["status"]
 
 
-class PlayerPropsTableEntrySerializer(BaseTableForm):
+class PlayerPropsTableEntrySerializer(BaseHTMLTableSerializer):
     id = CharField(default=uuid.uuid4)
     player_name = RenameField("PLAYER", type=str, cache=False)
     player_id = TransformationField(
