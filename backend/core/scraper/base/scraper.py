@@ -143,17 +143,19 @@ class BaseScraper(threading.Thread):
                 data = self.identify_table(table_config=table_config, tables=tables)
 
                 if data is None:
-                    # print(tables)
                     raise ValueError(f"No matching table found for {table_name}.")
 
+                # print("DATA", data)
                 # Add any of the query arguments to the dataframe if desired.
                 for (
                     df_column,
                     query_key,
                 ) in table_config.table_serializer.query_arg_fields.items():
+                    # print("QUERY", query_args)
                     if query_args and query_key in query_args:
                         data[df_column] = query_args[query_key]
 
+                # print("DATA2", data)
                 # Apply each cleaning function
                 try:
                     table_config.data = table_config._clean_data(data=data)
@@ -201,7 +203,10 @@ class BaseScraper(threading.Thread):
 
         self.logger.info("\n" + str(data))
 
+        # print(data[])
+
         for index, row in data.iterrows():
+            print(row)
             row_data = row.to_dict()
             row_data["id"] = index
             if index == None:

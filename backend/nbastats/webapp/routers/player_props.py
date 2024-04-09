@@ -5,10 +5,8 @@ import logging
 import numpy as np
 import pandas as pd
 from fastapi import APIRouter
-from nbastats.global_implementations import constants
+from nbastats.lib import constants
 from nbastats.sql_app.register import BasicInfo, PlayerBoxScores, PlayerProps
-
-# from pydantic.utils import deep_update
 from nbastats.sql_app.register.gamelog import GamelogQuery
 from nbastats.sql_app.serializers import ReadPlayerPropSerializer
 from nbastats.sql_app.util.db_helpers import GamelogFilter, filter_gamelog

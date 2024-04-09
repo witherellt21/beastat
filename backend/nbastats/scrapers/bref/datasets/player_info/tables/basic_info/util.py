@@ -6,12 +6,11 @@ from core.scraper.base.table_form import (
     CharField,
     DatetimeField,
     HTMLSaveField,
-    IntegerField,
     RenameField,
     TransformationField,
 )
 from core.scraper.base.util import QueryArgs
-from nbastats.global_implementations import constants
+from nbastats.lib import constants
 from nbastats.sql_app.register import BasicInfo
 from unidecode import unidecode
 

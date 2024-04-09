@@ -176,7 +176,7 @@ def load_scrapers(path: str = ".") -> list[BaseScraper]:
 
     for module_name in list_modules:
 
-        if module_name != "bref":
+        if module_name != "todays_games":
             continue
 
         is_dir = is_dir_module(module_path=path + os.sep + module_name)

@@ -1,5 +1,6 @@
 import traceback
 from datetime import datetime
+from math import e
 from typing import (
     Any,
     Callable,
@@ -15,6 +16,7 @@ from typing import (
 import pandas as pd
 from core.util.dataframes import filter_dataframe
 from core.util.pydantic_validator import PydanticValidatorMixin
+from numpy import isin
 from pandera.typing import Series
 from typing_extensions import TypedDict
 
@@ -37,6 +39,7 @@ class BaseField(Generic[T]):
         cache: bool = True,
         field_name: str = "",
         from_column: Optional[str] = None,
+        to_columns: Optional[str] = None,
         **kwargs: Unpack[FieldKwargs],
     ):
         self.type = type
@@ -49,6 +52,7 @@ class BaseField(Generic[T]):
         self.required = "default" not in kwargs
 
         self._from_column = from_column
+        self._to_columns = to_columns
 
         if not self.required and self.default == None and not self.null:
             raise ValueError("Must set null to True if default is None.")
@@ -58,6 +62,10 @@ class BaseField(Generic[T]):
     @property
     def from_column(self):
         return self._from_column or self.field_name
+
+    @property
+    def to_columns(self):
+        return self._to_columns or [self.field_name]
 
     def bind(self, field_name: str):
         self.field_name = self.field_name or field_name
@@ -73,25 +81,27 @@ class BaseField(Generic[T]):
                 )
                 dataframe[self.field_name] = dataframe.iloc[:, 0].apply(func)
 
-            if self.replace_values:
-                dataframe = dataframe.replace({self.field_name: self.replace_values})
+            for field_name in self.to_columns:
+                if self.replace_values:
+                    dataframe = dataframe.replace({field_name: self.replace_values})
 
             if not self.null:
-                dataframe = dataframe.dropna(subset=[self.field_name])
+                dataframe = dataframe.dropna(subset=self.to_columns)
 
             if self.type in [str, int, float, object, "category"]:
-                dataframe[self.field_name] = dataframe[self.field_name].astype(
+                dataframe[self.to_columns] = dataframe[self.to_columns].astype(
                     self.type
                 )
 
-            if self.filters:
-                dataframe = filter_dataframe(
-                    dataframe=dataframe,
-                    filters=[
-                        lambda dataset: filter(dataset[self.field_name])
-                        for filter in self.filters
-                    ],
-                )
+            for field_name in self.to_columns:
+                if self.filters:
+                    dataframe = filter_dataframe(
+                        dataframe=dataframe,
+                        filters=[
+                            lambda dataset: filter(dataset[field_name])
+                            for filter in self.filters
+                        ],
+                    )
 
             return dataframe
         except Exception as e:
@@ -223,7 +233,7 @@ class AugmentationField(BaseField[Generic[T]]):
     def __init__(
         self,
         type: Type,
-        function: Callable[[pd.DataFrame], pd.Series],
+        function: Callable[[pd.DataFrame], pd.Series | pd.DataFrame],
         from_columns: Optional[list[str]] = None,
         to_columns: Optional[list[str]] = None,
         **kwargs,
@@ -244,7 +254,24 @@ class AugmentationField(BaseField[Generic[T]]):
         return self._to_columns or [self.field_name]
 
     def execute(self, dataframe: pd.DataFrame) -> pd.DataFrame:
-        dataframe[self.field_name] = self.function(dataframe)
+        result = self.function(dataframe)
+
+        if isinstance(result, pd.DataFrame):
+            new_data = result.to_dict(orient="list")
+
+            for key, value in new_data.items():
+
+                try:
+
+                    dataframe[key] = value
+
+                except Exception as e:
+                    print(dataframe)
+                    print(value)
+                    print(key)
+
+        else:
+            dataframe[self.to_columns] = result
 
         return super().execute(dataframe)
 
@@ -324,6 +351,8 @@ class BaseTableForm(PydanticValidatorMixin):
 
             # Add all fields that are being cached to the column types, except datetime
             self.__column_types__[field_name] = field.type
+
+        # print(self.query_arg_fields)
 
     @property
     def datetime_fields(self):

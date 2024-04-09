@@ -5,7 +5,7 @@ from core.scraper.base import ScraperKwargs
 NAME = "TodaysGames"
 
 CONFIG: ScraperKwargs = {
-    "active": False,
+    "active": True,
     "log_level": logging.INFO,
     "download_rate": 5,
     "align": "inline",

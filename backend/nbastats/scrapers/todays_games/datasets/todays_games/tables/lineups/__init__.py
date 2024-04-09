@@ -1,7 +1,26 @@
 import uuid
 
-from nbastats.scrapers.util.team_helpers import get_team_id_by_abbr
-from nbastats.sql_app.register import Lineups
+from core.scraper.base.table_form import (
+    BaseTableForm,
+    CharField,
+    ListField,
+    TransformationField,
+)
+from nbastats.sql_app.register import Lineups, Teams
+
+
+class LineupTableForm(BaseTableForm):
+    id = CharField(default=uuid.uuid4)
+    game_id = CharField()
+    team_id = TransformationField(str, Teams.get_team_id_or_nan)
+    status = CharField()
+    PG_id = CharField()
+    SG_id = CharField()
+    SF_id = CharField()
+    PF_id = CharField()
+    C_id = CharField()
+    injuries = ListField(type=str)
+
 
 NAME = "Lineups"
 
@@ -12,10 +31,4 @@ IDENTIFICATION_FUNCTION = lambda tables: next(
     None,
 )
 
-CONFIG = {
-    "json_columns": ["injuries"],
-    "transformations": {
-        ("team_id", "id"): lambda x: uuid.uuid4(),
-        "team_id": get_team_id_by_abbr,
-    },
-}
+TABLE_SERIALIZER = LineupTableForm()

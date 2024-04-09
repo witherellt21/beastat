@@ -10,8 +10,8 @@ import requests
 from bs4 import BeautifulSoup, element
 from dateutil import parser
 from dateutil.tz import gettz
-from nbastats.scrapers.util.team_helpers import get_team_id_by_abbr
-from nbastats.sql_app.register import Games, Lineups
+from nbastats.scrapers.db_wrappers.team import get_team_id_by_abbr
+from nbastats.sql_app.register import Games
 from nbastats.sql_app.util.db_helpers import get_player_id
 
 date_regex = r"(?:%s)\s\d\d,\s\d{4}" % "|".join(calendar.month_name)
@@ -215,11 +215,7 @@ def extract_games_lineups_matchups(url: str) -> list[pd.DataFrame]:
                 **home_team_lineup,
             }
 
-            print(home_team_data)
-
             lineups = pd.concat([lineups, pd.DataFrame([home_team_data])])
-
-            # print(lineups)
 
         if away_team_lineup:
             away_team_data: dict = {
@@ -229,8 +225,6 @@ def extract_games_lineups_matchups(url: str) -> list[pd.DataFrame]:
                 "status": away_lineup_status,
                 **away_team_lineup,
             }
-
-            print(away_team_data)
 
             lineups = pd.concat([lineups, pd.DataFrame([away_team_data])])
 
@@ -251,7 +245,4 @@ def extract_games_lineups_matchups(url: str) -> list[pd.DataFrame]:
 
             matchups = pd.concat([matchups, pd.DataFrame([matchup])])
 
-    # print(games)
-    # print(lineups)
-    # print(matchups)
     return [games, lineups, matchups]

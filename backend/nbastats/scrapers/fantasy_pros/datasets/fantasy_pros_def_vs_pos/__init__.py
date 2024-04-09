@@ -1,8 +1,11 @@
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup, element
-from nbastats.global_implementations import constants
-from nbastats.scrapers.db_wrappers.team import get_team_id_by_abbr
+from nbastats.lib import constants
+
+from backend.nbastats.sql_app.register import Teams
+
+# from nbastats.scrapers.db_wrappers.team import get_team_id_by_abbr
 
 
 def scrape_data(url: str) -> list[pd.DataFrame] | None:
@@ -40,7 +43,7 @@ def scrape_data(url: str) -> list[pd.DataFrame] | None:
                 team_abbr = row_cells[0].span.text
 
                 data = {
-                    "team_id": get_team_id_by_abbr(team_abbr),
+                    "team_id": Teams.get_team_id_or_nan(team_abbr),
                     "pos": position,
                     "PTS": float(row_cells[2].text),
                     "REB": float(row_cells[3].text),

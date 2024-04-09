@@ -1,7 +1,27 @@
 import uuid
 
-from nbastats.scrapers.util.team_helpers import get_team_id_by_abbr
-from nbastats.sql_app.register import Games
+from core.scraper.base.table_form import (
+    BaseTableForm,
+    CharField,
+    DatetimeField,
+    IntegerField,
+    TransformationField,
+)
+from nbastats.sql_app.register import Games, Teams
+
+
+class GamesTableForm(BaseTableForm):
+    id = CharField(default=uuid.uuid4)
+    date_time = DatetimeField(format="%Y-%m-%d")
+    # home: Annotated[str, StringConstraints(min_length=3, max_length=3)]
+    # away: Annotated[str, StringConstraints(min_length=3, max_length=3)]  # type: ignore
+    home_id = TransformationField(str, Teams.get_team_id_or_nan)
+    away_id = TransformationField(str, Teams.get_team_id_or_nan)
+    home_score = IntegerField(null=True, default=None)
+    away_score = IntegerField(null=True, default=None)
+    winner = CharField(null=True, default=None)  # type: ignore
+    victory_margin = IntegerField(null=True, default=None)
+
 
 NAME = "Games"
 
@@ -12,23 +32,4 @@ IDENTIFICATION_FUNCTION = lambda tables: next(
     None,
 )
 
-CONFIG = {
-    "filters": [],
-    "datetime_columns": {"date_time": "%Y-%m-%d"},
-    # "json_columns": ["injuries"],
-    "rename_columns": {},
-    "rename_values": {},
-    "transformations": {
-        ("date_time", "id"): lambda x: uuid.uuid4(),
-        "home_id": get_team_id_by_abbr,
-        "away_id": get_team_id_by_abbr,
-        # ("date_time", "home_score"): lambda x: 0,
-        # ("date_time", "away_score"): lambda x: 0,
-    },
-    "data_transformations": [],
-    "query_save_columns": {},
-    "required_fields": [],
-    "nan_values": [],
-    "stat_augmentations": {},
-    "href_save_map": {},
-}
+TABLE_SERIALIZER = GamesTableForm()

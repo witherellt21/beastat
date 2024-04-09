@@ -17,10 +17,9 @@ from core.scraper.base.table_form import (
 )
 from core.scraper.base.util import QueryArgs
 from core.util.nullables import sum_nullables
-from nbastats.global_implementations import constants
-from nbastats.scrapers.db_wrappers.team import get_team_id_by_abbr
+from nbastats.lib import constants
 from nbastats.sql_app.models import Game, Gamelog
-from nbastats.sql_app.register import Games, PlayerBoxScores
+from nbastats.sql_app.register import Games, PlayerBoxScores, Teams
 from nbastats.sql_app.serializers import ReadGameSerializer
 from pandera.typing import Series
 from playhouse.shortcuts import model_to_dict
@@ -92,8 +91,8 @@ def get_game_id(row: pd.Series) -> str:
     home_team = row["Tm"] if row["home"] else row["Opp"]
     away_team = row["Opp"] if row["home"] else row["Tm"]
 
-    home_team_id = get_team_id_by_abbr(home_team)
-    away_team_id = get_team_id_by_abbr(away_team)
+    home_team_id = Teams.get_team_id_or_nan(home_team, raise_exception=True)
+    away_team_id = Teams.get_team_id_or_nan(away_team, raise_exception=True)
 
     game: ReadGameSerializer = Games.update_or_insert_record(
         data={

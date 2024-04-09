@@ -3,7 +3,7 @@ import traceback
 
 import exceptions
 from fastapi import APIRouter, HTTPException, status
-from nbastats.global_implementations import constants
+from nbastats.lib import constants
 from nbastats.sql_app.register import SeasonAveragess
 from nbastats.sql_app.util.db_helpers import GamelogFilter, filter_gamelog
 

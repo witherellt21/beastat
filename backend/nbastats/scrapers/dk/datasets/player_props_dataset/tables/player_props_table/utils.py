@@ -1,7 +1,16 @@
 import re
+import uuid
 from datetime import datetime
 
 import pandas as pd
+from core.scraper.base.table_form import (
+    AugmentationField,
+    BaseTableForm,
+    CharField,
+    QueryArgField,
+    RenameField,
+    TransformationField,
+)
 from core.sql_app.register import AdvancedQuery
 from nbastats.sql_app.register import BasicInfo, Games, PlayerProps
 from nbastats.sql_app.serializers import ReadPlayerSerializer
@@ -14,6 +23,7 @@ line_split_match = r"^[^\d]*"
 
 def get_player_props(dataset: pd.DataFrame) -> pd.DataFrame:
     def split_line_column_by_regex(column, regex):
+
         data: pd.DataFrame = dataset[column].str.split(regex, expand=True)
         data: pd.DataFrame = data.dropna(subset=1)
 
@@ -55,6 +65,7 @@ def get_player_props(dataset: pd.DataFrame) -> pd.DataFrame:
 
         # Rename the columns for the dataset
         full_data: pd.DataFrame = full_data.rename(columns={0: "line", 1: "odds"})
+
         full_data.index = full_data.index.set_names(["id"])
 
         return full_data
@@ -64,6 +75,7 @@ def get_player_props(dataset: pd.DataFrame) -> pd.DataFrame:
 
     # Split our over/under data to extrapolate the line/odds for each
     try:
+        print("DATASET\n", dataset)
         over_data = split_line_column_into_dataframe("OVER")
         under_data = split_line_column_into_dataframe("UNDER")
     except Exception as e:
@@ -72,23 +84,14 @@ def get_player_props(dataset: pd.DataFrame) -> pd.DataFrame:
         )
 
     # Merge the new over/under data to a single dataset
-    over_under_odds = pd.merge(
+    full_data = pd.merge(
         over_data,
         under_data,
         on=["id", "line"],
         suffixes=["_over", "_under"],
     )
 
-    # Add the new over/under data to our initial dataset
-    full_data = pd.merge(
-        dataset,
-        over_under_odds,
-        left_index=True,
-        right_index=True,
-    )
-
     # Drop the old over/under data and return
-    full_data = full_data.drop(columns=["OVER", "UNDER"])
     full_data: pd.DataFrame = full_data.rename(
         columns={
             "odds_over": "over",
@@ -100,11 +103,14 @@ def get_player_props(dataset: pd.DataFrame) -> pd.DataFrame:
     return full_data
 
 
-def get_game_id(*, player_id: str):
+def get_game_id(player_id: str):
     player: ReadPlayerSerializer = BasicInfo.get_record(query={"id": player_id})  # type: ignore
     todays_games: pd.DataFrame = Games.filter_by_datetime(
         min_datetime=datetime.today(), as_df=True
     )
+
+    if todays_games.empty:
+        return None
 
     cur_team_game = todays_games[
         (todays_games["home"] == getattr(player.team, "id", None))
@@ -118,8 +124,11 @@ def get_game_id(*, player_id: str):
         return None
 
 
-def set_statuses(dataset: pd.DataFrame) -> pd.DataFrame:
+def set_statuses(dataset: pd.DataFrame) -> pd.Series:
     todays_games = Games.filter_by_datetime(min_datetime=datetime.today(), as_df=True)
+
+    if todays_games.empty:
+        return pd.Series(data={"status": 0 for i in range(PlayerProps.count_records())})
 
     todays_game_ids = list(todays_games["id"].values)
 
@@ -127,11 +136,10 @@ def set_statuses(dataset: pd.DataFrame) -> pd.DataFrame:
         query=AdvancedQuery(in_={"game_id": todays_game_ids})
     )
 
-    dataset = dataset[dataset["player_id"] != "harteis01"]
-
     if todays_props.empty:
         dataset["status"] = 1
     else:
+        dataset["status"] = 1
         merged = todays_props.merge(
             dataset,
             how="left",
@@ -141,4 +149,34 @@ def set_statuses(dataset: pd.DataFrame) -> pd.DataFrame:
 
         locked_lines = merged[merged["id_y"].isna()]["id_x"].values
 
-    return dataset
+    return dataset["status"]
+
+
+class PlayerPropsTableEntrySerializer(BaseTableForm):
+    id = CharField(default=uuid.uuid4)
+    player_name = RenameField("PLAYER", type=str, cache=False)
+    player_id = TransformationField(
+        str, BasicInfo.get_player_id_from_name, from_columns=["player_name"]
+    )
+    game_id = TransformationField(
+        str, get_game_id, from_columns=["player_id"], null=False
+    )
+    status = AugmentationField(int, set_statuses, null=True)
+    stat = QueryArgField(
+        from_column="stat_subcategory",
+        replace_values={
+            "points": "PTS",
+            "assists": "AST",
+            "threes": "THP",
+            "rebounds": "TRB",
+            "pts-+-reb-+-ast": "PRA",
+            "pts-+-reb": "PR",
+            "pts-+-ast": "PA",
+            "ast-+-reb": "RA",
+        },
+    )
+    odds = AugmentationField(
+        float,
+        get_player_props,
+        to_columns=["line", "over", "over_implied", "under", "under_implied"],
+    )

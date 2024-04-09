@@ -433,3 +433,37 @@ class BaseTable:
     def get_column_values(self, *, column: str) -> "list[Any]":
         values = [value[column] for value in self.model_class.select().dicts()]
         return values
+
+    def count_records(
+        self,
+        *,
+        query: Optional[AdvancedQuery] = None,
+    ) -> int:
+        """
+        Return all rows matching the search query.
+        """
+        # start = time.time()
+        if query:
+            count = (
+                self.model_class.select()
+                .where(
+                    *[
+                        getattr(self.model_class, key) == value
+                        for key, value in query.equal_to.items()
+                    ],
+                    *[
+                        getattr(self.model_class, key) > value
+                        for key, value in query.greater_than.items()
+                    ],
+                    *[
+                        getattr(self.model_class, key) < value
+                        for key, value in query.less_than.items()
+                    ],
+                )
+                .count()
+            )
+        else:
+            count = self.model_class.select().count()
+
+        # Serialize rows and convert to desired output type
+        return count

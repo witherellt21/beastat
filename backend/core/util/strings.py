@@ -4,8 +4,7 @@ import re
 from typing import Optional, Sequence
 
 from fuzzywuzzy import fuzz, process
-from nbastats.global_implementations import constants
-from unidecode import unidecode
+from nbastats.lib import constants
 
 logger = logging.getLogger("main")
 

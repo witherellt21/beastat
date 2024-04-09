@@ -117,7 +117,11 @@ class TableConfig(
         data = data.replace(self.nan_values, np.nan, regex=True)
 
         for name, field in self.table_serializer.get_fields().items():
-            data = field.execute(data)
+
+            try:
+                data = field.execute(data)
+            except Exception as e:
+                raise Exception(f"Error executing {name} for scraper {self.name}: {e}.")
 
         if self.primary_key in list(data.columns):
             data = data.set_index(self.primary_key)

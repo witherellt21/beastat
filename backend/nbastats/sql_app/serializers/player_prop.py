@@ -8,7 +8,7 @@ from .player import PlayerSerializer
 
 class PlayerPropSerializer(BaseSerializer):
     id: UUID4
-    game_id: UUID4
+    game_id: str
     status: Literal[0, 1]
     stat: str
     line: float

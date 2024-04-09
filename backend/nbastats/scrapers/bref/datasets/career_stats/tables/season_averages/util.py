@@ -14,9 +14,8 @@ from core.scraper.base.table_form import (
 )
 from core.scraper.base.util import QueryArgs
 from core.util.nullables import sum_nullables
-from nbastats.global_implementations.string_helpers import convert_season_to_year
-from nbastats.scrapers.db_wrappers.team import get_team_id_by_abbr
-from nbastats.sql_app.register import SeasonAveragess
+from nbastats.lib.string_helpers import convert_season_to_year
+from nbastats.sql_app.register import SeasonAveragess, Teams
 
 
 def has_season_column(tables: list[pd.DataFrame]) -> Optional[pd.DataFrame]:
@@ -49,7 +48,10 @@ class SeasonAveragesTableEntrySerializer(BaseTableForm):
     Season = TransformationField(int, convert_season_to_year)
     Age = FloatField()
     Tm_id = TransformationField(
-        str, get_team_id_by_abbr, from_columns=["Tm"], replace_values={"TOT": np.nan}
+        str,
+        lambda abbr: Teams.get_team_id_or_nan(abbr, raise_exception=True),
+        from_columns=["Tm"],
+        replace_values={"TOT": np.nan},
     )
     Lg = CharField(null=True)
     Pos = CharField(null=True)
