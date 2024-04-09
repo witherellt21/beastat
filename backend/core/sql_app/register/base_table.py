@@ -4,12 +4,10 @@ from typing import Any, Literal, Optional, Type, Union, overload
 
 import pandas as pd
 import peewee
-from pandas._typing import Dtype
 from peewee import Model
 from playhouse.shortcuts import model_to_dict
 from pydantic import BaseModel as BaseSerializer
 from pydantic import GetCoreSchemaHandler
-from pydantic.fields import FieldInfo
 from pydantic_core import CoreSchema, core_schema
 
 logger = logging.getLogger("main")

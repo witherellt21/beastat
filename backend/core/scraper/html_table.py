@@ -1,26 +1,26 @@
-from typing import Any, Callable, Literal, NotRequired, Optional, Unpack
+from typing import Callable, Literal, NotRequired, Optional, Unpack
 
 import numpy as np
 import pandas as pd
-from core.scraper.base.util import QueryArgs
-from core.scraper.util.dependency_tree_helpers import DependencyKwargs, DependentObject
-from core.sql_app.register.base_table import BaseTable
-from core.util.pydantic_validator import PydanticValidatorMixin
+from core.sql_app import BaseTable
+from lib.dependency_trees import DependencyKwargs, DependentObject
+from lib.pydantic_validator import PydanticValidatorMixin
 from typing_extensions import TypedDict
 
-from .table_form import BaseTableForm
+from .html_table_serializer import BaseHTMLTableSerializer
+from .util import QueryArgs
 
 
-class TableInheritance:
+class HTMLTableInheritance:
     def __init__(
         self,
         *,
-        source: "TableConfig",
+        source: "BaseHTMLTable",
         inheritance_function: Callable[
             [pd.DataFrame], pd.DataFrame
         ] = lambda dataframe: dataframe,
     ) -> None:
-        self.source: "TableConfig" = source
+        self.source: "BaseHTMLTable" = source
         self.inheritance_function: Callable[[pd.DataFrame], pd.DataFrame] = (
             inheritance_function
         )
@@ -29,42 +29,43 @@ class TableInheritance:
         return f"{self.source.name} : {self.inheritance_function}"
 
 
-class TableConfigArgs(TypedDict):
+class HTMLTableArgs(TypedDict):
     # values that should be considered nan for the table
     nan_values: NotRequired[list[str]]
-
-    # serializer
-    serializer: NotRequired[BaseTableForm]
 
     # cache_generator
     cached_query_generator: NotRequired[Callable[[Optional[QueryArgs]], pd.DataFrame]]
 
 
-class TableConfig(
-    DependentObject["TableConfig", DependencyKwargs], PydanticValidatorMixin
+class BaseHTMLTable(
+    DependentObject["BaseHTMLTable", DependencyKwargs], PydanticValidatorMixin
 ):
+    """
+    Base class for an HTML-embedded table.
+    """
 
     NAN_VALUES: list[str] = []
-
     CACHED_QUERY_GENERATOR: Callable[[Optional[QueryArgs]], pd.DataFrame] = (
         lambda x: pd.DataFrame()
     )
 
     def __init__(
         self,
+        db_table: BaseTable,
+        serializer: BaseHTMLTableSerializer,
         identification_function: Callable[[list[pd.DataFrame]], Optional[pd.DataFrame]],
-        sql_table: BaseTable,
         name: str,
-        table_serializer: BaseTableForm,
-        **kwargs: Unpack[TableConfigArgs],
+        **kwargs: Unpack[HTMLTableArgs],
     ):
         super().__init__(name=name, validator=DependencyKwargs)
 
-        self._sql_table = sql_table
-        self._identification_function = identification_function
-        self._table_serializer = table_serializer
+        # TODO: lets make identification function a part of the serializer
 
-        self.primary_key: str = self._sql_table.model_class._meta.primary_key.name  # type: ignore
+        self._db_table = db_table
+        self._serializer = serializer
+        self._identification_function = identification_function
+
+        self.primary_key: str = self._db_table.model_class._meta.primary_key.name  # type: ignore
 
         # # extract info from the given dataset
         self.nan_values = kwargs.get("nan_values", self.__class__.NAN_VALUES)
@@ -76,11 +77,18 @@ class TableConfig(
         self.staged_data = pd.DataFrame()
         self.data_source: Literal["cached", "downloaded"] = "downloaded"
 
-        self.inheritances: list[TableInheritance] = []
+        self.inheritances: list[HTMLTableInheritance] = []
 
     @property
-    def table_serializer(self):
-        return self._table_serializer
+    def db_table(self):
+        return self._db_table
+
+    @property
+    def serializer(self):
+        return self._serializer
+
+    def identify(self, tables: list[pd.DataFrame]):
+        return self._identification_function(tables)
 
     def cached_data(self, *, query_args: Optional[QueryArgs] = None) -> pd.DataFrame:
         if query_args == None:
@@ -91,11 +99,13 @@ class TableConfig(
     def add_inheritance(
         self,
         *,
-        source: "TableConfig",
+        source: "BaseHTMLTable",
         inheritance_function: Callable[[pd.DataFrame], pd.DataFrame],
     ):
         self.inheritances.append(
-            TableInheritance(source=source, inheritance_function=inheritance_function)
+            HTMLTableInheritance(
+                source=source, inheritance_function=inheritance_function
+            )
         )
 
     def _clean_data(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -108,15 +118,15 @@ class TableConfig(
             return pd.DataFrame()
 
         for column in data.columns:
-            if column in self.table_serializer.html_save_fields:
-                data[self.table_serializer.html_save_fields[column]] = data[
-                    column
-                ].apply(lambda x: x[1])
+            if column in self.serializer.html_save_fields:
+                data[self.serializer.html_save_fields[column]] = data[column].apply(
+                    lambda x: x[1]
+                )
             data[column] = data[column].apply(lambda x: x[0] if type(x) == tuple else x)
 
         data = data.replace(self.nan_values, np.nan, regex=True)
 
-        for name, field in self.table_serializer.get_fields().items():
+        for name, field in self.serializer.get_fields().items():
 
             try:
                 data = field.execute(data)

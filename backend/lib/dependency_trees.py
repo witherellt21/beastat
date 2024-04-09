@@ -22,9 +22,6 @@ class DependentObject(Generic[DO, DK]):
         self.validator: Type[DK] = validator
         self.dependencies: list[Dependency[DO, DK]] = []
 
-    # def __str__(self):
-    #     return self.name
-
     @property
     def name(self):
         return self._name
@@ -53,25 +50,29 @@ def topological_sort_dependency_tree(*, dependency_tree: dict[str, DependentObje
     recursion_stack = set()
 
     # Helper function for depth-first search
-    def dfs(*, dataset_name: str):
-        if dataset_name in recursion_stack:
-            raise Exception(
-                f"Circular dependency detected starting from {dataset_name}"
-            )
-        if dataset_name not in visited:
-            visited.add(dataset_name)
-            recursion_stack.add(dataset_name)
-            current_config = dependency_tree.get(dataset_name)
-            if current_config:
-                for dependency in current_config.dependencies:
-                    dfs(dataset_name=dependency.source.name)
+    def dfs(*, dependency_name: str):
 
-            recursion_stack.remove(dataset_name)
-            sorted_list.append(dataset_name)
+        if dependency_name in recursion_stack:
+            raise Exception(
+                f"Circular dependency detected starting from {dependency_name}"
+            )
+
+        if dependency_name not in visited:
+
+            visited.add(dependency_name)
+            recursion_stack.add(dependency_name)
+
+            current_obj = dependency_tree.get(dependency_name)
+            if current_obj:
+                for dependency in current_obj.dependencies:
+                    dfs(dependency_name=dependency.source.name)
+
+            recursion_stack.remove(dependency_name)
+            sorted_list.append(dependency_name)
 
     # Perform DFS from each node
-    for dataset_name in dependency_tree:
-        if dataset_name not in visited:
-            dfs(dataset_name=dataset_name)
+    for dependency_name in dependency_tree:
+        if dependency_name not in visited:
+            dfs(dependency_name=dependency_name)
 
     return sorted_list

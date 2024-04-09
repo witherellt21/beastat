@@ -5,17 +5,18 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from core.scraper.base.table_form import (
+from core.scraper.fields import (
     AugmentationField,
-    BaseTableForm,
     CharField,
     DatetimeField,
     FloatField,
+    IntegerField,
     QueryArgField,
     RenameField,
     TransformationField,
 )
-from core.scraper.base.util import QueryArgs
+from core.scraper.html_table_serializer import BaseHTMLTableSerializer
+from core.scraper.util import QueryArgs
 from core.util.nullables import sum_nullables
 from nbastats.lib import constants
 from nbastats.sql_app.models import Game, Gamelog
@@ -23,7 +24,6 @@ from nbastats.sql_app.register import Games, PlayerBoxScores, Teams
 from nbastats.sql_app.serializers import ReadGameSerializer
 from pandera.typing import Series
 from playhouse.shortcuts import model_to_dict
-from pydantic import UUID4
 
 
 def convert_minutes_to_float(time: str) -> float:
@@ -78,9 +78,6 @@ def get_days_rest(dataset: pd.DataFrame) -> pd.Series:
             else:
                 return None
         except Exception as e:
-            print(data)
-            print(date_differences)
-            print(sorted_dates)
             raise e
 
     return dataset["Date"].apply(lambda date: get_closest_game(date, dataset))
@@ -150,7 +147,7 @@ def get_cached_gamelog_query_data(query_args: QueryArgs):
     return pd.DataFrame()
 
 
-class PlayerBoxScoreTableConfig(BaseTableForm):
+class PlayerBoxScoreTableConfig(BaseHTMLTableSerializer):
     Rk = CharField(replace_values={"Rk": np.nan}, cache=False)
     id = CharField(default=uuid.uuid4)
     player_id = QueryArgField("player_id")

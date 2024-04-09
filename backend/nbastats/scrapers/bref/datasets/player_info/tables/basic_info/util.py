@@ -1,15 +1,15 @@
 from typing import Optional
 
 import pandas as pd
-from core.scraper.base.table_form import (
-    BaseTableForm,
+from core.scraper.fields import (
     CharField,
     DatetimeField,
     HTMLSaveField,
     RenameField,
     TransformationField,
 )
-from core.scraper.base.util import QueryArgs
+from core.scraper.html_table_serializer import BaseHTMLTableSerializer
+from core.scraper.util import QueryArgs
 from nbastats.lib import constants
 from nbastats.sql_app.register import BasicInfo
 from unidecode import unidecode
@@ -50,8 +50,7 @@ def get_cached_player_info_data(query_args: QueryArgs):
         return pd.DataFrame()
 
 
-class PlayerInfoTableEntrySerializer(BaseTableForm):
-    # id = CharField(default=uuid.uuid4)
+class PlayerInfoTableEntrySerializer(BaseHTMLTableSerializer):
     team_id = CharField(null=True, default=None)
     player_link = HTMLSaveField("Player")
 

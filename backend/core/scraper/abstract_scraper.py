@@ -1,8 +1,8 @@
 import threading
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 
 import pandas as pd
-from core.sql_app.register import BaseTable
+from core.sql_app import BaseTable
 
 
 class AbstractDatasetConfig(ABC):

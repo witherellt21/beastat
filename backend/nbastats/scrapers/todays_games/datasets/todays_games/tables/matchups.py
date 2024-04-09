@@ -1,10 +1,11 @@
 import uuid
 
-from core.scraper.base.table_form import BaseTableForm, CharField
+from core.scraper.fields import CharField
+from core.scraper.html_table_serializer import BaseHTMLTableSerializer
 from nbastats.sql_app.register import Matchups
 
 
-class MatchupTableForm(BaseTableForm):
+class MatchupTableForm(BaseHTMLTableSerializer):
     id = CharField(default=uuid.uuid4)
     game_id = CharField()
     position = CharField()

@@ -2,10 +2,7 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup, element
 from nbastats.lib import constants
-
-from backend.nbastats.sql_app.register import Teams
-
-# from nbastats.scrapers.db_wrappers.team import get_team_id_by_abbr
+from nbastats.sql_app.register import Teams
 
 
 def scrape_data(url: str) -> list[pd.DataFrame] | None:

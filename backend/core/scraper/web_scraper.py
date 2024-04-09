@@ -1,17 +1,17 @@
 import logging
 import threading
+import time
 import traceback
-from time import sleep, time
 from typing import Literal, NotRequired, Optional, Union, Unpack
 
 import numpy as np
 import pandas as pd
-from core.scraper.base.table import TableConfig
-from core.scraper.base.util import QueryArgs, QuerySet
-from core.scraper.util.dependency_tree_helpers import topological_sort_dependency_tree
+from lib.dependency_trees import topological_sort_dependency_tree
 from typing_extensions import TypedDict
 
-from .dataset import BaseHTMLDatasetConfig
+from .html_table import BaseHTMLTable
+from .util import QueryArgs, QuerySet
+from .web_page import BaseWebPage
 
 DEFAULT_LOG_FORMATTER = logging.Formatter(
     "[{levelname:^10}] [ {asctime} ] [{threadName:^20}]  {message}",
@@ -22,22 +22,20 @@ STREAM_HANDLER = logging.StreamHandler()
 STREAM_HANDLER.setFormatter(DEFAULT_LOG_FORMATTER)
 
 
-class ScraperKwargs(TypedDict):
-    datasets: NotRequired[dict[str, BaseHTMLDatasetConfig]]
+class WebScraperKwargs(TypedDict):
+    datasets: NotRequired[dict[str, BaseWebPage]]
     log_level: NotRequired[int]
     download_rate: NotRequired[int]
     active: NotRequired[bool]
     align: NotRequired[Union[Literal["nested"], Literal["inline"]]]
 
 
-class BaseScraper(threading.Thread):
+class BaseWebScraper(threading.Thread):
 
-    def __init__(self, *, name: str, **kwargs: Unpack[ScraperKwargs]) -> None:
+    def __init__(self, *, name: str, **kwargs: Unpack[WebScraperKwargs]) -> None:
         threading.Thread.__init__(self, name=name)
 
-        self._dataset_configs: dict[str, BaseHTMLDatasetConfig] = (
-            kwargs.get("datasets") or {}
-        )
+        self._dataset_configs: dict[str, BaseWebPage] = kwargs.get("datasets") or {}
         self._configured: bool = False
 
         self.RUNNING: Literal[False, True] = kwargs.get("active", True)
@@ -47,7 +45,7 @@ class BaseScraper(threading.Thread):
         self.logger.addHandler(STREAM_HANDLER)
 
         self.download_rate = kwargs.get("download_rate", 5)
-        self.last_download_time = time()
+        self.last_download_time = time.time()
 
         self.alignment = kwargs.get("align", "inline")
 
@@ -57,7 +55,7 @@ class BaseScraper(threading.Thread):
     def set_log_level(self, log_level: int):
         self.logger.setLevel(log_level)
 
-    def add_dataset_config(self, dataset_config: BaseHTMLDatasetConfig):
+    def add_dataset_config(self, dataset_config: BaseWebPage):
         """
         Add a dataset configuration to the scraper.
         """
@@ -70,10 +68,10 @@ class BaseScraper(threading.Thread):
         """
         sorted = topological_sort_dependency_tree(dependency_tree=self._dataset_configs)  # type: ignore
 
-        dataset_configs: dict[str, BaseHTMLDatasetConfig] = {}
+        dataset_configs: dict[str, BaseWebPage] = {}
 
         for dataset_name in sorted:
-            self._dataset_configs[dataset_name]._configure()
+            self._dataset_configs[dataset_name].configure()
 
         if self.alignment == "nested":
             current_config = dataset_configs[sorted[0]] = self._dataset_configs[
@@ -81,7 +79,7 @@ class BaseScraper(threading.Thread):
             ]
             for dataset_name in sorted[1:]:
                 nested_config = self._dataset_configs[dataset_name]
-                current_config.add_nested_dataset(dataset=nested_config)
+                current_config.add_nested_web_page(web_page=nested_config)
                 current_config = nested_config
 
         else:
@@ -93,32 +91,30 @@ class BaseScraper(threading.Thread):
         self._configured = True
 
     def identify_table(
-        self, table_config: TableConfig, tables: list[pd.DataFrame]
+        self, html_table: BaseHTMLTable, tables: list[pd.DataFrame]
     ) -> Optional[pd.DataFrame]:
-        data = table_config._identification_function(tables)
-        # data = next(
-        #     (table for table in tables if table_config._identification_function(table)),
-        #     None,
-        # )
-        return data
+        """
+        Use identification function to identify the correct table for the configuration
+        """
+        return html_table.identify(tables)
 
     def download_and_process_query(
-        self, *, config: BaseHTMLDatasetConfig, query_args: Optional[QueryArgs] = None
+        self, *, config: BaseWebPage, query_args: Optional[QueryArgs] = None
     ) -> None:
 
         # get the download url from the query args
         url = (
-            config._get_download_url(query_args=query_args)
+            config.get_download_url(query_args=query_args)
             if query_args
             else config.base_download_url
         )
 
         # if this specific query is already save in the database, fetch that instead
-        config.load_data_from_cache(query_args=query_args)
+        config.load_cached_data(query_args=query_args)
         if all(
             [
                 table_config.data_source == "cached"
-                for table_config in config._table_configs.values()
+                for table_config in config._html_tables.values()
             ]
         ):
             config.data_source = "cached"
@@ -128,19 +124,21 @@ class BaseScraper(threading.Thread):
 
             # self.logger.info(f"Downloading data for {config.name}.")
             if self.last_download_time:
-                wait = max(self.last_download_time - time() + self.download_rate, 0)
+                wait = max(
+                    self.last_download_time - time.time() + self.download_rate, 0
+                )
             else:
                 wait = 0
 
             if wait:
-                sleep(wait)
+                time.sleep(wait)
 
             tables = config.extract_tables(url=url)
-            self.last_download_time = time()
+            self.last_download_time = time.time()
 
             # find the table matching the identification function. Error if not found
-            for table_name, table_config in config._table_configs.items():
-                data = self.identify_table(table_config=table_config, tables=tables)
+            for table_name, table_config in config._html_tables.items():
+                data = self.identify_table(html_table=table_config, tables=tables)
 
                 if data is None:
                     raise ValueError(f"No matching table found for {table_name}.")
@@ -150,7 +148,7 @@ class BaseScraper(threading.Thread):
                 for (
                     df_column,
                     query_key,
-                ) in table_config.table_serializer.query_arg_fields.items():
+                ) in table_config.serializer.query_arg_fields.items():
                     # print("QUERY", query_args)
                     if query_args and query_key in query_args:
                         data[df_column] = query_args[query_key]
@@ -166,7 +164,7 @@ class BaseScraper(threading.Thread):
 
                 # return data
 
-    def save_data(self, dataset_config: BaseHTMLDatasetConfig) -> None:
+    def save_data(self, dataset_config: BaseWebPage) -> None:
         """
         Save the data for the dataset and any nested datasets.
         """
@@ -174,15 +172,15 @@ class BaseScraper(threading.Thread):
 
         # Use staging if there is backed up data that needs to be saved that was
         # waiting for a dependency
-        for table_config in dataset_config._table_configs.values():
+        for table_config in dataset_config._html_tables.values():
             if table_config.data_source != "cached":
                 self.save_table(table_config=table_config)
 
         # recurse into nested datatsets
-        for nested_config in dataset_config.nested_datasets:
+        for nested_config in dataset_config.nested_web_pages:
             self.save_data(dataset_config=nested_config)
 
-    def save_table(self, table_config: TableConfig) -> None:
+    def save_table(self, table_config: BaseHTMLTable) -> None:
         """
         Save the data for the dataset and any nested datasets.
         """
@@ -211,12 +209,12 @@ class BaseScraper(threading.Thread):
             row_data["id"] = index
             if index == None:
                 self.logger.warning(row)
-            table_config._sql_table.update_or_insert_record(data=row_data)
+            table_config._db_table.update_or_insert_record(data=row_data)
 
         self.logger.debug(f"\n{data}")
 
     def perform_single_pass(
-        self, dataset_config: BaseHTMLDatasetConfig, query_args: Optional[QueryArgs]
+        self, dataset_config: BaseWebPage, query_args: Optional[QueryArgs]
     ):
         """
         Perform a single pass through of a dataset using specific query args and
@@ -224,20 +222,20 @@ class BaseScraper(threading.Thread):
         """
         self.download_and_process_query(config=dataset_config, query_args=query_args)
 
-        for nested_dataset in dataset_config.nested_datasets:
+        for nested_dataset in dataset_config.nested_web_pages:
             self.process_dataset(
                 dataset_config=nested_dataset, query_set=nested_dataset.query_set
             )
 
     def resolve_inheritances(
-        self, *, dataset_config: BaseHTMLDatasetConfig, set_data_source: bool = True
+        self, *, dataset_config: BaseWebPage, set_data_source: bool = True
     ) -> Optional[bool]:
         """
         Backwards resolve any inherited fields after all dependencies have been exhausted.
         Specify confirm_update as True to return a boolean designating where there was any
         update performed on the dataset configuration.
         """
-        for table_name, table_config in dataset_config._table_configs.items():
+        for table_name, table_config in dataset_config._html_tables.items():
             if set_data_source:
                 data = table_config.data.copy()
 
@@ -255,7 +253,7 @@ class BaseScraper(threading.Thread):
                     table_config.data_source = "downloaded"
 
     def process_dataset(
-        self, dataset_config: BaseHTMLDatasetConfig, query_set: Optional[QuerySet]
+        self, dataset_config: BaseWebPage, query_set: Optional[QuerySet]
     ):
         """
         Process an entire dataset by iterating through its query set and
@@ -283,7 +281,7 @@ class BaseScraper(threading.Thread):
                 )
 
                 if dataset_config.dependencies and not ready_for_save:
-                    for table_config in dataset_config._table_configs.values():
+                    for table_config in dataset_config._html_tables.values():
                         table_config.staged_data = pd.concat(
                             [table_config.staged_data, table_config.data]
                         )
@@ -323,7 +321,7 @@ class BaseScraper(threading.Thread):
                 )
 
                 if dataset_config.dependencies and not ready_for_save:
-                    for table_config in dataset_config._table_configs.values():
+                    for table_config in dataset_config._html_tables.values():
                         table_config.staged_data = pd.concat(
                             [table_config.staged_data, table_config.data]
                         )
@@ -356,7 +354,7 @@ class BaseScraper(threading.Thread):
             if self.RUNNING == False:
                 break
 
-            dataset_info._configure()
+            dataset_info.configure()
 
             query_set = dataset_info.query_set
 

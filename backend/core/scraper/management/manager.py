@@ -2,87 +2,32 @@ import imp
 import os
 from pathlib import Path
 from pprint import PrettyPrinter
-from typing import Callable, Optional
 
-import pandas as pd
-from core.scraper.base import (
-    BaseHTMLDatasetConfig,
-    BaseScraper,
-    DatasetConfigKwargs,
-    ScraperKwargs,
-    TableConfig,
-    TableConfigArgs,
+from core.scraper import BaseHTMLTable, BaseWebPage, BaseWebScraper
+from lib.util import camel_to_snake_case, is_dir_module, is_file_module, list_difference
+from pydantic import ValidationError
+
+from .file_configs.validators import (
+    HTMLTableFileConfig,
+    WebPageFileConfig,
+    WebScraperFileConfig,
 )
-from core.scraper.base.table_form import BaseTableForm
-from core.sql_app.register.base_table import BaseTable
-from core.util.strings import camel_to_snake_case
-from pydantic import BaseModel, ValidationError
-from typing_extensions import TypedDict
 
 pp = PrettyPrinter(depth=4)
 
 
-class TableConfigFileParams(BaseModel):
-    IDENTIFICATION_FUNCTION: Callable[[list[pd.DataFrame]], Optional[pd.DataFrame]]
-    SQL_TABLE: BaseTable
-    NAME: str
-    TABLE_SERIALIZER: BaseTableForm
-    CONFIG: TableConfigArgs = {}
+MODULE_IGNORE = ["__init__.py", "__pycache__", "util"]
 
 
-class DatasetConfigFileParams(BaseModel):
-    BASE_DOWNLOAD_URL: str
-    NAME: str
-    CONFIG: DatasetConfigKwargs = {}
-
-
-class FileConfigDependencyType(TypedDict):
-    source_name: str
-    source_table_name: str
-    query_set_provider: Callable[[pd.DataFrame], list[dict[str, str]]]
-
-
-class FileConfigInheritanceType(TypedDict):
-    source: tuple[str, str]
-    inheritance_function: Callable[[pd.DataFrame], pd.DataFrame]
-
-
-class ScraperConfigFileParams(BaseModel):
-    NAME: str
-    DEPENDENCIES: dict[str, FileConfigDependencyType] = {}
-    INHERITANCES: dict[tuple[str, str], FileConfigInheritanceType] = {}
-    CONFIG: ScraperKwargs = {}
-
-
-module_ignore = ["__init__.py", "__pycache__", "util"]
-
-
-def ignore_modules(*, modules: list[str]):
-    for module in module_ignore:
-        if module in modules:
-            modules.remove(module)
-    return modules
-
-
-def is_dir_module(*, module_path: str) -> bool:
-    return os.path.isdir(module_path) and "__init__.py" in os.listdir(module_path)
-
-
-def is_file_module(*, module_name: str) -> bool:
-    return module_name.split(".")[-1] == "py"
-
-
-def load_tables(path: str) -> dict[str, TableConfig]:
-    tables: dict[str, TableConfig] = {}
+def load_tables(path: str) -> dict[str, BaseHTMLTable]:
+    tables: dict[str, BaseHTMLTable] = {}
 
     list_modules = os.listdir(path)
-    list_modules = ignore_modules(modules=list_modules)
+    list_modules = list_difference(source=list_modules, to_remove=MODULE_IGNORE)
 
     for module_name in list_modules:
         is_file = is_file_module(module_name=module_name)
         is_dir = is_dir_module(module_path=path + os.sep + module_name)
-
-        # print(module_name)
 
         if is_dir:
             table_settings = imp.load_source(
@@ -95,37 +40,33 @@ def load_tables(path: str) -> dict[str, TableConfig]:
         table_settings_config = table_settings.__dict__.copy()
 
         try:
-            obj = TableConfigFileParams(**table_settings_config)
+            obj = HTMLTableFileConfig(**table_settings_config)
 
         except ValidationError as exc:
             raise Exception(f"ConfigurationError for file {module_name}: {exc}")
 
-        table = TableConfig(
+        table = BaseHTMLTable(
             identification_function=obj.IDENTIFICATION_FUNCTION,
-            sql_table=obj.SQL_TABLE,
+            db_table=obj.SQL_TABLE,
             name=obj.NAME,
-            table_serializer=obj.TABLE_SERIALIZER,
+            serializer=obj.TABLE_SERIALIZER,
             **obj.CONFIG,
         )
 
         tables[table.name] = table
 
-    # print(tables)
-
     return tables
 
 
-def load_datasets(path: str = ".") -> dict[str, BaseHTMLDatasetConfig]:
-    datasets: dict[str, BaseHTMLDatasetConfig] = {}
+def load_datasets(path: str = ".") -> dict[str, BaseWebPage]:
+    datasets: dict[str, BaseWebPage] = {}
 
     list_modules = os.listdir(path)
-    list_modules = ignore_modules(modules=list_modules)
+    list_modules = list_difference(source=list_modules, to_remove=MODULE_IGNORE)
 
     for module_name in list_modules:
         is_dir = is_dir_module(module_path=path + os.sep + module_name)
         is_file = is_file_module(module_name=module_name)
-
-        # print(module_name)
 
         if is_dir:
             tables = load_tables(path + os.sep + module_name + os.sep + "tables")
@@ -139,20 +80,15 @@ def load_datasets(path: str = ".") -> dict[str, BaseHTMLDatasetConfig]:
             tables = []
 
         dataset_settings_config = dataset_settings.__dict__.copy()
-        # dataset_settings_config = tables
-        # dataset_settings_config[]
-
-        # pp.pprint(dataset_settings_config)
 
         try:
-            obj = DatasetConfigFileParams(**dataset_settings_config)
-            obj.CONFIG["table_configs"] = tables
-            # pp.pprint(obj.model_dump())
+            obj = WebPageFileConfig(**dataset_settings_config)
+            obj.CONFIG["html_tables"] = tables
 
         except ValidationError as exc:
             raise exc
 
-        dataset = BaseHTMLDatasetConfig(
+        dataset = BaseWebPage(
             base_download_url=obj.BASE_DOWNLOAD_URL,
             name=obj.NAME,
             **obj.CONFIG,
@@ -160,19 +96,17 @@ def load_datasets(path: str = ".") -> dict[str, BaseHTMLDatasetConfig]:
 
         datasets[dataset.name] = dataset
 
-    # print(datasets)
-
     return datasets
 
 
-def load_scrapers(path: str = ".") -> list[BaseScraper]:
-    scrapers: list[BaseScraper] = []
+def load_scrapers(path: str = ".") -> list[BaseWebScraper]:
+    scrapers: list[BaseWebScraper] = []
 
     if path == ".":
         path = str(Path(__file__).parent)
 
     list_modules = os.listdir(path)
-    list_modules = ignore_modules(modules=list_modules)
+    list_modules = list_difference(source=list_modules, to_remove=MODULE_IGNORE)
 
     for module_name in list_modules:
 
@@ -195,7 +129,7 @@ def load_scrapers(path: str = ".") -> list[BaseScraper]:
 
         scraper_settings_config = scraper_settings.__dict__.copy()
         try:
-            scraper_config = ScraperConfigFileParams(**scraper_settings_config)
+            scraper_config = WebScraperFileConfig(**scraper_settings_config)
 
         except ValidationError as exc:
             raise exc
@@ -213,8 +147,8 @@ def load_scrapers(path: str = ".") -> list[BaseScraper]:
             )
 
         for base_table_name, inheritance_config in scraper_config.INHERITANCES.items():
-            base_table = datasets[base_table_name[0]]._table_configs[base_table_name[1]]
-            source_table = datasets[inheritance_config["source"][0]]._table_configs[
+            base_table = datasets[base_table_name[0]]._html_tables[base_table_name[1]]
+            source_table = datasets[inheritance_config["source"][0]]._html_tables[
                 inheritance_config["source"][1]
             ]
 
@@ -225,7 +159,7 @@ def load_scrapers(path: str = ".") -> list[BaseScraper]:
 
         scraper_config.CONFIG["datasets"] = datasets
 
-        scraper = BaseScraper(
+        scraper = BaseWebScraper(
             name=scraper_config.NAME,
             **scraper_config.CONFIG,
         )
@@ -236,7 +170,6 @@ def load_scrapers(path: str = ".") -> list[BaseScraper]:
 
 
 def add_scraper(name: str, path: str = "."):
-    # os.makedirs()
     snake_case_name = camel_to_snake_case(name)
     scraper_dir = path + os.sep + snake_case_name
     os.mkdir(scraper_dir)
@@ -246,6 +179,8 @@ def add_scraper(name: str, path: str = "."):
             str(Path(__file__).parent)
             + os.sep
             + "file_configs"
+            + os.sep
+            + "static"
             + os.sep
             + "scraper.config",
             "r",
@@ -259,7 +194,6 @@ def add_scraper(name: str, path: str = "."):
 
 
 def add_dataset(scraper_name: str, name: str, path: str = "."):
-    # os.makedirs()
     scraper_dir = path + os.sep + camel_to_snake_case(scraper_name)
     if not os.path.isdir(scraper_dir):
         raise Exception(f"Scraper {scraper_name} does not exist in the path: {path}.")
@@ -279,6 +213,8 @@ def add_dataset(scraper_name: str, name: str, path: str = "."):
             + os.sep
             + "file_configs"
             + os.sep
+            + "static"
+            + os.sep
             + "dataset.config",
             "r",
         ) as example_init_file:
@@ -291,7 +227,6 @@ def add_dataset(scraper_name: str, name: str, path: str = "."):
 
 
 def add_table(scraper_name: str, dataset_name: str, name: str, path: str = "."):
-    # os.makedirs()
     scraper_dir = path + os.sep + camel_to_snake_case(scraper_name)
     if not os.path.isdir(scraper_dir):
         raise Exception(f"Scraper {scraper_name} does not exist in the path: {path}.")
@@ -319,6 +254,8 @@ def add_table(scraper_name: str, dataset_name: str, name: str, path: str = "."):
             + os.sep
             + "file_configs"
             + os.sep
+            + "static"
+            + os.sep
             + "table.config",
             "r",
         ) as example_init_file:
@@ -326,5 +263,3 @@ def add_table(scraper_name: str, dataset_name: str, name: str, path: str = "."):
 
         init_file.write(example_config)
         init_file.close()
-
-    # os.mkdir(dataset_dir + os.sep + "tables")

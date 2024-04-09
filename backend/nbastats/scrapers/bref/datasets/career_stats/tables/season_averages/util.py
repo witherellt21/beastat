@@ -3,17 +3,17 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from core.scraper.base.table_form import (
-    BaseTableForm,
+from core.scraper import (
+    BaseHTMLTableSerializer,
     CharField,
     FloatField,
     IntegerField,
     QueryArgField,
+    QueryArgs,
     RenameField,
     TransformationField,
 )
-from core.scraper.base.util import QueryArgs
-from core.util.nullables import sum_nullables
+from lib.util import sum_nullables
 from nbastats.lib.string_helpers import convert_season_to_year
 from nbastats.sql_app.register import SeasonAveragess, Teams
 
@@ -42,7 +42,7 @@ def get_cached_player_season_averages_data(query_args: QueryArgs):
     return data
 
 
-class SeasonAveragesTableEntrySerializer(BaseTableForm):
+class SeasonAveragesTableEntrySerializer(BaseHTMLTableSerializer):
     id = CharField(default=uuid.uuid4)
     player_id = QueryArgField()
     Season = TransformationField(int, convert_season_to_year)
