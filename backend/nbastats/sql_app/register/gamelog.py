@@ -4,11 +4,12 @@ from typing import Any, Optional, Union
 import pandas as pd
 import peewee
 from core.sql_app.register import AdvancedQuery, BaseTable
-from nbastats.sql_app.models import Game, Gamelog
-from nbastats.sql_app.register.player import PlayerTable
-from nbastats.sql_app.serializers import GamelogReadSerializer, GamelogSerializer
 from playhouse.shortcuts import model_to_dict
 from pydantic import BaseModel
+
+from .models import Game, Gamelog
+from .player import PlayerTable
+from .serializers import GamelogReadSerializer, GamelogSerializer
 
 
 class GamelogQuery(BaseModel):

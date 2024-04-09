@@ -3,10 +3,16 @@ from typing import Optional
 
 import pandas as pd
 from core.sql_app.register import BaseTable
-from core.util.strings import find_closest_match
-from nbastats.sql_app.models import Player, PropLine
-from nbastats.sql_app.serializers import PlayerReadSerializer, PlayerSerializer
+from lib.string_matching import find_closest_match
 from playhouse.shortcuts import model_to_dict
+
+from .models import Player, PropLine
+from .serializers import (
+    PlayerPropReadSerializer,
+    PlayerPropSerializer,
+    PlayerReadSerializer,
+    PlayerSerializer,
+)
 
 logger = logging.getLogger("main")
 
@@ -43,7 +49,7 @@ class PlayerTable(BaseTable):
             player_names: list[str] = self.get_column_values(column="name")
 
             player_name_match: Optional[str] = find_closest_match(
-                value=player_name, search_list=player_names
+                target=player_name, search_list=player_names
             )
 
             # if no match found, return None
@@ -55,3 +61,10 @@ class PlayerTable(BaseTable):
             player: PlayerSerializer = self.get_record(query={"name": player_name_match})  # type: ignore
 
         return player.id
+
+
+class PlayerPropTable(BaseTable):
+    MODEL_CLASS = PropLine
+    SERIALIZER_CLASS = PlayerPropSerializer
+    READ_SERIALIZER_CLASS = PlayerPropReadSerializer
+    PKS = ["player_id", "stat"]

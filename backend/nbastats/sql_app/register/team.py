@@ -4,9 +4,10 @@ from typing import Literal, Optional, overload
 import numpy as np
 import peewee
 from core.sql_app.register import BaseTable
-from nbastats.sql_app.models import Team
-from nbastats.sql_app.serializers import TeamReadSerializer, TeamSerializer
 from playhouse.shortcuts import model_to_dict
+
+from .models import Team
+from .serializers import TeamReadSerializer, TeamSerializer
 
 logger = logging.getLogger("main")
 

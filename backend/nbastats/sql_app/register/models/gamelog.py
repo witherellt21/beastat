@@ -1,12 +1,4 @@
-from peewee import (
-    BooleanField,
-    CharField,
-    DateField,
-    FloatField,
-    ForeignKeyField,
-    IntegerField,
-    UUIDField,
-)
+from peewee import BooleanField, CharField, FloatField, ForeignKeyField, UUIDField
 
 from .base_model import BaseModel
 from .game import Game
@@ -19,15 +11,7 @@ class Gamelog(BaseModel):
     G = FloatField(null=True)
     game = ForeignKeyField(Game, backref="boxscore")
     Age = CharField()
-    # Tm = ForeignKeyField(Team, backref="player_gamelogs")
-
-    # Date = DateField()
-    # Tm = ForeignKeyField(Team, backref="player_gamelogs")
-    # Opp = ForeignKeyField(Team, backref="opponent_gamelogs")
     home = BooleanField()
-    # result = CharField()
-    # margin = IntegerField()
-
     GS = FloatField(null=True)
     MP = FloatField(null=True)
     FG = FloatField(null=True)

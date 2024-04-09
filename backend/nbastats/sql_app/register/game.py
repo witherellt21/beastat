@@ -1,18 +1,18 @@
-import uuid
 from datetime import datetime
-from typing import Literal, Optional, overload
+from typing import Literal, overload
 
 import pandas as pd
 from core.sql_app.register import BaseTable
-from nbastats.sql_app.models import Game, GameLine, Team
-from nbastats.sql_app.register.team import TeamTable
-from nbastats.sql_app.serializers import (
+from playhouse.shortcuts import model_to_dict
+
+from .models import Game, GameLine
+from .serializers import (
     GameLineReadSerializer,
     GameLineSerializer,
     GameReadSerializer,
     GameSerializer,
 )
-from playhouse.shortcuts import model_to_dict
+from .team import TeamTable
 
 
 class GameTable(BaseTable):

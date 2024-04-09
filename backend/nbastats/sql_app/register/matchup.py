@@ -1,6 +1,7 @@
 from core.sql_app.register import BaseTable
-from nbastats.sql_app.models import Matchup
-from nbastats.sql_app.serializers import MatchupReadSerializer, MatchupSerializer
+
+from .models import Matchup
+from .serializers import MatchupReadSerializer, MatchupSerializer
 
 
 class MatchupTable(BaseTable):

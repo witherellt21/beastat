@@ -1,11 +1,9 @@
 from core.sql_app.register import BaseTable
-from nbastats.sql_app.models import CareerStats
-from nbastats.sql_app.register.player import PlayerTable
-from nbastats.sql_app.register.team import TeamTable
-from nbastats.sql_app.serializers import (
-    CareerStatsReadSerializer,
-    CareerStatsSerializer,
-)
+
+from .models import CareerStats
+from .player import PlayerTable
+from .serializers import CareerStatsReadSerializer, CareerStatsSerializer
+from .team import TeamTable
 
 
 class CareerStatsTable(BaseTable):

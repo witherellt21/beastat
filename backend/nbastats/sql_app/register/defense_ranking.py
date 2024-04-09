@@ -1,6 +1,7 @@
 from core.sql_app.register import BaseTable
-from nbastats.sql_app.models import DefenseRanking
-from nbastats.sql_app.serializers import DefenseRankingSerializer
+
+from .models import DefenseRanking
+from .serializers import DefenseRankingSerializer
 
 
 class DefenseRankingTable(BaseTable):
