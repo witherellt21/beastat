@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import datetime
 from typing import Any, Literal, Optional, Type, Union, overload
@@ -29,7 +30,7 @@ class BaseTable:
 
     DEPENDENCIES: list[Type["BaseTable"]] = []
 
-    def __init__(self, db: peewee.Database):
+    def __init__(self, db: peewee.Database, source: str = ""):
         if not self.model_class:
             raise Exception("Must specify the MODEL_CLASS class attribute.")
         if not self.serializer_class:
@@ -45,6 +46,9 @@ class BaseTable:
             self.db.create_tables([self.model_class])
         else:
             raise Exception("DB not connected. Cannot perform operations on the table.")
+
+        if source:
+            load_fixture(json_file=source, table=self)
 
     @classmethod
     def validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> "BaseTable":
@@ -447,3 +451,38 @@ class BaseTable:
 
         # Serialize rows and convert to desired output type
         return count
+
+
+def load_fixture(json_file: str, table: BaseTable):
+    """
+    Load static data from json file to table.
+    """
+    try:
+        with open(json_file, "r") as teams_file:
+            team_data = json.load(teams_file)
+            for record in team_data:
+                table.update_or_insert_record(data=record)
+
+    except FileNotFoundError as e:
+        print(f"Unable to download team data. {e}")
+
+
+def dump_fixture(json_file: str, table: BaseTable):
+    """
+    Dump static data from table to json file.
+    """
+    try:
+        with open(json_file, "w") as file:
+            full_data = []
+
+            records = table.get_all_records()
+            for record in records:
+                data = record.model_dump(exclude={"id"})
+                data["id"] = str(record.id)  # type: ignore
+
+                full_data.append(data)
+
+            file.write(json.dumps(full_data))
+
+    except FileNotFoundError as e:
+        print(f"Unable to download team data. {e}")

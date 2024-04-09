@@ -1,17 +1,18 @@
 import datetime
 
-from sklearn.tree import DecisionTreeClassifier
-from sql_app.register import Games, Gamelogs
-from sql_app.register.gamelog import GamelogQuery
-
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.linear_model import Lasso, LinearRegression
-from sklearn.preprocessing import LabelEncoder, StandardScaler, OneHotEncoder
-from sklearn.model_selection import GridSearchCV
-
 import pandas as pd
-
-from sklearn.preprocessing import MultiLabelBinarizer
+from sklearn.linear_model import Lasso, LinearRegression
+from sklearn.model_selection import GridSearchCV
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import (
+    LabelEncoder,
+    MultiLabelBinarizer,
+    OneHotEncoder,
+    StandardScaler,
+)
+from sklearn.tree import DecisionTreeClassifier
+from sql_app.tables import Gamelogs, Games
+from sql_app.tables.gamelog import GamelogQuery
 
 
 def get_teammate_played(player_id, date, team):

@@ -1,17 +1,22 @@
 import datetime
 import math
 from typing import Optional
+
 import numpy as np
 import pandas as pd
-from sql_app.register.gamelog import Gamelogs, GamelogQuery
-from sql_app.register.player import Players
-from sklearn.model_selection import train_test_split, cross_val_score
+from nbastats.sql_app.register import Gamelogs
+from nbastats.sql_app.register.gamelog import GamelogQuery
 from sklearn.linear_model import Lasso, LinearRegression
-from sklearn.model_selection import GridSearchCV
-from sklearn.preprocessing import LabelEncoder, StandardScaler, OneHotEncoder
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import (
+    GridSearchCV,
+    StratifiedKFold,
+    cross_val_score,
+    train_test_split,
+)
 from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
 from sklearn.tree import DecisionTreeClassifier
+from sql_app.register.player import Players
 
 # import matplotlib.pyplot as plt
 

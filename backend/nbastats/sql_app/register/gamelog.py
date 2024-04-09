@@ -3,7 +3,7 @@ from typing import Any, Optional, Union
 
 import pandas as pd
 import peewee
-from core.sql_app.register import AdvancedQuery, BaseTable
+from core.sql_app.tables import AdvancedQuery, BaseTable
 from playhouse.shortcuts import model_to_dict
 from pydantic import BaseModel
 

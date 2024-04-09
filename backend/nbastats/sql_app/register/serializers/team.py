@@ -1,4 +1,5 @@
 from typing import Annotated
+from uuid import UUID
 
 from pydantic import UUID4
 from pydantic import BaseModel as BaseSerializer
@@ -13,4 +14,4 @@ class TeamSerializer(BaseSerializer):
 
 
 class TeamReadSerializer(TeamSerializer):
-    pass
+    id: UUID4

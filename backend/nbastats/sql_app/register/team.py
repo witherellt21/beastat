@@ -3,7 +3,7 @@ from typing import Literal, Optional, overload
 
 import numpy as np
 import peewee
-from core.sql_app.register import BaseTable
+from core.sql_app.tables import BaseTable
 from playhouse.shortcuts import model_to_dict
 
 from .models import Team

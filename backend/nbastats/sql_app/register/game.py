@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal, overload
 
 import pandas as pd
-from core.sql_app.register import BaseTable
+from core.sql_app.tables import BaseTable
 from playhouse.shortcuts import model_to_dict
 
 from .models import Game, GameLine

@@ -1,4 +1,4 @@
-from core.sql_app.register import BaseTable
+from core.sql_app.tables import BaseTable
 
 from .models import Matchup
 from .serializers import MatchupReadSerializer, MatchupSerializer
