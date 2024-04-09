@@ -55,7 +55,7 @@ if __name__ == "__main__":
             sleep(1)
 
         for scraper in scrapers:
-            scraper.kill_process()
+            scraper.kill()
 
     if sys.argv[1] == "makescraper":
         scrapers = create_scraper(sys.argv[2])

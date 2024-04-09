@@ -69,7 +69,7 @@ class BaseHTMLTable(
 
         # # extract info from the given dataset
         self.nan_values = kwargs.get("nan_values", self.__class__.NAN_VALUES)
-        self.cached_query_generator = kwargs.get(
+        self._cached_query_generator = kwargs.get(
             "cached_query_generator", self.__class__.CACHED_QUERY_GENERATOR
         )
 
@@ -87,15 +87,6 @@ class BaseHTMLTable(
     def serializer(self):
         return self._serializer
 
-    def identify(self, tables: list[pd.DataFrame]):
-        return self._identification_function(tables)
-
-    def cached_data(self, *, query_args: Optional[QueryArgs] = None) -> pd.DataFrame:
-        if query_args == None:
-            return pd.DataFrame()
-
-        return self.cached_query_generator(query_args)
-
     def add_inheritance(
         self,
         *,
@@ -108,11 +99,20 @@ class BaseHTMLTable(
             )
         )
 
-    def _clean_data(self, data: pd.DataFrame) -> pd.DataFrame:
+    def identify(self, tables: list[pd.DataFrame]):
+        return self._identification_function(tables)
+
+    def cached_data(self, *, query_args: Optional[QueryArgs] = None) -> pd.DataFrame:
+        if query_args == None:
+            return pd.DataFrame()
+
+        return self._cached_query_generator(query_args)
+
+    def clean(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Manipulate the dataset column types, add columns, slice columns.
 
-        **Override this for anything you want to be done to the dataset AFTER saving.
+        **Override this for anything you want to be done to the dataset BEFORE saving.
         """
         if data.empty:
             return pd.DataFrame()
@@ -137,3 +137,35 @@ class BaseHTMLTable(
             data = data.set_index(self.primary_key)
 
         return data
+
+    def save(self) -> None:
+        """
+        Save the data for the dataset and any nested datasets.
+        """
+        # self.logger.info(f"Saving data for table {table_config.name}.")
+
+        # Use staging if there is backed up data that needs to be saved that was
+        # waiting for a dependency
+        data = self.data if self.staged_data.empty else self.staged_data
+
+        # reset the staged data as we have successfully downloaded
+        self.staged_data = pd.DataFrame()
+
+        data = data.fillna(np.nan).replace([np.nan], [None])
+
+        # self.logger.info("\n" + str(data))
+
+        # print(data[])
+
+        for index, row in data.iterrows():
+            row_data = row.to_dict()
+            row_data["id"] = index
+            # if index == None:
+            # self.logger.warning(row)
+            self._db_table.update_or_insert_record(data=row_data)
+
+        # self.logger.debug(f"\n{data}")
+
+    def push_data(self) -> None:
+        self.staged_data = pd.concat([self.staged_data, self.data])
+        self.data = pd.DataFrame()

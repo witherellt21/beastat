@@ -1,16 +1,11 @@
 import logging
-import threading
 import time
-import traceback
 from typing import Literal, NotRequired, Optional, Union, Unpack
 
-import numpy as np
-import pandas as pd
 from lib.dependency_trees import topological_sort_dependency_tree
 from typing_extensions import TypedDict
 
-from .html_table import BaseHTMLTable
-from .util import QueryArgs, QuerySet
+from .util import QueryArgs, QuerySet, Thread
 from .web_page import BaseWebPage
 
 DEFAULT_LOG_FORMATTER = logging.Formatter(
@@ -23,104 +18,89 @@ STREAM_HANDLER.setFormatter(DEFAULT_LOG_FORMATTER)
 
 
 class WebScraperKwargs(TypedDict):
-    datasets: NotRequired[dict[str, BaseWebPage]]
+    web_pages: NotRequired[dict[str, BaseWebPage]]
     log_level: NotRequired[int]
     download_rate: NotRequired[int]
     active: NotRequired[bool]
     align: NotRequired[Union[Literal["nested"], Literal["inline"]]]
 
 
-class BaseWebScraper(threading.Thread):
+class BaseWebScraper(Thread):
 
-    def __init__(self, *, name: str, **kwargs: Unpack[WebScraperKwargs]) -> None:
-        threading.Thread.__init__(self, name=name)
+    def __init__(self, name: str, *args, **kwargs: Unpack[WebScraperKwargs]) -> None:
+        super().__init__(name, args, kwargs)
 
-        self._dataset_configs: dict[str, BaseWebPage] = kwargs.get("datasets") or {}
+        self._web_pages: dict[str, BaseWebPage] = kwargs.get("web_pages") or {}
         self._configured: bool = False
-
-        self.RUNNING: Literal[False, True] = kwargs.get("active", True)
-
-        self.logger = logging.getLogger(name)
-        self.logger.setLevel(kwargs.get("log_level", logging.INFO))
-        self.logger.addHandler(STREAM_HANDLER)
 
         self.download_rate = kwargs.get("download_rate", 5)
         self.last_download_time = time.time()
 
         self.alignment = kwargs.get("align", "inline")
 
+    @property
+    def is_configured(self):
+        return self._configured
+
     def __str__(self):
         return f"{self.name}Scraper"
 
-    def set_log_level(self, log_level: int):
-        self.logger.setLevel(log_level)
-
-    def add_dataset_config(self, dataset_config: BaseWebPage):
+    def add_web_page(self, web_page: BaseWebPage):
         """
         Add a dataset configuration to the scraper.
         """
-        self._dataset_configs[dataset_config.name] = dataset_config
+        self._web_pages[web_page.name] = web_page
 
     def configure(self):
         """
-        Configure the dataset_configurations based on dependency tree.
+        Configure the web_pages based on dependency tree.
         Must be run before the datascraper starts.
         """
-        sorted = topological_sort_dependency_tree(dependency_tree=self._dataset_configs)  # type: ignore
+        sorted = topological_sort_dependency_tree(dependency_tree=self._web_pages)  # type: ignore
 
-        dataset_configs: dict[str, BaseWebPage] = {}
+        web_pages: dict[str, BaseWebPage] = {}
 
-        for dataset_name in sorted:
-            self._dataset_configs[dataset_name].configure()
+        for web_page_name in sorted:
+            self._web_pages[web_page_name].configure()
 
         if self.alignment == "nested":
-            current_config = dataset_configs[sorted[0]] = self._dataset_configs[
-                sorted[0]
-            ]
-            for dataset_name in sorted[1:]:
-                nested_config = self._dataset_configs[dataset_name]
-                current_config.add_nested_web_page(web_page=nested_config)
-                current_config = nested_config
+            current_page = web_pages[sorted[0]] = self._web_pages[sorted[0]]
+            for web_page_name in sorted[1:]:
+                nested_web_page = self._web_pages[web_page_name]
+                current_page.add_nested_web_page(web_page=nested_web_page)
+                current_page = nested_web_page
 
         else:
-            for dataset_name in sorted:
-                dataset_configs[dataset_name] = self._dataset_configs[dataset_name]
+            for web_page_name in sorted:
+                web_pages[web_page_name] = self._web_pages[web_page_name]
 
-        self._dataset_configs = dataset_configs
+        self._web_pages = web_pages
 
         self._configured = True
 
-    def identify_table(
-        self, html_table: BaseHTMLTable, tables: list[pd.DataFrame]
-    ) -> Optional[pd.DataFrame]:
-        """
-        Use identification function to identify the correct table for the configuration
-        """
-        return html_table.identify(tables)
-
-    def download_and_process_query(
-        self, *, config: BaseWebPage, query_args: Optional[QueryArgs] = None
+    def download_web_page(
+        self, *, web_page: BaseWebPage, query_args: Optional[QueryArgs] = None
     ) -> None:
 
         # get the download url from the query args
         url = (
-            config.get_download_url(query_args=query_args)
+            web_page.get_download_url(query_args=query_args)
             if query_args
-            else config.base_download_url
+            else web_page.base_download_url
         )
 
         # if this specific query is already save in the database, fetch that instead
-        config.load_cached_data(query_args=query_args)
+        web_page.load_cached_data(query_args=query_args)
         if all(
             [
                 table_config.data_source == "cached"
-                for table_config in config._html_tables.values()
+                for table_config in web_page._html_tables.values()
             ]
         ):
-            config.data_source = "cached"
+            web_page.data_source = "cached"
 
         else:
-            config.data_source = "downloaded"
+            web_page.data_source = "downloaded"
 
             # self.logger.info(f"Downloading data for {config.name}.")
             if self.last_download_time:
@@ -133,98 +113,58 @@ class BaseWebScraper(threading.Thread):
             if wait:
                 time.sleep(wait)
 
-            tables = config.extract_tables(url=url)
+            tables = web_page.extract_tables(url=url)
             self.last_download_time = time.time()
 
             # find the table matching the identification function. Error if not found
-            for table_name, table_config in config._html_tables.items():
-                data = self.identify_table(html_table=table_config, tables=tables)
+            for table_name, table in web_page._html_tables.items():
+                data = table.identify(tables=tables)
 
                 if data is None:
                     raise ValueError(f"No matching table found for {table_name}.")
 
-                # print("DATA", data)
                 # Add any of the query arguments to the dataframe if desired.
                 for (
                     df_column,
                     query_key,
-                ) in table_config.serializer.query_arg_fields.items():
-                    # print("QUERY", query_args)
+                ) in table.serializer.query_arg_fields.items():
                     if query_args and query_key in query_args:
                         data[df_column] = query_args[query_key]
 
-                # print("DATA2", data)
                 # Apply each cleaning function
                 try:
-                    table_config.data = table_config._clean_data(data=data)
-                    # table_config.data_source = "downloaded"
-                    self.logger.info(f"Downloaded data for {table_config.name}.")
+                    table.data = table.clean(data=data)
+
+                    self.logger.info(f"Downloaded data for {table.name}.")
                 except Exception as e:
-                    raise Exception(f"{table_config.name}: {e}")
+                    raise Exception(f"{table.name}: {e}")
 
-                # return data
-
-    def save_data(self, dataset_config: BaseWebPage) -> None:
+    def save_web_page(self, web_page: BaseWebPage) -> None:
         """
         Save the data for the dataset and any nested datasets.
         """
-        self.logger.info(f"Saving data to database for dataset {dataset_config.name}.")
+        self.logger.info(f"Saving data to database for dataset {web_page.name}.")
 
         # Use staging if there is backed up data that needs to be saved that was
         # waiting for a dependency
-        for table_config in dataset_config._html_tables.values():
-            if table_config.data_source != "cached":
-                self.save_table(table_config=table_config)
+        for table in web_page._html_tables.values():
+            if table.data_source != "cached":
+                table.save()
 
         # recurse into nested datatsets
-        for nested_config in dataset_config.nested_web_pages:
-            self.save_data(dataset_config=nested_config)
+        for nested_web_page in web_page.nested_web_pages:
+            self.save_web_page(web_page=nested_web_page)
 
-    def save_table(self, table_config: BaseHTMLTable) -> None:
-        """
-        Save the data for the dataset and any nested datasets.
-        """
-        self.logger.info(f"Saving data for table {table_config.name}.")
-
-        # Use staging if there is backed up data that needs to be saved that was
-        # waiting for a dependency
-        data = (
-            table_config.data
-            if table_config.staged_data.empty
-            else table_config.staged_data
-        )
-
-        # reset the staged data as we have successfully downloaded
-        table_config.staged_data = pd.DataFrame()
-
-        data = data.fillna(np.nan).replace([np.nan], [None])
-
-        self.logger.info("\n" + str(data))
-
-        # print(data[])
-
-        for index, row in data.iterrows():
-            print(row)
-            row_data = row.to_dict()
-            row_data["id"] = index
-            if index == None:
-                self.logger.warning(row)
-            table_config._db_table.update_or_insert_record(data=row_data)
-
-        self.logger.debug(f"\n{data}")
-
-    def perform_single_pass(
-        self, dataset_config: BaseWebPage, query_args: Optional[QueryArgs]
-    ):
+    def forward_pass(self, web_page: BaseWebPage, query_args: Optional[QueryArgs]):
         """
         Perform a single pass through of a dataset using specific query args and
         nesting inside nested datasets.
         """
-        self.download_and_process_query(config=dataset_config, query_args=query_args)
+        self.download_web_page(web_page=web_page, query_args=query_args)
 
-        for nested_dataset in dataset_config.nested_web_pages:
-            self.process_dataset(
-                dataset_config=nested_dataset, query_set=nested_dataset.query_set
+        for nested_web_page in web_page.nested_web_pages:
+            self.process_web_page(
+                web_page=nested_web_page, query_set=nested_web_page.query_set
             )
 
     def resolve_inheritances(
@@ -252,92 +192,60 @@ class BaseWebScraper(threading.Thread):
                     dataset_config.data_source = "downloaded"
                     table_config.data_source = "downloaded"
 
-    def process_dataset(
-        self, dataset_config: BaseWebPage, query_set: Optional[QuerySet]
+    def process_web_page_query(
+        self, web_page: BaseWebPage, query: Optional[QueryArgs], ready_for_save: bool
     ):
+        self.forward_pass(web_page=web_page, query_args=query)
+
+        self.resolve_inheritances(dataset_config=web_page, set_data_source=True)
+
+        self.logger.debug(
+            f"{web_page.name}: Ready for save = {ready_for_save} : Is already saved = {web_page.data_source == 'cached'}"
+        )
+
+        if web_page.dependencies and not ready_for_save:
+            for table in web_page._html_tables.values():
+                table.push_data()
+
+        elif web_page.data_source != "cached":
+            self.save_web_page(web_page=web_page)
+
+        else:
+            self.logger.info(f"No new data to save for dataset: {web_page.name}.")
+
+    def process_web_page(self, web_page: BaseWebPage, query_set: Optional[QuerySet]):
         """
         Process an entire dataset by iterating through its query set and
         performing a single pass, resolving inheritances, and then saving
         all data (including nested dataset functionality).
         """
+        ready_for_save: bool = all(
+            [
+                dependency.source.data_source == "cached"
+                for dependency in web_page.dependencies
+            ]
+        )
 
-        if query_set is None:
-            if dataset_config.static:
-                ready_for_save: bool = all(
-                    [
-                        dependency.source.data_source == "cached"
-                        for dependency in dataset_config.dependencies
-                    ]
-                )
-
-                self.perform_single_pass(dataset_config=dataset_config, query_args=None)
-
-                self.resolve_inheritances(
-                    dataset_config=dataset_config, set_data_source=True
-                )
-
-                self.logger.debug(
-                    f"{dataset_config.name}: Ready for save = {ready_for_save} : Is already saved = {dataset_config.data_source == 'cached'}"
-                )
-
-                if dataset_config.dependencies and not ready_for_save:
-                    for table_config in dataset_config._html_tables.values():
-                        table_config.staged_data = pd.concat(
-                            [table_config.staged_data, table_config.data]
-                        )
-
-                elif dataset_config.data_source != "cached":
-                    self.save_data(dataset_config=dataset_config)
-
-                else:
-                    self.logger.info(
-                        f"No new data to save for dataset: {dataset_config.name}."
-                    )
+        if query_set is None and web_page.static:
+            queries = [None]
+        elif query_set:
+            queries = query_set
         else:
-            ready_for_save: bool = all(
-                [
-                    dependency.source.data_source == "cached"
-                    for dependency in dataset_config.dependencies
-                ]
+            raise Exception("Unknown exception at process_web_page()")
+
+        idx, n = 0, len(queries)
+
+        self.logger.debug(f"Beginning download of query set: {query_set}")
+        for query in queries:
+            if self.RUNNING == False:
+                break
+
+            self.process_web_page_query(web_page, query, ready_for_save)
+
+            idx += 1
+            self.logger.debug(
+                f"{web_page.name} query set {round(idx/n * 100, 2)}% complete."
             )
-
-            idx, n = 0, len(query_set)
-
-            self.logger.info(f"Beginning download of query set: {query_set}")
-            for query in query_set:
-                if self.RUNNING == False:
-                    break
-
-                self.perform_single_pass(
-                    dataset_config=dataset_config, query_args=query
-                )
-
-                self.resolve_inheritances(
-                    dataset_config=dataset_config, set_data_source=True
-                )
-
-                self.logger.debug(
-                    f"{dataset_config.name}: Ready for save = {ready_for_save} : Is already saved = {dataset_config.data_source == 'cached'}"
-                )
-
-                if dataset_config.dependencies and not ready_for_save:
-                    for table_config in dataset_config._html_tables.values():
-                        table_config.staged_data = pd.concat(
-                            [table_config.staged_data, table_config.data]
-                        )
-
-                elif dataset_config.data_source != "cached":
-                    self.save_data(dataset_config=dataset_config)
-
-                else:
-                    self.logger.info(
-                        f"No new data to save for dataset: {dataset_config.name}."
-                    )
-
-                idx += 1
-                self.logger.info(
-                    f"{dataset_config.name} query set {round(idx/n * 100, 2)}% complete."
-                )
 
     def execute(self):
         """
@@ -345,47 +253,22 @@ class BaseWebScraper(threading.Thread):
         the scraper's configuration. To add more datasets, use the 'add_dataset'
         method.
         """
-        if not self._dataset_configs:
+        if not self._web_pages:
             raise Exception(
                 "No datasets defined - to add datasets, use the 'add_dataset' method."
             )
 
-        for dataset_name, dataset_info in self._dataset_configs.items():
+        for web_page in self._web_pages.values():
             if self.RUNNING == False:
                 break
 
-            dataset_info.configure()
-
-            query_set = dataset_info.query_set
-
-            self.process_dataset(dataset_info, query_set=query_set)
-
-    def kill_process(self, *args):
-        """
-        Kill the running thread and stop the scraper.
-        """
-        self.RUNNING = False
-        self.logger.critical(f"PROCESS KILLED FOR {self.name}.")
+            self.process_web_page(web_page, query_set=web_page.query_set)
 
     def run(self):
 
-        if not self._configured:
+        if not self.is_configured:
             raise Exception(
                 "Must call '.configure()' on the scraper before running it."
             )
 
-        self.logger.info(f"Starting scraper: {self.name}...")
-
-        consecutive_failures: int = 0
-
-        # this will include gamelog dataset
-        while self.RUNNING:
-            if consecutive_failures >= 10:
-                self.kill_process()
-
-            try:
-                self.execute()
-                consecutive_failures = 0
-            except Exception as e:
-                self.logger.warning(traceback.format_exc())
-                consecutive_failures += 1
+        super().run()

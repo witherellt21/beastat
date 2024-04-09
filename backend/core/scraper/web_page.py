@@ -120,29 +120,6 @@ class BaseWebPage(
         """
         return self.base_download_url.format(**query_args)
 
-    def is_configured(self):
-        """
-        Returns whether or not the web page has been configured (call .configure() to
-        configure the web page)
-        """
-        return self._configured
-
-    def add_table(self, *, table_config: BaseHTMLTable):
-        """
-        Add a table to download from the web page.
-        """
-        self._html_tables[table_config.name] = table_config
-
-    def add_nested_web_page(
-        self,
-        *,
-        web_page: "BaseWebPage",
-    ):
-        """
-        Add a nested web page to the current web page.
-        """
-        self.nested_web_pages.append(web_page)
-
     def configure(self):
         """
         Configure the web page tables by sorting dependencies.
@@ -157,6 +134,25 @@ class BaseWebPage(
         self._html_tables = html_tables
 
         self._configured = True
+
+    def is_configured(self):
+        """
+        Returns whether or not the web page has been configured (call .configure() to
+        configure the web page)
+        """
+        return self._configured
+
+    def add_table(self, *, table: BaseHTMLTable):
+        """
+        Add a table to download from the web page.
+        """
+        self._html_tables[table.name] = table
+
+    def add_nested_web_page(self, *, web_page: "BaseWebPage"):
+        """
+        Add a nested web page to the current web page.
+        """
+        self.nested_web_pages.append(web_page)
 
     def load_cached_data(self, *, query_args: Optional[QueryArgs] = None) -> None:
         """
