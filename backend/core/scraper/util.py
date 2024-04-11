@@ -21,19 +21,21 @@ class Thread(threading.Thread):
     def __init__(
         self,
         name: str | None = None,
-        args=(),
-        kwargs=None,
+        fargs=(),
+        fkwargs=None,
         *,
         daemon: bool | None = None,
         log_level: int = logging.INFO,
+        active: bool = True,
+        **kwargs,
     ) -> None:
-        super().__init__(name=name, args=args, kwargs=kwargs, daemon=daemon)
+        super().__init__(name=name, args=fargs, kwargs=kwargs, daemon=daemon)
 
         self.logger = logging.getLogger(name)
         self.logger.setLevel(log_level)
         self.logger.addHandler(STREAM_HANDLER)
 
-        self.RUNNING = True
+        self.RUNNING = active
 
     def __str__(self) -> str:
         return self.name
@@ -55,12 +57,7 @@ class Thread(threading.Thread):
 
     def run(self):
 
-        # if not self._configured:
-        #     raise Exception(
-        #         "Must call '.configure()' on the scraper before running it."
-        #     )
-
-        self.logger.info(f"Starting thread: {self}...")
+        self.logger.warning(f"Starting thread: {self}...")
 
         consecutive_failures: int = 0
 
@@ -73,5 +70,5 @@ class Thread(threading.Thread):
                 self.execute()
                 consecutive_failures = 0
             except Exception as e:
-                self.logger.warning(traceback.format_exc())
+                self.logger.warning(f"Error in {self}: {e}")
                 consecutive_failures += 1

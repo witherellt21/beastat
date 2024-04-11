@@ -33,6 +33,7 @@ class BaseHTMLTableSerializer(PydanticValidatorMixin):
         self.__rename_columns__: dict[str, str] = {}
         self.__html_save_fields__: dict[str, str] = {}
         self.__query_arg_fields__: dict[str, str] = {}
+        self.__dependencies__: dict[str, str] = {}
 
         self.__filters__: list[Callable[[pd.DataFrame], pd.Series[bool]]] = []
 
@@ -49,6 +50,9 @@ class BaseHTMLTableSerializer(PydanticValidatorMixin):
             # Whether field should be saved
             if not field.cache:
                 continue
+
+            if field.depends_on:
+                self.dependencies[field_name] = field.depends_on
 
             # Whether the field is required to be provided, or if it has default
             if field.required:
@@ -131,6 +135,10 @@ class BaseHTMLTableSerializer(PydanticValidatorMixin):
     @property
     def query_arg_fields(self):
         return self.__query_arg_fields__
+
+    @property
+    def dependencies(self):
+        return self.__dependencies__
 
     @classmethod
     def get_fields(cls) -> dict[str, BaseField]:

@@ -11,7 +11,7 @@ from nbastats.sql_app.register import Lineups, Teams
 
 class LineupTableForm(BaseHTMLTableSerializer):
     id = CharField(default=uuid.uuid4)
-    game_id = CharField()
+    game_id = CharField(depends_on="Games")
     team_id = TransformationField(str, Teams.get_team_id_or_nan)
     status = CharField()
     PG_id = CharField()

@@ -58,8 +58,8 @@ def load_tables(path: str) -> dict[str, BaseHTMLTable]:
     return tables
 
 
-def load_datasets(path: str = ".") -> dict[str, BaseWebPage]:
-    datasets: dict[str, BaseWebPage] = {}
+def load_web_pages(path: str = ".") -> dict[str, BaseWebPage]:
+    web_pages: dict[str, BaseWebPage] = {}
 
     list_modules = os.listdir(path)
     list_modules = list_difference(source=list_modules, to_remove=MODULE_IGNORE)
@@ -71,32 +71,32 @@ def load_datasets(path: str = ".") -> dict[str, BaseWebPage]:
         if is_dir:
             tables = load_tables(path + os.sep + module_name + os.sep + "tables")
 
-            dataset_settings = imp.load_source(
+            web_page_settings = imp.load_source(
                 "module", path + os.sep + module_name + os.sep + "__init__.py"
             )
 
         elif is_file:
-            dataset_settings = imp.load_source("module", path + os.sep + module_name)
+            web_page_settings = imp.load_source("module", path + os.sep + module_name)
             tables = []
 
-        dataset_settings_config = dataset_settings.__dict__.copy()
+        web_page_settings_config = web_page_settings.__dict__.copy()
 
         try:
-            obj = WebPageFileConfig(**dataset_settings_config)
+            obj = WebPageFileConfig(**web_page_settings_config)
             obj.CONFIG["html_tables"] = tables
 
         except ValidationError as exc:
             raise exc
 
-        dataset = BaseWebPage(
+        web_page = BaseWebPage(
             base_download_url=obj.BASE_DOWNLOAD_URL,
             name=obj.NAME,
             **obj.CONFIG,
         )
 
-        datasets[dataset.name] = dataset
+        web_pages[web_page.name] = web_page
 
-    return datasets
+    return web_pages
 
 
 def load_scrapers(path: str = ".") -> list[BaseWebScraper]:
@@ -110,14 +110,16 @@ def load_scrapers(path: str = ".") -> list[BaseWebScraper]:
 
     for module_name in list_modules:
 
-        if module_name != "todays_games":
-            continue
+        # if module_name != "todays_games":
+        #     continue
 
         is_dir = is_dir_module(module_path=path + os.sep + module_name)
         is_file = is_file_module(module_name=module_name)
 
         if is_dir:
-            datasets = load_datasets(path + os.sep + module_name + os.sep + "datasets")
+            web_pages = load_web_pages(
+                path + os.sep + module_name + os.sep + "web_pages"
+            )
 
             scraper_settings = imp.load_source(
                 "module", path + os.sep + module_name + os.sep + "__init__.py"
@@ -125,7 +127,7 @@ def load_scrapers(path: str = ".") -> list[BaseWebScraper]:
 
         elif is_file:
             scraper_settings = imp.load_source("module", path + os.sep + module_name)
-            datasets = {}
+            web_pages = {}
 
         scraper_settings_config = scraper_settings.__dict__.copy()
         try:
@@ -134,12 +136,15 @@ def load_scrapers(path: str = ".") -> list[BaseWebScraper]:
         except ValidationError as exc:
             raise exc
 
-        for base_dataset_name, dependency_config in scraper_config.DEPENDENCIES.items():
-            base_dataset = datasets[base_dataset_name]
-            source_dataset = datasets[dependency_config["source_name"]]
+        for (
+            base_web_page_name,
+            dependency_config,
+        ) in scraper_config.DEPENDENCIES.items():
+            base_web_page = web_pages[base_web_page_name]
+            source_web_page = web_pages[dependency_config["source_name"]]
 
-            base_dataset.add_dependency(
-                source=source_dataset,
+            base_web_page.add_dependency(
+                source=source_web_page,
                 meta_data={
                     "table_name": dependency_config["source_table_name"],
                     "query_set_provider": dependency_config["query_set_provider"],
@@ -147,8 +152,8 @@ def load_scrapers(path: str = ".") -> list[BaseWebScraper]:
             )
 
         for base_table_name, inheritance_config in scraper_config.INHERITANCES.items():
-            base_table = datasets[base_table_name[0]]._html_tables[base_table_name[1]]
-            source_table = datasets[inheritance_config["source"][0]]._html_tables[
+            base_table = web_pages[base_table_name[0]]._html_tables[base_table_name[1]]
+            source_table = web_pages[inheritance_config["source"][0]]._html_tables[
                 inheritance_config["source"][1]
             ]
 
@@ -157,7 +162,7 @@ def load_scrapers(path: str = ".") -> list[BaseWebScraper]:
                 inheritance_function=inheritance_config["inheritance_function"],
             )
 
-        scraper_config.CONFIG["datasets"] = datasets
+        scraper_config.CONFIG["web_pages"] = web_pages
 
         scraper = BaseWebScraper(
             name=scraper_config.NAME,
@@ -190,24 +195,24 @@ def add_scraper(name: str, path: str = "."):
         init_file.write(example_config)
         init_file.close()
 
-    os.mkdir(scraper_dir + os.sep + "datasets")
+    os.mkdir(scraper_dir + os.sep + "web_pages")
 
 
-def add_dataset(scraper_name: str, name: str, path: str = "."):
+def add_web_page(scraper_name: str, name: str, path: str = "."):
     scraper_dir = path + os.sep + camel_to_snake_case(scraper_name)
     if not os.path.isdir(scraper_dir):
         raise Exception(f"Scraper {scraper_name} does not exist in the path: {path}.")
 
-    datasets_dir = scraper_dir + os.sep + "datasets"
-    if not os.path.isdir(datasets_dir):
-        os.mkdir(datasets_dir)
+    web_pages_dir = scraper_dir + os.sep + "web_pages"
+    if not os.path.isdir(web_pages_dir):
+        os.mkdir(web_pages_dir)
 
-    dataset_name = camel_to_snake_case(name)
-    dataset_dir = datasets_dir + os.sep + dataset_name
+    web_page_name = camel_to_snake_case(name)
+    web_page_dir = web_pages_dir + os.sep + web_page_name
 
-    os.mkdir(dataset_dir)
+    os.mkdir(web_page_dir)
 
-    with open(dataset_dir + os.sep + "__init__.py", "w") as init_file:
+    with open(web_page_dir + os.sep + "__init__.py", "w") as init_file:
         with open(
             str(Path(__file__).parent)
             + os.sep
@@ -215,7 +220,7 @@ def add_dataset(scraper_name: str, name: str, path: str = "."):
             + os.sep
             + "static"
             + os.sep
-            + "dataset.config",
+            + "web_page.config",
             "r",
         ) as example_init_file:
             example_config = example_init_file.read()
@@ -223,23 +228,23 @@ def add_dataset(scraper_name: str, name: str, path: str = "."):
         init_file.write(example_config)
         init_file.close()
 
-    os.mkdir(dataset_dir + os.sep + "tables")
+    os.mkdir(web_page_dir + os.sep + "tables")
 
 
-def add_table(scraper_name: str, dataset_name: str, name: str, path: str = "."):
+def add_table(scraper_name: str, web_page_name: str, name: str, path: str = "."):
     scraper_dir = path + os.sep + camel_to_snake_case(scraper_name)
     if not os.path.isdir(scraper_dir):
         raise Exception(f"Scraper {scraper_name} does not exist in the path: {path}.")
 
-    dataset_dir = (
-        scraper_dir + os.sep + "datasets" + os.sep + camel_to_snake_case(dataset_name)
+    web_page_dir = (
+        scraper_dir + os.sep + "web_pages" + os.sep + camel_to_snake_case(web_page_name)
     )
-    if not os.path.isdir(dataset_dir):
+    if not os.path.isdir(web_page_dir):
         raise Exception(
-            f"Dataset {dataset_name} does not exist for the scraper {scraper_name} in the path: {path}."
+            f"Web page {web_page_name} does not exist for the scraper {scraper_name} in the path: {path}."
         )
 
-    tables_dir = dataset_dir + os.sep + "tables"
+    tables_dir = web_page_dir + os.sep + "tables"
     if not os.path.isdir(tables_dir):
         os.mkdir(tables_dir)
 

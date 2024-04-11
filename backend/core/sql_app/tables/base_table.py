@@ -2,6 +2,7 @@ import json
 import logging
 from datetime import datetime
 from typing import Any, Literal, Optional, Type, Union, overload
+from uuid import UUID
 
 import pandas as pd
 import peewee
@@ -18,7 +19,7 @@ class AdvancedQuery(BaseSerializer):
     greater_than: dict[str, Union[int, float, datetime]] = {}
     less_than: dict[str, Union[int, float, datetime]] = {}
     equal_to: dict[str, Any] = {}
-    in_: dict[str, list[Union[str, int, float, datetime]]] = {}
+    in_: dict[str, list[Any]] = {}
 
 
 class BaseTable:

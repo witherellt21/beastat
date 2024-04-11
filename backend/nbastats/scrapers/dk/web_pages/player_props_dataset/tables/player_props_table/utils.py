@@ -13,7 +13,7 @@ from core.scraper import (
 )
 from core.sql_app import AdvancedQuery
 from nbastats.sql_app.register import BasicInfo, Games, PlayerProps
-from nbastats.sql_app.serializers import PlayerReadSerializer
+from nbastats.sql_app.register.serializers import PlayerReadSerializer
 
 plus_minus_match = re.compile(r"−|\+")
 minus_match = re.compile(r"−")
@@ -75,7 +75,6 @@ def get_player_props(dataset: pd.DataFrame) -> pd.DataFrame:
 
     # Split our over/under data to extrapolate the line/odds for each
     try:
-        print("DATASET\n", dataset)
         over_data = split_line_column_into_dataframe("OVER")
         under_data = split_line_column_into_dataframe("UNDER")
     except Exception as e:
@@ -136,8 +135,12 @@ def set_statuses(dataset: pd.DataFrame) -> pd.Series:
         query=AdvancedQuery(in_={"game_id": todays_game_ids})
     )
 
+    print(todays_props)
+    #
+    # print("TODAYS PROPS\n", todays_props)
+
     if todays_props.empty:
-        dataset["status"] = 1
+        dataset["status"] = [1] * len(dataset)
     else:
         dataset["status"] = 1
         merged = todays_props.merge(
@@ -159,7 +162,7 @@ class PlayerPropsTableEntrySerializer(BaseHTMLTableSerializer):
         str, BasicInfo.get_player_id_from_name, from_columns=["player_name"]
     )
     game_id = TransformationField(
-        str, get_game_id, from_columns=["player_id"], null=False
+        str, get_game_id, from_columns=["player_id"], null=True
     )
     status = AugmentationField(int, set_statuses, null=True)
     stat = QueryArgField(

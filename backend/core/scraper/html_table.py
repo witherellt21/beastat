@@ -65,19 +65,19 @@ class BaseHTMLTable(
         self._serializer = serializer
         self._identification_function = identification_function
 
-        self.primary_key: str = self._db_table.model_class._meta.primary_key.name  # type: ignore
-
         # # extract info from the given dataset
-        self.nan_values = kwargs.get("nan_values", self.__class__.NAN_VALUES)
         self._cached_query_generator = kwargs.get(
             "cached_query_generator", self.__class__.CACHED_QUERY_GENERATOR
         )
 
-        self.data = pd.DataFrame()
-        self.staged_data = pd.DataFrame()
-        self.data_source: Literal["cached", "downloaded"] = "downloaded"
+        self._staged_data = pd.DataFrame()
 
+        self.data = pd.DataFrame()
+        self.nan_values = kwargs.get("nan_values", self.__class__.NAN_VALUES)
+        self.primary_key: str = self._db_table.model_class._meta.primary_key.name  # type: ignore
         self.inheritances: list[HTMLTableInheritance] = []
+
+        self.data_source: Literal["cached", "downloaded"] = "downloaded"
 
     @property
     def db_table(self):
@@ -138,34 +138,41 @@ class BaseHTMLTable(
 
         return data
 
-    def save(self) -> None:
+    def add_data(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Add data to the stack.
+        """
+        self.data = pd.concat([self.data, data])
+
+        return self.data
+
+    def stage_changes(self) -> pd.DataFrame:
+        self._staged_data = pd.concat([self._staged_data, self.data])
+        self.data = pd.DataFrame()
+
+        return self._staged_data
+
+    def flush_changes(self) -> None:
+        """
+        Flush the changes from the stage.
+        """
+        self._staged_data = pd.DataFrame()
+
+    def push(self) -> None:
         """
         Save the data for the dataset and any nested datasets.
         """
-        # self.logger.info(f"Saving data for table {table_config.name}.")
-
         # Use staging if there is backed up data that needs to be saved that was
         # waiting for a dependency
-        data = self.data if self.staged_data.empty else self.staged_data
+        data = self.stage_changes()
 
         # reset the staged data as we have successfully downloaded
-        self.staged_data = pd.DataFrame()
+        self.flush_changes()
 
         data = data.fillna(np.nan).replace([np.nan], [None])
-
-        # self.logger.info("\n" + str(data))
-
-        # print(data[])
 
         for index, row in data.iterrows():
             row_data = row.to_dict()
             row_data["id"] = index
-            # if index == None:
-            # self.logger.warning(row)
+
             self._db_table.update_or_insert_record(data=row_data)
-
-        # self.logger.debug(f"\n{data}")
-
-    def push_data(self) -> None:
-        self.staged_data = pd.concat([self.staged_data, self.data])
-        self.data = pd.DataFrame()

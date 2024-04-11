@@ -18,9 +18,9 @@ from core.scraper import (
 )
 from lib.util import sum_nullables
 from nbastats import constants
-from nbastats.sql_app.models import Game, Gamelog
 from nbastats.sql_app.register import Games, PlayerBoxScores, Teams
-from nbastats.sql_app.serializers import GameReadSerializer
+from nbastats.sql_app.register.models import Game, Gamelog
+from nbastats.sql_app.register.serializers import GameReadSerializer
 from pandera.typing import Series
 from playhouse.shortcuts import model_to_dict
 

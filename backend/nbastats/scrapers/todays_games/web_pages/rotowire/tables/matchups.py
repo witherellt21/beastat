@@ -6,7 +6,7 @@ from nbastats.sql_app.register import Matchups
 
 class MatchupTableForm(BaseHTMLTableSerializer):
     id = CharField(default=uuid.uuid4)
-    game_id = CharField()
+    game_id = CharField(depends_on="Games")
     position = CharField()
     home_player_id = CharField()
     away_player_id = CharField()

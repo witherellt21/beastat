@@ -28,7 +28,7 @@ class WebScraperKwargs(TypedDict):
 class BaseWebScraper(Thread):
 
     def __init__(self, name: str, *args, **kwargs: Unpack[WebScraperKwargs]) -> None:
-        super().__init__(name, args, kwargs)
+        super().__init__(name, *args, **kwargs)
 
         self._web_pages: dict[str, BaseWebPage] = kwargs.get("web_pages") or {}
         self._configured: bool = False
@@ -50,6 +50,15 @@ class BaseWebScraper(Thread):
         Add a dataset configuration to the scraper.
         """
         self._web_pages[web_page.name] = web_page
+
+    def acquire_download_lock(self):
+        if self.last_download_time:
+            wait = max(self.last_download_time - time.time() + self.download_rate, 0)
+        else:
+            wait = 0
+
+        if wait:
+            time.sleep(wait)
 
     def configure(self):
         """
@@ -78,17 +87,9 @@ class BaseWebScraper(Thread):
 
         self._configured = True
 
-    def download_web_page(
+    def download_web_page_query(
         self, *, web_page: BaseWebPage, query_args: Optional[QueryArgs] = None
     ) -> None:
-
-        # get the download url from the query args
-        url = (
-            web_page.get_download_url(query_args=query_args)
-            if query_args
-            else web_page.base_download_url
-        )
-
         # if this specific query is already save in the database, fetch that instead
         web_page.load_cached_data(query_args=query_args)
         if all(
@@ -100,18 +101,14 @@ class BaseWebScraper(Thread):
             web_page.data_source = "cached"
 
         else:
-            web_page.data_source = "downloaded"
+            # get the download url from the query args
+            url = (
+                web_page.get_download_url(query_args=query_args)
+                if query_args
+                else web_page.base_download_url
+            )
 
-            # self.logger.info(f"Downloading data for {config.name}.")
-            if self.last_download_time:
-                wait = max(
-                    self.last_download_time - time.time() + self.download_rate, 0
-                )
-            else:
-                wait = 0
-
-            if wait:
-                time.sleep(wait)
+            self.acquire_download_lock()
 
             tables = web_page.extract_tables(url=url)
             self.last_download_time = time.time()
@@ -133,7 +130,7 @@ class BaseWebScraper(Thread):
 
                 # Apply each cleaning function
                 try:
-                    table.data = table.clean(data=data)
+                    table.add_data(table.clean(data=data))
 
                     self.logger.info(f"Downloaded data for {table.name}.")
                 except Exception as e:
@@ -149,7 +146,7 @@ class BaseWebScraper(Thread):
         # waiting for a dependency
         for table in web_page._html_tables.values():
             if table.data_source != "cached":
-                table.save()
+                table.push()
 
         # recurse into nested datatsets
         for nested_web_page in web_page.nested_web_pages:
@@ -160,7 +157,7 @@ class BaseWebScraper(Thread):
         Perform a single pass through of a dataset using specific query args and
         nesting inside nested datasets.
         """
-        self.download_web_page(web_page=web_page, query_args=query_args)
+        self.download_web_page_query(web_page=web_page, query_args=query_args)
 
         for nested_web_page in web_page.nested_web_pages:
             self.process_web_page(
@@ -168,36 +165,45 @@ class BaseWebScraper(Thread):
             )
 
     def resolve_inheritances(
-        self, *, dataset_config: BaseWebPage, set_data_source: bool = True
+        self, *, web_page: BaseWebPage, set_data_source: bool = True
     ) -> Optional[bool]:
         """
         Backwards resolve any inherited fields after all dependencies have been exhausted.
         Specify confirm_update as True to return a boolean designating where there was any
         update performed on the dataset configuration.
         """
-        for table_name, table_config in dataset_config._html_tables.items():
+        for table in web_page._html_tables.values():
             if set_data_source:
-                data = table_config.data.copy()
+                data = table.data.copy()
 
-            for inheritance in table_config.inheritances:
-                if not inheritance.source.staged_data.empty:
+            for inheritance in table.inheritances:
+                if not inheritance.source.data.empty:
                     inherited_data = inheritance.inheritance_function(
-                        inheritance.source.staged_data
+                        inheritance.source.data
                     )
 
-                    table_config.data.update(inherited_data)
+                    table.data.update(inherited_data)
+
+                else:
+                    raise Exception(
+                        f"Inherited data source was empty for {table} retrieving data from {inheritance.source}."
+                    )
 
             if set_data_source:
-                if not data.equals(table_config.data):
-                    dataset_config.data_source = "downloaded"
-                    table_config.data_source = "downloaded"
+                if not data.equals(table.data):
+                    web_page.data_source = "downloaded"
+                    table.data_source = "downloaded"
 
     def process_web_page_query(
         self, web_page: BaseWebPage, query: Optional[QueryArgs], ready_for_save: bool
     ):
+        """
+        Full process of web page by query, including a forward pass to get the data,
+        resolving any inherited fields, and then saving if set to True.
+        """
         self.forward_pass(web_page=web_page, query_args=query)
 
-        self.resolve_inheritances(dataset_config=web_page, set_data_source=True)
+        self.resolve_inheritances(web_page=web_page, set_data_source=True)
 
         self.logger.debug(
             f"{web_page.name}: Ready for save = {ready_for_save} : Is already saved = {web_page.data_source == 'cached'}"
@@ -205,7 +211,7 @@ class BaseWebScraper(Thread):
 
         if web_page.dependencies and not ready_for_save:
             for table in web_page._html_tables.values():
-                table.push_data()
+                table.stage_changes()
 
         elif web_page.data_source != "cached":
             self.save_web_page(web_page=web_page)

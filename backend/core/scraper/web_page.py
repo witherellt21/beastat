@@ -120,10 +120,28 @@ class BaseWebPage(
         """
         return self.base_download_url.format(**query_args)
 
+    def add_table(self, *, table: BaseHTMLTable):
+        """
+        Add a table to download from the web page.
+        """
+        self._html_tables[table.name] = table
+
+    def add_nested_web_page(self, *, web_page: "BaseWebPage"):
+        """
+        Add a nested web page to the current web page.
+        """
+        self.nested_web_pages.append(web_page)
+
     def configure(self):
         """
         Configure the web page tables by sorting dependencies.
         """
+        # for dependency in self.serializer.dependencies:
+        #     self.add_dependency(source=self.)
+        for table in self.html_tables.values():
+            for dependency in table.serializer.dependencies.values():
+                table.add_dependency(source=self.html_tables[dependency])
+
         sorted = topological_sort_dependency_tree(dependency_tree=self._html_tables)  # type: ignore
 
         html_tables: dict[str, BaseHTMLTable] = {}
@@ -141,18 +159,6 @@ class BaseWebPage(
         configure the web page)
         """
         return self._configured
-
-    def add_table(self, *, table: BaseHTMLTable):
-        """
-        Add a table to download from the web page.
-        """
-        self._html_tables[table.name] = table
-
-    def add_nested_web_page(self, *, web_page: "BaseWebPage"):
-        """
-        Add a nested web page to the current web page.
-        """
-        self.nested_web_pages.append(web_page)
 
     def load_cached_data(self, *, query_args: Optional[QueryArgs] = None) -> None:
         """

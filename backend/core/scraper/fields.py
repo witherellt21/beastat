@@ -40,6 +40,7 @@ class BaseField(Generic[T]):
         field_name: str = "",
         from_column: Optional[str] = None,
         to_columns: Optional[str] = None,
+        depends_on: Optional[str] = None,
         **kwargs: Unpack[FieldKwargs],
     ):
         self.type = type
@@ -50,6 +51,7 @@ class BaseField(Generic[T]):
         self.filters = filters
         self.default = kwargs.get("default", None)
         self.required = "default" not in kwargs
+        self.depends_on = depends_on
 
         self._from_column = from_column
         self._to_columns = to_columns
@@ -72,36 +74,46 @@ class BaseField(Generic[T]):
 
     def execute(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         try:
-            if not self.required:
+            # print(self.field_name, dataframe)
 
+            if self.required:
+                for field_name in self.to_columns:
+                    if self.replace_values:
+                        dataframe = dataframe.replace({field_name: self.replace_values})
+
+                if not self.null:
+                    dataframe = dataframe.dropna(subset=self.to_columns)
+
+                # if self.field_name == "winner":
+                #     dataframe = dataframe.replace({self.field_name: None})
+
+                if self.type in [str, int, float, object, "category"]:
+
+                    # TODO: REMOVE
+                    # if self.field_name != "winner":
+                    # print(dataframe)
+
+                    dataframe[self.to_columns] = dataframe[self.to_columns].astype(
+                        self.type
+                    )
+
+                for field_name in self.to_columns:
+                    if self.filters:
+                        dataframe = filter_dataframe(
+                            dataframe=dataframe,
+                            filters=[
+                                lambda dataset: filter(dataset[field_name])
+                                for filter in self.filters
+                            ],
+                        )
+
+            else:
                 func = lambda x: (
                     self.type(self.default())
                     if callable(self.default)
                     else self.default
                 )
                 dataframe[self.field_name] = dataframe.iloc[:, 0].apply(func)
-
-            for field_name in self.to_columns:
-                if self.replace_values:
-                    dataframe = dataframe.replace({field_name: self.replace_values})
-
-            if not self.null:
-                dataframe = dataframe.dropna(subset=self.to_columns)
-
-            if self.type in [str, int, float, object, "category"]:
-                dataframe[self.to_columns] = dataframe[self.to_columns].astype(
-                    self.type
-                )
-
-            for field_name in self.to_columns:
-                if self.filters:
-                    dataframe = filter_dataframe(
-                        dataframe=dataframe,
-                        filters=[
-                            lambda dataset: filter(dataset[field_name])
-                            for filter in self.filters
-                        ],
-                    )
 
             return dataframe
         except Exception as e:

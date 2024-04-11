@@ -3,9 +3,9 @@ from pathlib import Path
 from time import sleep
 
 from core.scraper.management.manager import (
-    add_dataset,
     add_scraper,
     add_table,
+    add_web_page,
     load_scrapers,
 )
 from sql_app.register import *
@@ -21,6 +21,9 @@ def run_scrapers():
         if scraper.RUNNING:
             scraper.daemon = True
             scraper.configure()
+
+            # for web_page in scraper._web_pages.values():
+            #     print(web_page.html_tables)
             scraper.start()
 
     return scrapers
@@ -31,13 +34,13 @@ def create_scraper(name: str):
 
 
 def create_dataset(scraper_name: str, name: str):
-    add_dataset(scraper_name=scraper_name, name=name, path=SCRAPERS_DIR)
+    add_web_page(scraper_name=scraper_name, name=name, path=SCRAPERS_DIR)
 
 
 def create_table(scraper_name: str, dataset_name: str, name: str):
     add_table(
         scraper_name=scraper_name,
-        dataset_name=dataset_name,
+        web_page_name=dataset_name,
         name=name,
         path=SCRAPERS_DIR,
     )

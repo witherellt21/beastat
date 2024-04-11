@@ -5,8 +5,8 @@ from core.scraper import WebScraperKwargs
 NAME = "TodaysGames"
 
 CONFIG: WebScraperKwargs = {
-    "active": True,
-    "log_level": logging.INFO,
+    "active": False,
+    "log_level": logging.WARNING,
     "download_rate": 5,
     "align": "inline",
 }

@@ -1,5 +1,5 @@
 from nbastats import constants
-from nbastats.scrapers.bref.datasets.player_season_gamelog.tables.player_box_score.util import (
+from nbastats.scrapers.bref.web_pages.player_season_gamelog.tables.player_box_score.util import (
     PlayerBoxScoreTableConfig,
     get_cached_gamelog_query_data,
     has_30_columns,

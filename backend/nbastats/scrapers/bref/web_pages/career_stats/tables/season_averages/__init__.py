@@ -1,5 +1,5 @@
 from nbastats import constants
-from nbastats.scrapers.bref.datasets.career_stats.tables.season_averages.util import (
+from nbastats.scrapers.bref.web_pages.career_stats.tables.season_averages.util import (
     SeasonAveragesTableEntrySerializer,
     get_cached_player_season_averages_data,
     has_season_column,

@@ -2,15 +2,15 @@ import logging
 
 from core.scraper import WebScraperKwargs
 
-from .datasets.career_stats import NAME as CAREER_STATS
-from .datasets.player_info import NAME as PLAYERINFO
-from .datasets.player_season_gamelog import NAME as GAMELOG
 from .util import get_team_id_from_career_stats
+from .web_pages.career_stats import NAME as CAREER_STATS
+from .web_pages.player_info import NAME as PLAYERINFO
+from .web_pages.player_season_gamelog import NAME as GAMELOG
 
 NAME = "BasketballReference"
 
 CONFIG: WebScraperKwargs = {
-    "active": True,
+    "active": False,
     "log_level": logging.INFO,
     "download_rate": 5,
     "align": "nested",
