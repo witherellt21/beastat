@@ -1,5 +1,5 @@
 import threading
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 
 import pandas as pd
 from base.sql_app.register import BaseTable
