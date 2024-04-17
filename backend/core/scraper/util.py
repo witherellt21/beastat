@@ -70,5 +70,5 @@ class Thread(threading.Thread):
                 self.execute()
                 consecutive_failures = 0
             except Exception as e:
-                self.logger.warning(f"Error in {self}: {e}")
+                self.logger.warning(f"Error in {self}: {traceback.format_exc()}")
                 consecutive_failures += 1

@@ -23,6 +23,7 @@ from nbastats.sql_app.register.models import Game, Gamelog
 from nbastats.sql_app.register.serializers import GameReadSerializer
 from pandera.typing import Series
 from playhouse.shortcuts import model_to_dict
+from pydantic import UUID4
 
 
 def convert_minutes_to_float(time: str) -> float:
@@ -82,7 +83,7 @@ def get_days_rest(dataset: pd.DataFrame) -> pd.Series:
     return dataset["Date"].apply(lambda date: get_closest_game(date, dataset))
 
 
-def get_game_id(row: pd.Series) -> str:
+def get_game_id(row: pd.Series) -> UUID4:
 
     home_team = row["Tm"] if row["home"] else row["Opp"]
     away_team = row["Opp"] if row["home"] else row["Tm"]

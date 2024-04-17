@@ -1,5 +1,6 @@
 import logging
 import time
+import traceback
 from typing import Literal, NotRequired, Optional, Union, Unpack
 
 from lib.dependency_trees import topological_sort_dependency_tree
@@ -134,7 +135,7 @@ class BaseWebScraper(Thread):
 
                     self.logger.info(f"Downloaded data for {table.name}.")
                 except Exception as e:
-                    raise Exception(f"{table.name}: {e}")
+                    raise Exception(f"{table.name}: {traceback.format_exc()}")
 
     def save_web_page(self, web_page: BaseWebPage) -> None:
         """

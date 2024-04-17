@@ -10,8 +10,8 @@ from .web_pages.player_season_gamelog import NAME as GAMELOG
 NAME = "BasketballReference"
 
 CONFIG: WebScraperKwargs = {
-    "active": False,
-    "log_level": logging.INFO,
+    "active": True,
+    "log_level": logging.DEBUG,
     "download_rate": 5,
     "align": "nested",
 }

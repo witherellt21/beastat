@@ -4,8 +4,8 @@ from core.scraper import WebScraperKwargs
 
 NAME = "DraftKings"
 CONFIG: WebScraperKwargs = {
-    "active": True,
-    "log_level": logging.DEBUG,
+    "active": False,
+    "log_level": logging.WARNING,
     "download_rate": 2,
     "align": "inline",
 }

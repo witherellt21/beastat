@@ -52,6 +52,7 @@ class BaseField(Generic[T]):
         self.default = kwargs.get("default", None)
         self.required = "default" not in kwargs
         self.depends_on = depends_on
+        self.fill_none = []
 
         self._from_column = from_column
         self._to_columns = to_columns
@@ -74,7 +75,6 @@ class BaseField(Generic[T]):
 
     def execute(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         try:
-            # print(self.field_name, dataframe)
 
             if self.required:
                 for field_name in self.to_columns:
@@ -84,18 +84,16 @@ class BaseField(Generic[T]):
                 if not self.null:
                     dataframe = dataframe.dropna(subset=self.to_columns)
 
-                # if self.field_name == "winner":
-                #     dataframe = dataframe.replace({self.field_name: None})
-
                 if self.type in [str, int, float, object, "category"]:
+                    # dataframe[self.to_columns] = dataframe[self.to_columns].astype(
+                    #     self.type
+                    # )
+                    dataframe.loc[:, self.to_columns] = dataframe[
+                        self.to_columns
+                    ].astype(self.type)
 
-                    # TODO: REMOVE
-                    # if self.field_name != "winner":
-                    # print(dataframe)
-
-                    dataframe[self.to_columns] = dataframe[self.to_columns].astype(
-                        self.type
-                    )
+                # if self.type == str:
+                #     dataframe = dataframe.replace({self.field_name: {"": None}})
 
                 for field_name in self.to_columns:
                     if self.filters:
@@ -116,6 +114,7 @@ class BaseField(Generic[T]):
                 dataframe[self.field_name] = dataframe.iloc[:, 0].apply(func)
 
             return dataframe
+
         except Exception as e:
             raise Exception(
                 f"Failed getting value for {self.field_name}. {traceback.format_exc()}"
@@ -266,15 +265,22 @@ class AugmentationField(BaseField[Generic[T]]):
         return self._to_columns or [self.field_name]
 
     def execute(self, dataframe: pd.DataFrame) -> pd.DataFrame:
+
         result = self.function(dataframe)
 
         if isinstance(result, pd.DataFrame):
             new_data = result.to_dict(orient="list")
 
             for key, value in new_data.items():
+                # if self.field_name == "odds":
+                #     print(key)
+                #     print(value)
+                #     print(dataframe)
                 dataframe[key] = value
-
         else:
-            dataframe[self.to_columns] = result
+            if len(self.to_columns) == 1:
+                dataframe[self.to_columns[0]] = result
+            else:
+                dataframe[self.to_columns] = result
 
         return super().execute(dataframe)

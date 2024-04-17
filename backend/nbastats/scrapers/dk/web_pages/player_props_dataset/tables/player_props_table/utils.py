@@ -2,6 +2,7 @@ import re
 import uuid
 from datetime import datetime
 
+import numpy as np
 import pandas as pd
 from core.scraper import (
     AugmentationField,
@@ -74,13 +75,13 @@ def get_player_props(dataset: pd.DataFrame) -> pd.DataFrame:
     input_data = dataset.copy()
 
     # Split our over/under data to extrapolate the line/odds for each
-    try:
-        over_data = split_line_column_into_dataframe("OVER")
-        under_data = split_line_column_into_dataframe("UNDER")
-    except Exception as e:
-        raise Exception(
-            f"Error getting player props data: {e}. Original dataset: \n {input_data}"
-        )
+    # try:
+    over_data = split_line_column_into_dataframe("OVER")
+    under_data = split_line_column_into_dataframe("UNDER")
+    # except Exception as e:
+    #     raise Exception(
+    #         f"Error getting player props data: {e}. Original dataset: \n {input_data}"
+    #     )
 
     # Merge the new over/under data to a single dataset
     full_data = pd.merge(
@@ -102,14 +103,14 @@ def get_player_props(dataset: pd.DataFrame) -> pd.DataFrame:
     return full_data
 
 
-def get_game_id(player_id: str):
+def get_game_id(player_id: str) -> str | float:
     player: PlayerReadSerializer = BasicInfo.get_record(query={"id": player_id})  # type: ignore
     todays_games: pd.DataFrame = Games.filter_by_datetime(
         min_datetime=datetime.today(), as_df=True
     )
 
     if todays_games.empty:
-        return None
+        return np.nan
 
     cur_team_game = todays_games[
         (todays_games["home"] == getattr(player.team, "id", None))
@@ -120,7 +121,7 @@ def get_game_id(player_id: str):
         cur_team_game = cur_team_game.iloc[0, :]
         return cur_team_game["id"]
     else:
-        return None
+        return np.nan
 
 
 def set_statuses(dataset: pd.DataFrame) -> pd.Series:
@@ -135,12 +136,8 @@ def set_statuses(dataset: pd.DataFrame) -> pd.Series:
         query=AdvancedQuery(in_={"game_id": todays_game_ids})
     )
 
-    print(todays_props)
-    #
-    # print("TODAYS PROPS\n", todays_props)
-
     if todays_props.empty:
-        dataset["status"] = [1] * len(dataset)
+        return dataset.apply(lambda row: 1, axis=1)
     else:
         dataset["status"] = 1
         merged = todays_props.merge(
@@ -162,7 +159,7 @@ class PlayerPropsTableEntrySerializer(BaseHTMLTableSerializer):
         str, BasicInfo.get_player_id_from_name, from_columns=["player_name"]
     )
     game_id = TransformationField(
-        str, get_game_id, from_columns=["player_id"], null=True
+        str, get_game_id, from_columns=["player_id"], null=False
     )
     status = AugmentationField(int, set_statuses, null=True)
     stat = QueryArgField(
