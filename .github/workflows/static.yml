@@ -51,7 +51,7 @@ jobs:
         uses: actions/upload-pages-artifact@v1
         with:
             # Upload the coverage directory from the repository
-            path: 'backend/htmlcov/index.html'
+            path: 'htmlcov/index.html'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v1
