@@ -35,9 +35,9 @@ def convert_minutes_to_float(time: str) -> float:
         result = int(minutes) + round(int(seconds) / 60, ndigits=1)
         return result
     except Exception as e:
-        print(time)
-        print(time.split(":"))
-        raise e
+        raise Exception(
+            f"Error converting minutes to float: {e}. Args: time:{type(time)}={time}"
+        )
 
 
 def get_result_and_margin(result: str) -> Series[str]:
@@ -115,8 +115,8 @@ def get_cached_gamelog_query_data(query_args: QueryArgs):
     queried_season = query_args.get("year", None)
     # TODO: Switch to less than to always update the current season
     if queried_season and int(queried_season) <= constants.CURRENT_SEASON:
-        start = datetime.datetime(year=queried_season - 1, month=6, day=1)
-        end = datetime.datetime(year=queried_season, month=6, day=1)
+        start = datetime.datetime(year=int(queried_season) - 1, month=6, day=1)
+        end = datetime.datetime(year=int(queried_season), month=6, day=1)
 
         search = (
             Gamelog.select()

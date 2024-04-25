@@ -176,4 +176,7 @@ class BaseWebPage(
         """
         Extract all tables for the html web page.
         """
-        return self._extract_tables(url)
+        try:
+            self._extract_tables(url)
+        except Exception as e:
+            raise Exception(f"Error downloading data from {url}. {e}")

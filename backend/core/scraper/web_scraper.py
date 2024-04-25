@@ -111,8 +111,12 @@ class BaseWebScraper(Thread):
 
             self.acquire_download_lock()
 
-            tables = web_page.extract_tables(url=url)
-            self.last_download_time = time.time()
+            try:
+                tables = web_page.extract_tables(url=url)
+            except Exception as e:
+                raise e
+            finally:
+                self.last_download_time = time.time()
 
             # find the table matching the identification function. Error if not found
             for table_name, table in web_page._html_tables.items():
