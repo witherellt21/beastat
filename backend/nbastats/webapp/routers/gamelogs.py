@@ -1,11 +1,12 @@
 import logging
 import traceback
 
-import exceptions
 from fastapi import APIRouter, HTTPException, status
 from nbastats import constants
 from nbastats.sql_app.register import SeasonAveragess
 from nbastats.sql_app.util.db_helpers import GamelogFilter, filter_gamelog
+
+import backend.lib.exceptions as exceptions
 
 logger = logging.getLogger("main")
 

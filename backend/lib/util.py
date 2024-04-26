@@ -27,12 +27,15 @@ def is_file_module(*, module_name: str) -> bool:
     return module_name.split(".")[-1] == "py"
 
 
-def camel_to_snake_case(str):
+def camel_to_snake_case(string: str) -> str:
     """
-    Conver camel case string to snake case.
+    Convert camel case string to snake case.
     """
-    res = [str[0].lower()]
-    for c in str[1:]:
+    if type(string) != str:
+        raise TypeError('Argument "string" must be of type "str"')
+
+    res = [string[0].lower()]
+    for c in string[1:]:
         if c in ("ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
             res.append("_")
             res.append(c.lower())

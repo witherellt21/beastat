@@ -2,7 +2,6 @@ import logging
 from typing import Literal, Optional
 
 import pandas as pd
-from exceptions import DBNotFoundException
 from lib.dataframes import filter_with_bounds
 from nbastats.sql_app.register import BasicInfo, Matchups, PlayerBoxScores
 from nbastats.sql_app.register.serializers import (
@@ -10,6 +9,8 @@ from nbastats.sql_app.register.serializers import (
     MatchupReadSerializer,
 )
 from pydantic import BaseModel
+
+from backend.lib.exceptions import DBNotFoundException
 
 logger = logging.getLogger("main")
 
