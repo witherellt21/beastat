@@ -7,9 +7,7 @@ from .augmentations import evaluate_expression, get_expression_stack
 MATHEMATICAL_OPERATORS = ["+", "-"]
 
 
-def reorder_columns(
-    *, dataframe: pd.DataFrame, column_order: list[str]
-) -> pd.DataFrame:
+def reorder_columns(dataframe: pd.DataFrame, column_order: list[str]) -> pd.DataFrame:
     columns = list(dataframe)
     for column in reversed(column_order):
         try:
