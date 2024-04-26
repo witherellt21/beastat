@@ -1,6 +1,5 @@
-from calendar import day_abbr
 from decimal import Decimal
-from typing import Callable, TypeVar
+from typing import Callable
 
 import pandas as pd
 
@@ -14,52 +13,62 @@ OPERATOR_FUNCTION_MAP: dict[str, Callable[[int | float, int | float], int | floa
 }
 
 
-def get_operation_stack(formula: str) -> list:
-    """Convert the string to an operation. Only supports addition and subtraction."""
+def get_expression_stack(formula: str) -> list:
+    """
+    Convert the string to an expressions stack. Only supports addition and subtraction.
+    """
 
     if type(formula) != str:
         raise TypeError("Argument 'formula' must be a string.")
 
     current_var = ""
-    operation_list = []
+    expression_stack = []
 
     for char in formula:
         if char in OPERATOR_FUNCTION_MAP:
-            operation_list.append(OPERATOR_FUNCTION_MAP[char])
             if not current_var:
                 raise ValueError(
                     "Operator reached before variable. Make sure your equation syntax is correct."
                 )
 
-            operation_list.append(current_var)
+            expression_stack.extend([OPERATOR_FUNCTION_MAP[char], current_var])
             current_var = ""
+
         else:
             current_var += char
 
     if current_var:
-        operation_list.append(current_var)
+        expression_stack.append(current_var)
     else:
         raise ValueError(
             "Operator did not receive a second operand. Make sure your equation syntax is correct."
         )
 
-    return operation_list
+    return expression_stack
 
 
-def evaluate(
+def evaluate_expression(
     dataframe: pd.DataFrame,
-    operation_list: list[Callable[[pd.Series, pd.Series], pd.Series] | str],
+    expression_stack: list[Callable[[pd.Series, pd.Series], pd.Series] | str],
 ) -> pd.Series:
-    """A recursive function for evaluating a semantic expression in binary tree form."""
-    if not operation_list:
+    """
+    Perform an expression containing pandas dataframe columns and constants.
+    Provide a dataframe as well as an expression stack containing operators and operands
+    in binary stack notation:
+        [operator, operand1, operand2]
+
+    Operators must be callable functions that take 2 series, and return the result of an operation
+    on the 2 series.
+    """
+    if not expression_stack:
         raise ValueError("Ran out of operators.")
 
-    operator = operation_list.pop(0)
+    operator = expression_stack.pop(0)
 
     if callable(operator):
         return operator(
-            evaluate(dataframe, operation_list[:1]),
-            evaluate(dataframe, operation_list[1:]),
+            evaluate_expression(dataframe, expression_stack[:1]),
+            evaluate_expression(dataframe, expression_stack[1:]),
         )
 
     else:
@@ -74,7 +83,7 @@ def evaluate(
 
         except NameError as e:
 
-            if operation_list:
+            if expression_stack:
                 raise ValueError(
                     "Leftover operands. Check your operation stack to ensure there are n operators and n+1 operands."
                 )

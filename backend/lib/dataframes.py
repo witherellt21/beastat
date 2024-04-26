@@ -2,7 +2,7 @@ from typing import Any, Callable, Mapping
 
 import pandas as pd
 
-from .augmentations import evaluate, get_operation_stack
+from .augmentations import evaluate_expression, get_expression_stack
 
 MATHEMATICAL_OPERATORS = ["+", "-"]
 
@@ -41,9 +41,9 @@ def augment_dataframe(
 
     for key, augmentation in augmentations.items():
         if isinstance(augmentation, str):
-            operation_stack = get_operation_stack(augmentation)
+            operation_stack = get_expression_stack(augmentation)
 
-            dataframe[key] = evaluate(dataframe, operation_stack)
+            dataframe[key] = evaluate_expression(dataframe, operation_stack)
 
         elif isinstance(augmentation, Callable):
             dataframe[key] = augmentation(dataframe)

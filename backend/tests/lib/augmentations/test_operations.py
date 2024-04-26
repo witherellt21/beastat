@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from lib.augmentations.operations import evaluate, get_operation_stack
+from lib.augmentations.operations import evaluate_expression, get_expression_stack
 
 
 @pytest.mark.parametrize(
@@ -17,8 +17,8 @@ from lib.augmentations.operations import evaluate, get_operation_stack
         ("word^2", 1),
     ),
 )
-def test_get_operation_stack(formula: str, expected_length: int):
-    res = get_operation_stack(formula)
+def test_get_expression_stack(formula: str, expected_length: int):
+    res = get_expression_stack(formula)
 
     assert type(res) == list
     assert len(res) == expected_length
@@ -36,9 +36,9 @@ def test_get_operation_stack(formula: str, expected_length: int):
     "formula",
     (3, 3.5, None, dict(), list(), set(), True),
 )
-def test_get_operation_stack_illegal_argument_type(formula: str):
+def test_get_expression_stack_illegal_argument_type(formula: str):
     with pytest.raises(TypeError) as error:
-        res = get_operation_stack(formula)
+        res = get_expression_stack(formula)
 
 
 @pytest.mark.parametrize(
@@ -51,9 +51,9 @@ def test_get_operation_stack_illegal_argument_type(formula: str):
         "word+",
     ),
 )
-def test_get_operation_stack_illegal_argument_format(formula: str):
+def test_get_expression_stack_illegal_argument_format(formula: str):
     with pytest.raises(ValueError) as error:
-        res = get_operation_stack(formula)
+        res = get_expression_stack(formula)
 
 
 @pytest.mark.parametrize(
@@ -61,33 +61,35 @@ def test_get_operation_stack_illegal_argument_format(formula: str):
     (
         (
             pd.DataFrame({"PTS": [3, 5], "REB": [2, 1]}),
-            get_operation_stack("PTS+REB"),
+            get_expression_stack("PTS+REB"),
             pd.Series([5, 6]),
         ),
         (
             pd.DataFrame({"PTS": [3, 5], "REB": [2, 1]}),
-            get_operation_stack("PTS+REB+2"),
+            get_expression_stack("PTS+REB+2"),
             pd.Series([7, 8]),
         ),
         (
             pd.DataFrame({"PTS": [3, 5], "REB": [2, 1]}),
-            get_operation_stack("PTS-REB"),
+            get_expression_stack("PTS-REB"),
             pd.Series([1, 4]),
         ),
         (
             pd.DataFrame({"PTS": [3, 5], "REB": [0.5, 1]}),
-            get_operation_stack("PTS-REB"),
+            get_expression_stack("PTS-REB"),
             pd.Series([2.5, 4]),
         ),
         (
             pd.DataFrame({"PTS": [3, 5], "REB": [None, 1]}),
-            get_operation_stack("PTS-REB"),
+            get_expression_stack("PTS-REB"),
             pd.Series([np.nan, 4]),
         ),
     ),
 )
-def test_evaluate(dataframe: pd.DataFrame, operation_list: list, expected: pd.Series):
-    res = evaluate(dataframe, operation_list)
+def test_evaluate_expression(
+    dataframe: pd.DataFrame, operation_list: list, expected: pd.Series
+):
+    res = evaluate_expression(dataframe, operation_list)
 
     assert res.equals(expected)
 
@@ -113,9 +115,9 @@ def test_evaluate(dataframe: pd.DataFrame, operation_list: list, expected: pd.Se
         ),
     ),
 )
-def test_evaluate_value_error(dataframe: pd.DataFrame, operation_list: list):
+def test_evaluate_expression_value_error(dataframe: pd.DataFrame, operation_list: list):
     with pytest.raises(ValueError) as error:
-        res = evaluate(dataframe, operation_list)
+        res = evaluate_expression(dataframe, operation_list)
 
 
 @pytest.mark.parametrize(
@@ -131,9 +133,9 @@ def test_evaluate_value_error(dataframe: pd.DataFrame, operation_list: list):
         ),
     ),
 )
-def test_evaluate_key_error(dataframe: pd.DataFrame, operation_list: list):
+def test_evaluate_expression_key_error(dataframe: pd.DataFrame, operation_list: list):
     with pytest.raises(KeyError) as error:
-        res = evaluate(dataframe, operation_list)
+        res = evaluate_expression(dataframe, operation_list)
 
 
 @pytest.mark.parametrize(
@@ -153,7 +155,6 @@ def test_evaluate_key_error(dataframe: pd.DataFrame, operation_list: list):
         ),
     ),
 )
-def test_evaluate_type_error(dataframe: pd.DataFrame, operation_list: list):
+def test_evaluate_expression_type_error(dataframe: pd.DataFrame, operation_list: list):
     with pytest.raises(TypeError) as error:
-        res = evaluate(dataframe, operation_list)
-        print(error)
+        res = evaluate_expression(dataframe, operation_list)
