@@ -7,35 +7,40 @@ from .augmentations import evaluate_expression, get_expression_stack
 MATHEMATICAL_OPERATORS = ["+", "-"]
 
 
-def reorder_columns(dataframe: pd.DataFrame, column_order: list[str]) -> pd.DataFrame:
-    columns = list(dataframe)
-    for column in reversed(column_order):
-        try:
-            columns.insert(0, columns.pop(columns.index(column)))
-        except ValueError:
-            continue
-
-    return dataframe.loc[:, columns]
-
-
-def filter_dataframe(
-    *, dataframe: pd.DataFrame, filters: "list[Callable]"
-) -> pd.DataFrame:
+def filter_dataframe(dataframe: pd.DataFrame, filters: list[Callable]) -> pd.DataFrame:
+    """
+    Filter a dataframe by a set of callable boolean filters.
+    Returns the original dataset filtered by the provided filters.
+    """
     for _filter in filters:
+        if _filter.__code__.co_argcount != 1:
+            raise ValueError("Filters must contain exactly one argument.")
+
+        proxy = dataframe.apply(_filter, axis=1)
+
+        if proxy.dtype != bool:
+            raise ValueError("Filters must return boolean values.")
+
         dataframe = dataframe[dataframe.apply(_filter, axis=1)].reset_index(drop=True)
     return dataframe
 
 
 def augment_dataframe(
-    *,
     dataframe: pd.DataFrame,
-    augmentations: Mapping[str, str | Callable[[pd.DataFrame], pd.Series]]
+    augmentations: Mapping[str, str | Callable[[pd.DataFrame], pd.Series]],
 ):
     """
     Augment the dataset using the passed dictionary of key: expression pairings and evaluating
     - Use Semantic Analysis to parse the a string string expression into an evaluation.
     - Assigns the resulting evaluation to the provided key in the dataset
     """
+    if not isinstance(augmentations, Mapping):
+        raise TypeError(
+            "Augmentations must be a mapping with a dataframe column to callable function pairing."
+        )
+
+    if not isinstance(dataframe, pd.DataFrame):
+        raise TypeError("'dataframe' must be of type pandas.Dataframe().")
 
     for key, augmentation in augmentations.items():
         if isinstance(augmentation, str):
@@ -46,23 +51,29 @@ def augment_dataframe(
         elif isinstance(augmentation, Callable):
             dataframe[key] = augmentation(dataframe)
 
+        else:
+            raise TypeError(f"Invalid augmentation function: {augmentation}.")
+
     return dataframe
 
 
 def filter_with_bounds(
-    dataset: pd.DataFrame, column: str, bounds: tuple[Any, Any]
+    dataframe: pd.DataFrame, column: str, bounds: tuple[Any, Any]
 ) -> pd.DataFrame:
+    """
+    Filter a dataframe column between 2 bounds.
+    """
     _min, _max = bounds
     if _min is not None and _max is not None:
         if _min < _max:
-            dataset = dataset[dataset[column].between(_min, _max)]
+            dataframe = dataframe[dataframe[column].between(_min, _max)]
         elif _min > _max:
-            dataset = dataset[~dataset[column].between(_min, _max)]
+            dataframe = dataframe[~dataframe[column].between(_max, _min)]
         else:
-            dataset = dataset[dataset[column] == _min]
+            dataframe = dataframe[dataframe[column] == _min]
     elif _min is not None:
-        dataset = dataset[dataset[column] >= _min]
+        dataframe = dataframe[dataframe[column] >= _min]
     elif _max is not None:
-        dataset = dataset[dataset[column] <= _max]
+        dataframe = dataframe[dataframe[column] <= _max]
 
-    return dataset
+    return dataframe

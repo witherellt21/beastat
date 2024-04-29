@@ -1,6 +1,6 @@
 import os
 from functools import reduce
-from typing import Any, Type, Union
+from typing import Any, Iterable, Type, Union
 
 import numpy as np
 
@@ -120,3 +120,24 @@ def convert_season_to_year(season: str | int | float) -> int | float:
             raise Exception(f"Error converting {season} to a year: {e}")
     else:
         raise Exception("'season' must be of type str, int, or float.")
+
+
+def reorder(origin: Iterable[Any], order: list[Any]) -> list[Any]:
+    """
+    Reorder an iterable object by the specified order.
+    * Values from the original set that were omitted will be appended to the
+    * result in their original order.
+    """
+    # convert the original object to a mutable iterable.
+    lyst = list(origin)
+
+    # starting from the back, move each item to the front
+    for item in reversed(order):
+        try:
+            idx = lyst.index(item)
+        except ValueError as e:
+            raise ValueError(f"{item} is not in the original set. Options are: {lyst}.")
+
+        lyst.insert(0, lyst.pop(idx))
+
+    return lyst
