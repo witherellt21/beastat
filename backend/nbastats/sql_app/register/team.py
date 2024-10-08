@@ -1,13 +1,13 @@
-import json
 import logging
-import uuid
-from typing import Optional
+from typing import Literal, Optional, overload
 
+import numpy as np
 import peewee
-from base.sql_app.register import BaseTable
-from nbastats.sql_app.models import Team
-from nbastats.sql_app.serializers import ReadTeamSerializer, TeamSerializer
+from core.sql_app.tables import BaseTable
 from playhouse.shortcuts import model_to_dict
+
+from .models import Team
+from .serializers import TeamReadSerializer, TeamSerializer
 
 logger = logging.getLogger("main")
 
@@ -15,39 +15,44 @@ logger = logging.getLogger("main")
 class TeamTable(BaseTable):
     MODEL_CLASS = Team
     SERIALIZER_CLASS = TeamSerializer
-    READ_SERIALIZER_CLASS = ReadTeamSerializer
-    TABLE_ENTRY_SERIALIZER_CLASS = TeamSerializer
+    READ_SERIALIZER_CLASS = TeamReadSerializer
     PKS = ["name"]
 
-    def get_team_by_abbr(self, team_abbr: str) -> Optional[ReadTeamSerializer]:
+    def get_team_by_abbr(self, team_abbr: str) -> Optional[TeamReadSerializer]:
         try:
             db_row = Team.get(
                 (team_abbr == Team.abbr) | (Team.alt_abbrs.contains(team_abbr))
             )
 
-            return ReadTeamSerializer(**model_to_dict(db_row))
+            return TeamReadSerializer(**model_to_dict(db_row))
 
         except peewee.DoesNotExist as e:
             return None
 
+    @overload
+    def get_team_id_or_nan(self, team_abbr: str) -> str: ...
 
-# Teams = TeamTable(DB)
+    @overload
+    def get_team_id_or_nan(
+        self, team_abbr: str, raise_exception: Literal[True]
+    ) -> str: ...
 
-# # # print(os.getcwd())
-# try:
-#     with open("sql_app/static_data/teams.json", "r") as teams_file:
-#         new_data = {}
-#         team_data = json.load(teams_file)
-#         for name, abbreviations in team_data.items():
-#             Teams.update_or_insert_record(
-#                 data={
-#                     "id": uuid.uuid4(),
-#                     "abbr": abbreviations[0],
-#                     "name": name,
-#                     "alt_abbrs": abbreviations[1:],
-#                 }
-#             )
-# except FileNotFoundError as e:
-#     logger.warning(f"Unable to download team data. {e}")
-# # with open("./sql_app/static_data/teams_new.json", "w") as teams_new:
-# #     json.dump(new_data, teams_new)
+    @overload
+    def get_team_id_or_nan(
+        self, team_abbr: str, raise_exception: Literal[False]
+    ) -> str | float: ...
+
+    def get_team_id_or_nan(
+        self, team_abbr: str, raise_exception: bool = True
+    ) -> str | float:
+        if type(team_abbr) != str and np.isnan(team_abbr):
+            return np.nan
+
+        team_abbr = team_abbr.split(",")[0]
+
+        team = self.get_team_by_abbr(team_abbr=team_abbr)
+
+        if not team:
+            return np.nan
+
+        return str(team.id)

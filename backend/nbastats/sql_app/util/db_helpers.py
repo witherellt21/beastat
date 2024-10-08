@@ -1,22 +1,13 @@
 import logging
-import traceback
 from typing import Literal, Optional
 
 import pandas as pd
-from base.util.dataset_helpers import filter_with_bounds
-from base.util.string_helpers import find_closest_match
 from exceptions import DBNotFoundException
-from nbastats.global_implementations.string_helpers import convert_season_to_year
-from nbastats.sql_app.register import (
-    BasicInfo,
-    Matchups,
-    PlayerBoxScores,
-    SeasonAveragess,
-)
-from nbastats.sql_app.serializers import (
+from lib.dataframes import filter_with_bounds
+from nbastats.sql_app.register import BasicInfo, Matchups, PlayerBoxScores
+from nbastats.sql_app.register.serializers import (
     GamelogSerializer,
     MatchupReadSerializer,
-    PlayerSerializer,
 )
 from pydantic import BaseModel
 
@@ -173,9 +164,8 @@ def filter_gamelog(*, player_id: str, query: GamelogFilter) -> pd.DataFrame:
 
     if query.withoutTeammates:
         for teammate in query.withoutTeammates:
-            # if with_teammates:
-            # for teammate in with_teammates:
-            teammate_id = get_player_id(player_name=teammate)
+
+            teammate_id = BasicInfo.get_player_id_from_name(player_name=teammate)
 
             # TODO: move this inside of the get_player_id function
             if not teammate_id:
@@ -293,75 +283,3 @@ def get_matchup_gamelog_by_player_id(*, player_id: str) -> pd.DataFrame:
     )
 
     return matchup_data
-
-
-# PLAYER_NICKNAMES: dict[str, str] = {
-#     "Lu Dort": "Luguentz Dort",
-#     "Nicolas Claxton": "Nic Claxton",
-# }
-
-
-def get_player_id(*, player_name: str) -> Optional[str]:
-    # Try to get the player's id given their name
-    player: PlayerSerializer = BasicInfo.get_record(query={"name": player_name})  # type: ignore
-
-    # if no player found, try to get the closes match to their name
-    if not player:
-        # player_name = PLAYER_NICKNAMES.get(player_name, player_name)
-
-        player_names: list[str] = BasicInfo.get_column_values(column="name")
-
-        player_name_match: Optional[str] = find_closest_match(
-            value=player_name, search_list=player_names
-        )
-
-        # if no match found, return None
-        if not player_name_match:
-            logger.warning(f"Could not find player id for {player_name}")
-            return None
-
-        # Get the player id for the closest name match
-        player: PlayerSerializer = BasicInfo.get_record(query={"name": player_name_match})  # type: ignore
-
-    return player.id
-
-
-def get_player_active_seasons(*, player_id: str) -> list[int]:
-    career_stats = SeasonAveragess.filter_records(
-        query={"player_id": player_id}, as_df=True
-    )
-
-    if career_stats.empty:
-        raise DBNotFoundException(
-            f"Could not find career stats for the given player: {player_id}"
-        )
-
-    try:
-        # Filter the career stats to contain just the season averages
-        season_stats: pd.DataFrame = career_stats[
-            career_stats["Season"].str.contains(r"^\d{4}") == True
-        ]
-        season_stats: pd.DataFrame = season_stats.dropna()
-
-        # Delete duplicate seasons (player played for multiple teams in same season)
-        season_stats: pd.DataFrame = season_stats.drop_duplicates(subset="Season")
-
-        # Get the seasons active by converting seasons column to a value list
-        seasons_active: list[str] = season_stats["Season"].to_list()
-
-        active_seasons: list[int] = []
-        for season in seasons_active:
-            as_year = convert_season_to_year(season=season)
-
-            if as_year:
-                active_seasons.append(as_year)
-
-        return active_seasons
-
-    except Exception as e:
-        raise Exception(f"{e.__class__.__name__}: {e}. \n {career_stats}. {player_id}")
-
-
-if __name__ == "__main__":
-    player_id = get_player_id(player_name="Jabari Smith")
-    print(player_id)

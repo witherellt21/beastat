@@ -1,26 +1,24 @@
-import uuid
 from datetime import datetime
-from typing import Literal, Optional, overload
+from typing import Literal, overload
 
 import pandas as pd
-from base.sql_app.register import BaseTable
-from nbastats.sql_app.models import Game, GameLine, Team
-from nbastats.sql_app.register.team import TeamTable
-from nbastats.sql_app.serializers import (
-    GameLineSerializer,
-    GameSerializer,
-    GameTableEntrySerializer,
-    ReadGameLineSerializer,
-    ReadGameSerializer,
-)
+from core.sql_app.tables import BaseTable
 from playhouse.shortcuts import model_to_dict
+
+from .models import Game, GameLine
+from .serializers import (
+    GameLineReadSerializer,
+    GameLineSerializer,
+    GameReadSerializer,
+    GameSerializer,
+)
+from .team import TeamTable
 
 
 class GameTable(BaseTable):
     MODEL_CLASS = Game
     SERIALIZER_CLASS = GameSerializer
-    TABLE_ENTRY_SERIALIZER_CLASS = GameTableEntrySerializer
-    READ_SERIALIZER_CLASS = ReadGameSerializer
+    READ_SERIALIZER_CLASS = GameReadSerializer
     PKS: list[str] = ["date_time", "home_id", "away_id"]
 
     DEPENDENCIES = [TeamTable]
@@ -71,11 +69,7 @@ class GameLineTable(BaseTable):
     MODEL_CLASS = GameLine
     SERIALIZER_CLASS = GameLineSerializer
     TABLE_ENTRY_SERIALIZER_CLASS = GameLineSerializer
-    READ_SERIALIZER_CLASS = ReadGameLineSerializer
+    READ_SERIALIZER_CLASS = GameLineReadSerializer
     PKS: list[str] = ["date_time", "home_id", "away_id"]
 
     DEPENDENCIES = [GameTable]
-
-
-# Games = GameTable(DB)
-# GameLines = GameLineTable(DB)

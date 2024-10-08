@@ -1,10 +1,10 @@
 import logging
 
-from base.scraper.base import ScraperKwargs
+from core.scraper import WebScraperKwargs
 
 NAME = "FantasyPros"
 
-CONFIG: ScraperKwargs = {
+CONFIG: WebScraperKwargs = {
     "active": False,
     "log_level": logging.INFO,
     "download_rate": 1,
