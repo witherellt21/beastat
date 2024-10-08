@@ -31,7 +31,6 @@ class BaseField(Generic[T]):
 
     def __init__(
         self,
-        *,
         type: Type,
         null: bool = False,
         replace_values: dict[Any, Any] = {},
@@ -85,15 +84,9 @@ class BaseField(Generic[T]):
                     dataframe = dataframe.dropna(subset=self.to_columns)
 
                 if self.type in [str, int, float, object, "category"]:
-                    # dataframe[self.to_columns] = dataframe[self.to_columns].astype(
-                    #     self.type
-                    # )
-                    dataframe.loc[:, self.to_columns] = dataframe[
-                        self.to_columns
-                    ].astype(self.type)
-
-                # if self.type == str:
-                #     dataframe = dataframe.replace({self.field_name: {"": None}})
+                    dataframe = dataframe.astype(
+                        {column: self.type for column in self.to_columns}
+                    )
 
                 for field_name in self.to_columns:
                     if self.filters:
@@ -272,10 +265,6 @@ class AugmentationField(BaseField[Generic[T]]):
             new_data = result.to_dict(orient="list")
 
             for key, value in new_data.items():
-                # if self.field_name == "odds":
-                #     print(key)
-                #     print(value)
-                #     print(dataframe)
                 dataframe[key] = value
         else:
             if len(self.to_columns) == 1:

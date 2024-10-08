@@ -2,7 +2,6 @@ import json
 import logging
 from datetime import datetime
 from typing import Any, Literal, Optional, Type, Union, overload
-from uuid import UUID
 
 import pandas as pd
 import peewee

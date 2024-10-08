@@ -68,6 +68,8 @@ def load_web_pages(path: str = ".") -> dict[str, BaseWebPage]:
         is_dir = is_dir_module(module_path=path + os.sep + module_name)
         is_file = is_file_module(module_name=module_name)
 
+        tables: dict[str, BaseHTMLTable]
+
         if is_dir:
             tables = load_tables(path + os.sep + module_name + os.sep + "tables")
 
@@ -77,7 +79,7 @@ def load_web_pages(path: str = ".") -> dict[str, BaseWebPage]:
 
         elif is_file:
             web_page_settings = imp.load_source("module", path + os.sep + module_name)
-            tables = []
+            tables = {}
 
         web_page_settings_config = web_page_settings.__dict__.copy()
 

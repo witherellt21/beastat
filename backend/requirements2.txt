@@ -1,0 +1,6 @@
+fastapi==0.115.0
+fuzzywuzzy==0.18.0
+pandas==2.2.3
+pandera==0.20.4
+peewee==3.17.6
+pydantic==2.9.2
