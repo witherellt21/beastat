@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 import pandas as pd
-from core.sql_app.tables import BaseTable
+from core.db.tables import BaseTable
 from lib.string_matching import find_closest_match
 from playhouse.shortcuts import model_to_dict
 

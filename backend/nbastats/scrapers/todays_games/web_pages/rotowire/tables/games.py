@@ -8,7 +8,7 @@ from core.scraper import (
     IntegerField,
     TransformationField,
 )
-from nbastats.sql_app.register import Games, Teams
+from nbastats.db.register import Games, Teams
 
 
 class GamesTableForm(BaseHTMLTableSerializer):

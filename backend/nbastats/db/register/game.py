@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal, overload
 
 import pandas as pd
-from core.sql_app.tables import BaseTable
+from core.db.tables import BaseTable
 from playhouse.shortcuts import model_to_dict
 
 from .models import Game, GameLine
@@ -22,6 +22,9 @@ class GameTable(BaseTable):
     PKS: list[str] = ["date_time", "home_id", "away_id"]
 
     DEPENDENCIES = [TeamTable]
+
+    @overload
+    def filter_by_datetime(self, *, min_datetime: datetime) -> list[GameSerializer]: ...
 
     @overload
     def filter_by_datetime(

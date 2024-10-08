@@ -3,11 +3,8 @@ from typing import Literal, Optional
 
 import pandas as pd
 from lib.dataframes import filter_with_bounds
-from nbastats.sql_app.register import BasicInfo, Matchups, PlayerBoxScores
-from nbastats.sql_app.register.serializers import (
-    GamelogSerializer,
-    MatchupReadSerializer,
-)
+from nbastats.db.register import BasicInfo, Matchups, PlayerBoxScores
+from nbastats.db.register.serializers import GamelogSerializer, MatchupReadSerializer
 from pydantic import BaseModel
 
 from backend.lib.exceptions import DBNotFoundException

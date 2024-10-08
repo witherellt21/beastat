@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from nbastats.webapp.config import router
+
+from backend.nbastats.web.app import router
 
 app = FastAPI(debug=True)
 

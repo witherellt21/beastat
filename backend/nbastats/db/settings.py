@@ -1,7 +1,7 @@
 import logging
 import os
 
-from core.sql_app.settings import *
+from core.db.settings import *
 
 logger = logging.getLogger("main")
 

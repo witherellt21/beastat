@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import APIRouter, HTTPException, status
-from nbastats.sql_app.register import SeasonAveragess
+from nbastats.db.register import SeasonAveragess
 
 logger = logging.getLogger("main")
 

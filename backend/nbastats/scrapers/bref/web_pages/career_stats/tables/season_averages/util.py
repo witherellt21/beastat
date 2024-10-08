@@ -14,7 +14,7 @@ from core.scraper import (
     TransformationField,
 )
 from lib.util import convert_season_to_year, sum_nullables
-from nbastats.sql_app.register import SeasonAveragess, Teams
+from nbastats.db.register import SeasonAveragess, Teams
 
 
 def has_season_column(tables: list[pd.DataFrame]) -> Optional[pd.DataFrame]:

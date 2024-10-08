@@ -6,7 +6,7 @@ from core.scraper import (
     ListField,
     TransformationField,
 )
-from nbastats.sql_app.register import Lineups, Teams
+from nbastats.db.register import Lineups, Teams
 
 
 class LineupTableForm(BaseHTMLTableSerializer):

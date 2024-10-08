@@ -1,8 +1,8 @@
 import logging
 
 from fastapi import APIRouter
-from nbastats.sql_app.register import DefenseRankings, Games
-from nbastats.sql_app.serializers import GameSerializer
+from nbastats.db.register import DefenseRankings, Games
+from nbastats.db.register.serializers import GameReadSerializer
 
 logger = logging.getLogger("main")
 
@@ -27,7 +27,7 @@ async def get_defense_rankings_by_team_and_position(team_abr: str, position: str
 
 @router.get("/game/{game_id}/{position}")
 async def get_defense_rankings_for_game(game_id: str, position: str):
-    game: GameSerializer = Games.get_record(query={"id": game_id})  # type: ignore
+    game: GameReadSerializer = Games.get_record(query={"id": game_id})  # type: ignore
 
     if not game:
         return {}
@@ -36,10 +36,10 @@ async def get_defense_rankings_for_game(game_id: str, position: str):
     team_abr = {"UTA": "UTH", "PHX": "PHO"}
 
     home_stat_rankings = DefenseRankings.filter_records(
-        query={"team_abr": team_abr.get(game.home, game.home)}, as_df=True
+        query={"team_abr": team_abr.get(game.home.name, game.home.name)}, as_df=True
     )
     away_stat_rankings = DefenseRankings.filter_records(
-        query={"team_abr": team_abr.get(game.away, game.away)}, as_df=True
+        query={"team_abr": team_abr.get(game.away.name, game.away.name)}, as_df=True
     )
 
     home_stat_rankings = home_stat_rankings[["stat", position]]

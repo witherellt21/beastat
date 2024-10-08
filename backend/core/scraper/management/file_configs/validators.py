@@ -1,13 +1,13 @@
 from typing import Callable, Optional
 
 import pandas as pd
+from core.db import BaseTable
 from core.scraper import (
     BaseHTMLTableSerializer,
     HTMLTableArgs,
     WebPageKwargs,
     WebScraperKwargs,
 )
-from core.sql_app import BaseTable
 from pydantic import BaseModel
 from typing_extensions import TypedDict
 

@@ -4,6 +4,7 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
+from core.db import AdvancedQuery
 from core.scraper import (
     AugmentationField,
     BaseHTMLTableSerializer,
@@ -12,9 +13,8 @@ from core.scraper import (
     RenameField,
     TransformationField,
 )
-from core.sql_app import AdvancedQuery
-from nbastats.sql_app.register import BasicInfo, Games, PlayerProps
-from nbastats.sql_app.register.serializers import PlayerReadSerializer
+from nbastats.db.register import BasicInfo, Games, PlayerProps
+from nbastats.db.register.serializers import PlayerReadSerializer
 
 plus_minus_match = re.compile(r"−|\+")
 minus_match = re.compile(r"−")

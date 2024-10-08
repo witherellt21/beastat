@@ -1,7 +1,7 @@
 import uuid
 
 from core.scraper import BaseHTMLTableSerializer, CharField
-from nbastats.sql_app.register import Matchups
+from nbastats.db.register import Matchups
 
 
 class MatchupTableForm(BaseHTMLTableSerializer):

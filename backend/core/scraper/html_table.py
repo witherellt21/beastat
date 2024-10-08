@@ -2,7 +2,7 @@ from typing import Callable, Literal, NotRequired, Optional, Unpack
 
 import numpy as np
 import pandas as pd
-from core.sql_app import BaseTable
+from core.db import BaseTable
 from lib.dependency_trees import DependencyKwargs, DependentObject
 from lib.pydantic_validator import PydanticValidatorMixin
 from typing_extensions import TypedDict

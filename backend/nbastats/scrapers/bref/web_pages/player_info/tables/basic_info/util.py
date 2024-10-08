@@ -11,7 +11,7 @@ from core.scraper import (
     TransformationField,
 )
 from nbastats import constants
-from nbastats.sql_app.register import BasicInfo
+from nbastats.db.register import BasicInfo
 from unidecode import unidecode
 
 

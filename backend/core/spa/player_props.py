@@ -1,6 +1,8 @@
 import datetime
 
 import pandas as pd
+from db.register import Gamelogs, Games
+from db.tables.gamelog import GamelogQuery
 from sklearn.linear_model import Lasso, LinearRegression
 from sklearn.model_selection import GridSearchCV
 from sklearn.neighbors import KNeighborsClassifier
@@ -11,8 +13,6 @@ from sklearn.preprocessing import (
     StandardScaler,
 )
 from sklearn.tree import DecisionTreeClassifier
-from sql_app.tables import Gamelogs, Games
-from sql_app.tables.gamelog import GamelogQuery
 
 
 def get_teammate_played(player_id, date, team):

@@ -1,6 +1,6 @@
 import uuid
 
-from nbastats.sql_app.register import DefenseRankings
+from nbastats.db.register import DefenseRankings
 
 NAME = "DefVsPos"
 

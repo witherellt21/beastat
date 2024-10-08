@@ -1,10 +1,10 @@
 from nbastats import constants
+from nbastats.db.register import PlayerBoxScores
 from nbastats.scrapers.bref.web_pages.player_season_gamelog.tables.player_box_score.util import (
     PlayerBoxScoreTableConfig,
     get_cached_gamelog_query_data,
     has_30_columns,
 )
-from nbastats.sql_app.register import PlayerBoxScores
 
 NAME = "PlayerBoxScore"
 

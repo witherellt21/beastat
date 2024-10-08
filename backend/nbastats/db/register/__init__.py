@@ -1,4 +1,4 @@
-from nbastats.sql_app.database import DB
+from nbastats.db.database import DB
 
 from .career_stats import CareerStatsTable
 from .defense_ranking import DefenseRankingTable

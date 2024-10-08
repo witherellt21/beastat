@@ -1,7 +1,7 @@
 import logging
 
 import pandas as pd
-from nbastats.sql_app.register import PlayerProps
+from nbastats.db.register import PlayerProps
 
 from .utils import PlayerPropsTableEntrySerializer
 

@@ -10,7 +10,7 @@ import requests
 from bs4 import BeautifulSoup, element
 from dateutil import parser
 from dateutil.tz import gettz
-from nbastats.sql_app.register import BasicInfo, Games, Teams
+from nbastats.db.register import BasicInfo, Games, Teams
 
 date_regex = r"(?:%s)\s\d\d,\s\d{4}" % "|".join(calendar.month_name)
 TZ_INFOS = {"ET": gettz("America/New York"), "EST": gettz("America/New York")}

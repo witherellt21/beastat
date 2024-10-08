@@ -8,7 +8,7 @@ from core.scraper.management.manager import (
     add_web_page,
     load_scrapers,
 )
-from sql_app.register import *
+from db.register import *
 
 SCRAPERS_DIR = str(Path(__file__).parent) + os.sep + "scrapers"
 

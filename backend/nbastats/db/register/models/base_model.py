@@ -1,4 +1,4 @@
-from nbastats.sql_app.database import DB
+from nbastats.db.database import DB
 from peewee import Model
 
 

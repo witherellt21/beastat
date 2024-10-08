@@ -4,8 +4,8 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from nbastats.sql_app.register import Gamelogs
-from nbastats.sql_app.register.gamelog import GamelogQuery
+from nbastats.db.register import Gamelogs
+from nbastats.db.register.gamelog import GamelogQuery
 from sklearn.linear_model import Lasso, LinearRegression
 from sklearn.model_selection import (
     GridSearchCV,

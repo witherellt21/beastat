@@ -4,9 +4,9 @@ from typing import List
 
 import pandas as pd
 from fastapi import APIRouter, HTTPException, status
-from nbastats.sql_app.register import DefenseRankings, Games, Matchups
-from nbastats.sql_app.serializers import GamelogSerializer, MatchupReadSerializer
-from nbastats.sql_app.util.db_helpers import get_matchup_gamelog
+from nbastats.db.register import DefenseRankings, Games, Matchups
+from nbastats.db.register.serializers import GamelogSerializer, MatchupReadSerializer
+from nbastats.db.util.db_helpers import get_matchup_gamelog
 from pytz import timezone
 
 EASTERN_TIME = timezone("EST")
@@ -61,11 +61,11 @@ async def list_matchups():
     for matchup in matchups:
 
         home_defense_rank_summary = get_defensive_rank_summary_by_position(
-            team=matchup.game.home, position=matchup.position
+            team=matchup.game.home.abbr, position=matchup.position
         )
 
         away_defense_rank_summary = get_defensive_rank_summary_by_position(
-            team=matchup.game.away, position=matchup.position
+            team=matchup.game.away.abbr, position=matchup.position
         )
 
         matchup_data = matchup.model_dump()

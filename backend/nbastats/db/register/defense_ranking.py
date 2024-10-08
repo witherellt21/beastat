@@ -1,4 +1,4 @@
-from core.sql_app.tables import BaseTable
+from core.db.tables import BaseTable
 
 from .models import DefenseRanking
 from .serializers import DefenseRankingSerializer

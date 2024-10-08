@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import APIRouter
-from nbastats.webapp.routers import (
+from nbastats.web.routers import (
     career_stats,
     defense_rankings,
     gamelogs,

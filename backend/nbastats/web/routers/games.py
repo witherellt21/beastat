@@ -2,8 +2,8 @@ import logging
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, status
-from nbastats.sql_app.register import Games
-from nbastats.sql_app.serializers import GameSerializer
+from nbastats.db.register import Games
+from nbastats.db.register.serializers import GameSerializer
 
 logger = logging.getLogger("main")
 
