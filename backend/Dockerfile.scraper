@@ -1,6 +1,4 @@
-# syntax=docker/dockerfile:1
-
-FROM python:3.11-slim-bookworm as base
+FROM python:3.11-slim-bookworm
 
 ENV ENV=dev
 ENV PORT ""
@@ -9,10 +7,10 @@ ENV TZ=America/New_York
 WORKDIR /app/backend
 
 # install python dependencies
-COPY requirements.txt ./requirements.txt
-RUN pip3 install -r requirements.txt --no-cache-dir
+COPY requirements.txt /app/backend/
+RUN pip install -r /app/backend/requirements.txt --no-cache-dir
 
 # copy backend files
-COPY . .
+COPY . /app/backend/
 
-ENTRYPOINT [ "bash", "nbastats/start_scraper.sh"]
+# ENTRYPOINT [ "bash", "./app/nflstats/start_scraper.sh"]

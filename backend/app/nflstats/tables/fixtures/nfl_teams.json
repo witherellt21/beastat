@@ -1,0 +1,23 @@
+[
+    {
+        "model": "nflteams",
+        "fields": {
+            "name": "Arizona Cardinals",
+            "abbr": "ARI"
+        }
+    },
+    {
+        "model": "nflteams",
+        "fields": {
+            "name": "Detroit Lions",
+            "abbr": "DET"
+        }
+    },
+    {
+        "model": "nflteams",
+        "fields": {
+            "name": "Jaxonville Jaguars",
+            "abbr": "JAX"
+        }
+    }
+]

@@ -35,19 +35,21 @@ class DependencyKwargs(pydantic.BaseModel):
     pass
 
 
-def topological_sort_dependency_tree(*, dependency_tree: dict[str, DependentObject]):
+def topological_sort_dependency_tree(
+    *, dependency_tree: dict[str, DependentObject]
+) -> list[str]:
     """
     Fancy sort for dataset configurations in self._dataset_configs
     based on order of dependence.
     """
     # A list to store the sorted elements
-    sorted_list = []
+    sorted_list: list[str] = []
 
     # A set to keep track of all visited nodes
-    visited = set()
+    visited: set[str] = set()
 
     # A set to detect recursion and hence, cycles
-    recursion_stack = set()
+    recursion_stack: set[str] = set()
 
     # Helper function for depth-first search
     def dfs(*, dependency_name: str):

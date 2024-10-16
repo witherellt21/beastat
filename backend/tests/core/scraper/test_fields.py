@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from core.scraper.fields import *
+from scrapp.scraper.fields import *
 
 
 @pytest.mark.parametrize(
