@@ -6,15 +6,16 @@ from pydantic import BaseModel as BaseSerializer
 from scrapp.db.models import BaseModel
 from scrapp.tables import BaseTable
 
+from ..nfl_player import NFLPlayer, NFLPlayerReadSerializer
 from ..nfl_team import NFLTeam, NFLTeamReadSerializer
 from .base_split import NFLPlayerBaseInfoSerializer
 
 
 class NFLKickAndPuntReturnSplit(BaseModel):
-    player_id = CharField()
+    player = ForeignKeyField(NFLPlayer, backref="kick_and_punt_return_splits")
     season = IntegerField()
     age = IntegerField()
-    team = ForeignKeyField(NFLTeam, backref="player_kick_and_punt_return_splits")
+    team = ForeignKeyField(NFLTeam, backref="kick_and_punt_return_splits")
     pos = CharField()
     gp = IntegerField()
     pr = IntegerField()
@@ -46,8 +47,11 @@ class NFLKickAndPuntReturnSplitSerializer(NFLPlayerBaseInfoSerializer):
 
 
 class NFLKickAndPuntReturnSplitReadSerializer(NFLKickAndPuntReturnSplitSerializer):
-    _team_id: UUID4
+    _team_id: str
     team: NFLTeamReadSerializer
+
+    _player_id: str
+    player: NFLPlayerReadSerializer
 
 
 class NFLKickAndPuntReturnSplitsTable(BaseTable):

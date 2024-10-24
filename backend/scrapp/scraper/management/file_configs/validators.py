@@ -4,7 +4,7 @@ import pandas as pd
 from pydantic import BaseModel
 from scrapp.scraper import (
     BaseHTMLTableSerializer,
-    HTMLTableArgs,
+    DataframeControllerKwargs,
     WebPageKwargs,
     WebScraperKwargs,
 )
@@ -17,7 +17,7 @@ class HTMLTableFileConfig(BaseModel):
     SQL_TABLE: BaseTable
     NAME: str
     TABLE_SERIALIZER: BaseHTMLTableSerializer
-    CONFIG: HTMLTableArgs = {}
+    CONFIG: DataframeControllerKwargs = {}
 
 
 class WebPageFileConfig(BaseModel):

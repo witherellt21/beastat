@@ -1,0 +1,244 @@
+from typing import Any, Callable, Literal, NotRequired, Optional, Unpack, overload
+
+import pandas as pd
+from lib.dependency_trees import DependencyKwargs, DependentObject
+from lib.pydantic_validator import PydanticValidatorMixin
+from scrapp.core.dataframes import BaseDataframeValidator
+from scrapp.core.exceptions import ColumnDoesNotExist, StageEmpty
+from scrapp.scraper.util import QueryArgs
+from scrapp.tables import BaseTable
+from scrapp.tables.base_table import AdvancedQuery
+from typing_extensions import TypedDict
+
+from ..web_page import BaseWebPage
+from .data_state_manager import DataStateManager
+
+
+class DataframeControllerInheritance:
+    """
+    Gets inherited data from a source controller.
+    """
+
+    def __init__(
+        self,
+        source: "DataStateManager",
+        fields: list[str],
+    ) -> None:
+        for field in fields:
+            if field not in source.data_fields:
+                raise ColumnDoesNotExist(field, source.data_fields)
+
+        self.source: "DataStateManager" = source
+        self.fields: list[str] = fields
+
+    def __str__(self) -> str:
+        return f"DataframeControllerInheritance :: {self.fields} from {self.source}"
+
+    def perform(self, primary_keys: list[str]):
+        """
+        Perform the inheritance operation to get a new dataframe consisting
+        of the requested field and keys to merge on.
+        """
+        if not self.source.stage.empty:
+            fields = [*primary_keys, *self.fields]
+
+            print(fields)
+            print(self.source.stage)
+
+            data = self.source.stage[fields]
+
+            data = data.rename(
+                columns={col: f"inherited_{col}" for col in data.columns}
+            )
+
+            return data
+            # except KeyError as e:
+            #     raise ColumnDoesNotExist(str(e), self.source.stage.columns)
+
+        else:
+            raise StageEmpty(
+                f"Inherited data source '{self.source}' while attempting to resolve inheritances for {self}."
+            )
+
+
+class DataframeControllerKwargs(TypedDict):
+    # cache_generator
+    cached_query_generator: NotRequired[
+        Callable[[Optional[QueryArgs]], Optional[pd.DataFrame]]
+    ]
+
+
+class WebTable(DependentObject["WebTable", DependencyKwargs], PydanticValidatorMixin):
+    """
+    Controls the validation and saving of pandas dataframes.
+    """
+
+    # CACHED_QUERY_GENERATOR: Callable[[Optional[QueryArgs]], Optional[pd.DataFrame]] = (
+    #     lambda x: None
+    # )
+
+    @overload
+    def __init__(
+        self,
+        name: str,
+        serializer: BaseDataframeValidator,
+        *,
+        data_manager: Optional[DataStateManager],
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        name: str,
+        serializer: BaseDataframeValidator,
+        *,
+        db_table: Optional[BaseTable],
+    ) -> None: ...
+
+    def __init__(
+        self,
+        name: str,
+        serializer: BaseDataframeValidator,
+        *,
+        data_manager: Optional[DataStateManager] = None,
+        db_table: Optional[BaseTable] = None,
+        **kwargs: Unpack[DataframeControllerKwargs],
+    ):
+        super().__init__(name=name, validator=DependencyKwargs)
+
+        self.__data_manager: DataStateManager
+        self.__serializer: BaseDataframeValidator = serializer
+        self.__inheritances: list[DataframeControllerInheritance] = []
+        # self.__cached_query_generator = kwargs.get(
+        #     "cached_query_generator", self.__class__.CACHED_QUERY_GENERATOR
+        # )
+
+        self.data_source: Literal["downloaded", "cached"] = "downloaded"
+
+        if data_manager and isinstance(data_manager, DataStateManager):
+            self.__data_manager = data_manager
+        elif db_table:
+            self.__data_manager = DataStateManager(
+                db_table,
+                self.__serializer.get_fields(),
+                extraneous_fields=self.__serializer.get_post_validated_fields(),
+            )
+        else:
+            raise Exception(
+                "Either the 'data_manager' or the 'db_table' argument must be provided."
+            )
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def data(self):
+        return self.__data_manager
+
+    @property
+    def serializer(self):
+        return self.__serializer
+
+    @serializer.setter
+    def serializer(self, serializer: BaseDataframeValidator):
+        self.__serializer = serializer
+        self.__data_manager.data_fields = serializer.get_fields()
+
+    @property
+    def inheritances(self):
+        return self.__inheritances
+
+    def add_inheritance(
+        self,
+        source_page: "BaseWebPage",
+        source_table: "str | WebTable",
+        fields: list[str],
+    ):
+        """
+        Add an inheritance to the table so that it can import foreign data from another webpage/table.
+        """
+        self.__inheritances.append(DataframeControllerInheritance(source, fields))
+
+    def load_from_cache(self, db_query: AdvancedQuery | None):
+        """
+        Load the cached data from the database and fix the data_source
+        attribute accordingly.
+        """
+        data = self.data.db_table.filter_records_advanced(db_query)
+
+        if not data.empty:
+            self.__data_manager.add(data)
+            self.data_source = "cached"
+
+        else:
+            self.data_source = "downloaded"  # TODO: Should this be done here?
+
+    def add_dependency(
+        self,
+        *,
+        source: "WebTable",
+    ):
+        return super().add_dependency(source=source, meta_data={})
+
+    def check_dependencies(self):
+        """
+        Check that all dependencies are saved.
+        """
+        for dependency in self.dependencies:
+            if dependency.source.data_source != "cached":
+                return False
+
+        return True
+
+    def ready_for_save(self):
+        """
+        1. Have all dependencies been saved to the database?
+        2. Is there committed data to be saved?
+        """
+        return not self.data.commits.empty and self.check_dependencies()
+
+    def attempt_save(self, *, raise_exception: bool = False):
+        """
+        Try to postprocess the current staged data and save it if successful.
+        """
+        try:
+            self.resolve_inheritances()
+
+            self.__data_manager.commit(persist_data=True)
+
+        except StageEmpty as e:
+            if raise_exception:
+                raise e
+
+        if self.ready_for_save():
+            self.data.push()
+            self.data_source = "cached"
+
+    def resolve_inheritances(self):
+        """
+        Perform inheritances to draw data from external data sources.
+        """
+        for inheritance in self.inheritances:
+            data = inheritance.perform(self.__data_manager.primary_keys)
+
+            data = self.__serializer.post_validate(data)
+
+            self.__data_manager.update(data)
+
+    def postprocess(self, *, persist_data: bool = False):
+        self.resolve_inheritances()
+
+        self.__data_manager.commit(persist_data=persist_data)
+
+    def preprocess(self, df: pd.DataFrame, additional_fields: dict[str, Any] = {}):
+        """
+        Validate the incoming data and update the data manager with
+        the resulting data.
+        """
+        # TODO: Currently, DataframeSerializers do not support multi-indexing
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.map("_".join).str.strip("_")
+
+        data = self.__serializer.validate(df, additional_fields)
+
+        self.__data_manager.add(data)

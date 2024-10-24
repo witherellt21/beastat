@@ -80,8 +80,6 @@ class GamelogTable(BaseTable):
     ) -> pd.DataFrame:
         search = self.model_class.select()
 
-        # print(query.in_.items())
-
         if query:
             search = search.join(Game, on=(Gamelog.game == Game.id)).where(
                 *[
@@ -111,7 +109,6 @@ class GamelogTable(BaseTable):
 
         rows = []
         for row in search:
-            # print(model_to_dict(row, recurse=False))
             rows.append(model_to_dict(row, recurse=False))
 
         return pd.DataFrame(rows)

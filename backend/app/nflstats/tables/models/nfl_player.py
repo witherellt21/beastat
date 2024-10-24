@@ -1,6 +1,7 @@
+import datetime
 import json
 
-from peewee import CharField, IntegerField
+from peewee import CharField, DateTimeField, IntegerField
 from playhouse.postgres_ext import JSONField
 from pydantic import BaseModel as BaseSerializer
 from scrapp.db import DB
@@ -16,7 +17,8 @@ class NFLPlayer(BaseModel):
     active_from = IntegerField()
     active_to = IntegerField()
 
-    # timestamp = DateTimeField()
+    timestamp = DateTimeField(default=datetime.datetime.now)
+
     class Meta:
         database = DB
 

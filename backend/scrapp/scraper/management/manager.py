@@ -5,7 +5,7 @@ from pprint import PrettyPrinter
 
 from lib.util import camel_to_snake_case, is_dir_module, is_file_module, list_difference
 from pydantic import ValidationError
-from scrapp.scraper import BaseHTMLTable, BaseWebPage, BaseWebScraper
+from scrapp.scraper import BaseWebPage, BaseWebScraper, DataframeController
 
 from .file_configs.validators import (
     HTMLTableFileConfig,
@@ -19,8 +19,8 @@ pp = PrettyPrinter(depth=4)
 MODULE_IGNORE = ["__init__.py", "__pycache__", "util"]
 
 
-def load_tables(path: str) -> dict[str, BaseHTMLTable]:
-    tables: dict[str, BaseHTMLTable] = {}
+def load_tables(path: str) -> dict[str, DataframeController]:
+    tables: dict[str, DataframeController] = {}
 
     list_modules = os.listdir(path)
     list_modules = list_difference(source=list_modules, to_remove=MODULE_IGNORE)
@@ -45,7 +45,7 @@ def load_tables(path: str) -> dict[str, BaseHTMLTable]:
         except ValidationError as exc:
             raise Exception(f"ConfigurationError for file {module_name}: {exc}")
 
-        table = BaseHTMLTable(
+        table = DataframeController(
             identification_function=obj.IDENTIFICATION_FUNCTION,
             db_table=obj.SQL_TABLE,
             name=obj.NAME,
@@ -68,7 +68,7 @@ def load_web_pages(path: str = ".") -> dict[str, BaseWebPage]:
         is_dir = is_dir_module(module_path=path + os.sep + module_name)
         is_file = is_file_module(module_name=module_name)
 
-        tables: dict[str, BaseHTMLTable]
+        tables: dict[str, DataframeController]
 
         if is_dir:
             tables = load_tables(path + os.sep + module_name + os.sep + "tables")
@@ -154,8 +154,10 @@ def load_scrapers(path: str = ".") -> list[BaseWebScraper]:
             )
 
         for base_table_name, inheritance_config in scraper_config.INHERITANCES.items():
-            base_table = web_pages[base_table_name[0]]._html_tables[base_table_name[1]]
-            source_table = web_pages[inheritance_config["source"][0]]._html_tables[
+            base_table = web_pages[base_table_name[0]].__table_configs[
+                base_table_name[1]
+            ]
+            source_table = web_pages[inheritance_config["source"][0]].__table_configs[
                 inheritance_config["source"][1]
             ]
 

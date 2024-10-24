@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python manage.py loaddata nfl_teams
+# python manage.py loaddata nfl_teams

@@ -22,8 +22,6 @@ def run_scrapers():
             scraper.daemon = True
             scraper.configure()
 
-            # for web_page in scraper._web_pages.values():
-            #     print(web_page.html_tables)
             scraper.start()
 
     return scrapers

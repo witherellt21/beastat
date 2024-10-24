@@ -10,9 +10,9 @@ from scrapp.scraper import (
     CharField,
     FloatField,
     IntegerField,
-    QueryArgField,
     QueryArgs,
     RenameField,
+    StaticField,
     TransformationField,
 )
 
@@ -43,7 +43,7 @@ def get_cached_player_season_averages_data(query_args: QueryArgs):
 
 class SeasonAveragesTableEntrySerializer(BaseHTMLTableSerializer):
     id = CharField(default=uuid.uuid4)
-    player_id = QueryArgField()
+    player_id = StaticField()
     Season = TransformationField(int, convert_season_to_year)
     Age = FloatField()
     Tm_id = TransformationField(

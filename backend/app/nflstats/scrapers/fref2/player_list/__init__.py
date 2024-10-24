@@ -1,2 +1,2 @@
-from .index import player_list_page
-from .player_info_table import player_info_table
+from .index import players_page
+from .player_info import player_info_table

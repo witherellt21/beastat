@@ -2,6 +2,7 @@ import re
 from typing import Any, Optional
 
 import numpy as np
+from peewee import DoesNotExist
 from scrapp.tables import schema
 
 
@@ -22,6 +23,10 @@ def extract_season_as_int_or_none(season: Any) -> Optional[int]:
 
 
 def get_team_id_by_abbr_or_none(abbr: str):
-    record = schema.table("nflteams").get_record({"abbr": abbr})
+    try:
+        record = schema.table("nflteams").get_record({"abbr": abbr})
 
-    return record.id if record else None  # type: ignore
+        return record.id  # type: ignore
+
+    except DoesNotExist:
+        return None

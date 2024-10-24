@@ -1,22 +1,55 @@
-from typing import Callable, Type
+from typing import Any, Callable, Type
 
+import numpy as np
 import pandas as pd
+from fastapi import dependencies
 from lib.pydantic_validator import PydanticValidatorMixin
+from pydantic import conint
+from scrapp.core.dataframes.util import safe_concat, safe_set_column
 
 from .fields import (
     BaseField,
     DatetimeField,
+    Dependency,
     HTMLSaveField,
-    QueryArgField,
-    RenameField,
+    StaticField,
     TransformationField,
 )
 
 
-class BaseHTMLTableSerializer(PydanticValidatorMixin):
+class BaseDataframeValidator(PydanticValidatorMixin):
     """
     Base class for a serializing an HTMLTable into savable types.
     """
+
+    __fields__: dict[str, BaseField] = {}
+    __field_set__: set[str] = set()
+    __post_validated_fields__: dict[str, BaseField] = {}
+    __post_validation_set__: set[str] = set()
+    # __dependencies__: list[BaseField] =
+
+    NAN_VALUES: list[str] = []
+    # CACHED_QUERY_GENERATOR: Callable[[Optional[QueryArgs]], pd.DataFrame] = (
+    #     lambda x: pd.DataFrame()
+    # )
+    MULTI_INDEX_MAPPER: Callable[[tuple[str, str]], str] = "_".join
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+
+        cls.__fields__ = cls.__get_fields()
+        cls.__field_set__ = set(cls.__fields__.keys())
+
+        for field_name, field in cls.__fields__.items():
+            # if field.dependencies:
+            # for dependency in field.dependencies:
+            # cls.__dependencies__[field_name] =
+
+            # cls.__post_validated_fields__[field_name] = field
+
+            if field.post_validated:
+                cls.__post_validated_fields__[field_name] = field
+                cls.__post_validation_set__.add(field_name)
 
     def __init__(self):
         """
@@ -32,12 +65,14 @@ class BaseHTMLTableSerializer(PydanticValidatorMixin):
         self.__replace_values__: dict[str, Type] = {}
         self.__rename_columns__: dict[str, str] = {}
         self.__html_save_fields__: dict[str, str] = {}
-        self.__query_arg_fields__: dict[str, str] = {}
-        self.__dependencies__: dict[str, str] = {}
-
+        self.__static_fields__: dict[str, str] = {}
+        # self.__dependencies__: dict[str, str] = {}
         self.__filters__: list[Callable[[pd.DataFrame], pd.Series[bool]]] = []
 
-        for field_name, field in self.__class__.get_fields().items():
+        self.multi_index_mapper = self.__class__.MULTI_INDEX_MAPPER
+        self.nan_values = self.__class__.NAN_VALUES
+
+        for field_name, field in self.__class__.__fields__.items():
 
             field.bind(field_name)
 
@@ -51,8 +86,8 @@ class BaseHTMLTableSerializer(PydanticValidatorMixin):
             if not field.cache:
                 continue
 
-            if field.depends_on:
-                self.dependencies[field_name] = field.depends_on
+            # if field.depends_on:
+            #     self.dependencies[field_name] = field.depends_on
 
             # Whether the field is required to be provided, or if it has default
             if field.required:
@@ -73,12 +108,8 @@ class BaseHTMLTableSerializer(PydanticValidatorMixin):
             if isinstance(field, HTMLSaveField):
                 self.__html_save_fields__[field.from_column] = field_name
 
-            # If the field is a rename of an existing field
-            if isinstance(field, RenameField):
-                self.__rename_columns__[field_name] = field.from_column
-
-            if isinstance(field, QueryArgField):
-                self.__query_arg_fields__[field_name] = field.from_column
+            if isinstance(field, StaticField):
+                self.__static_fields__[field_name] = field.from_column
 
             # If the field has filters
             if field.filters:
@@ -89,8 +120,6 @@ class BaseHTMLTableSerializer(PydanticValidatorMixin):
 
             # Add all fields that are being cached to the column types, except datetime
             self.__column_types__[field_name] = field.type
-
-        # print(self.query_arg_fields)
 
     @property
     def datetime_fields(self):
@@ -133,15 +162,19 @@ class BaseHTMLTableSerializer(PydanticValidatorMixin):
         return self.__replace_values__
 
     @property
-    def query_arg_fields(self):
-        return self.__query_arg_fields__
+    def static_fields(self):
+        return self.__static_fields__
 
     @property
-    def dependencies(self):
-        return self.__dependencies__
+    def fields(self) -> dict[str, BaseField]:
+        return self.__fields__
+
+    @property
+    def post_validated_fields(self) -> dict[str, BaseField]:
+        return self.__post_validated_fields__
 
     @classmethod
-    def get_fields(cls) -> dict[str, BaseField]:
+    def __get_fields(cls) -> dict[str, BaseField]:
         return {
             key: value
             for key, value in vars(cls).items()
@@ -149,18 +182,26 @@ class BaseHTMLTableSerializer(PydanticValidatorMixin):
         }
 
     @classmethod
+    def get_fields(cls) -> set[str]:
+        return cls.__field_set__
+
+    @classmethod
     def get_required_fields(cls):
         required = []
-        for field_name, field in cls.get_fields().items():
+        for field_name, field in cls.__get_fields().items():
             if not field.null:
                 required.append(field_name)
 
         return required
 
     @classmethod
+    def get_post_validated_fields(cls):
+        return cls.__post_validation_set__
+
+    @classmethod
     def get_non_required_fields(cls):
         non_required = []
-        for field_name, field in cls.get_fields().items():
+        for field_name, field in cls.__get_fields().items():
             if field.null:
                 non_required.append(field_name)
 
@@ -179,16 +220,50 @@ class BaseHTMLTableSerializer(PydanticValidatorMixin):
 
         return not_required
 
-    def execute(self, data: pd.DataFrame):
-        for name, field in self.get_fields().items():
+    def post_validate(self, df: pd.DataFrame):
+        for name, field in self.post_validated_fields.items():
             try:
-                data = field.execute(data)
+                df = field.execute(df)
             except Exception as e:
                 raise Exception(f"Error executing field `{name}`: {e}.")
 
-        return data
+        return df
+
+    def validate(self, df: pd.DataFrame, extra_columns: dict[str, Any]):
+        # Add metadata from the additional_fields attribute
+        for column_name, value in extra_columns.items():
+            df = safe_set_column(df, column_name, value)
+
+        # TODO: ADD support for multi-indexing
+        # if the columns are multindexed, flatten them
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.map("_".join).str.strip("_")
+
+        # flatten all columns TODO: probably should just make every field have a second column then reference
+        # for column in df.columns:
+        #     if column in self.html_save_fields:
+        #         df[self.html_save_fields[column]] = df[column].apply(lambda x: x[1])
+
+        #     df[column] = df[column].apply(lambda x: x[0] if type(x) == tuple else x)
+
+        df = df.replace(self.nan_values, np.nan, regex=True)
+
+        # print(df.columns)
+
+        for name, field in self.fields.items():
+            if field.post_validated:
+                continue
+
+            try:
+                df = field.execute(df)
+            except Exception as e:
+                raise Exception(f"Error executing field `{name}`: {e}.")
+
+        return df[
+            [col for col, field in self.fields.items() if not field.post_validated]
+        ]
 
 
 if __name__ == "__main__":
-    fields = BaseHTMLTableSerializer.get_fields()
-    fields = BaseHTMLTableSerializer.get_required_fields()
+    fields = BaseDataframeValidator.__get_fields()
+    fields = BaseDataframeValidator.get_required_fields()

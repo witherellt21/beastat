@@ -15,6 +15,8 @@ from typing import (
 import pandas as pd
 from lib.dataframes import filter_dataframe
 from pandera.typing import Series
+
+# from scrapp.scraper.html_table import BaseHTMLTable
 from typing_extensions import TypedDict
 
 T = TypeVar("T")
@@ -24,6 +26,18 @@ class FieldKwargs(TypedDict):
     default: NotRequired[
         Union[str, int, float, None, Callable[..., Union[str, int, float, None]]]
     ]
+
+
+class Dependency:
+    def __init__(self):
+        self.dependency = None
+        self.__confirmed = False
+
+    def is_confirmed(self):
+        return self.__confirmed
+
+    def confirm(self):
+        self.__confirmed = True
 
 
 class BaseField(Generic[T]):
@@ -41,7 +55,7 @@ class BaseField(Generic[T]):
         field_name: str = "",
         from_column: Optional[str] = None,
         to_columns: Optional[list[str]] = None,
-        depends_on: Optional[str] = None,
+        post_validated: bool = False,
         **kwargs: Unpack[FieldKwargs],
     ):
         self.type = type
@@ -52,7 +66,7 @@ class BaseField(Generic[T]):
         self.filters = filters
         self.default = kwargs.get("default", None)
         self.required = "default" not in kwargs
-        self.depends_on = depends_on
+        self.post_validated = post_validated
         self.fill_none = []
 
         self._from_column = from_column
@@ -75,34 +89,43 @@ class BaseField(Generic[T]):
         self.field_name = self.field_name or field_name
 
     def execute(self, dataframe: pd.DataFrame) -> pd.DataFrame:
-        # try:
-
-        # if self.required:
         try:
+            # If data comes from a different column, rename the column if it exists
             if self._from_column:
                 if self._from_column not in dataframe:
                     raise Exception(
                         f"{self.field_name} refers to a missing column: {self._from_column}"
                     )
 
-                dataframe = dataframe.rename(
-                    columns={self._from_column: self.field_name}
-                )
+                # adds a new column using the from column for each to column
+                for column in self.to_columns:
+                    dataframe.loc[:, [column]] = dataframe[self._from_column]
+                # dataframe = dataframe.rename(
+                #     columns={self._from_column: self.field_name}
+                # )
 
+            for column in self.to_columns:
+                if column not in dataframe.columns:
+                    raise Exception(f"Column {column} does not exist in the dataframe.")
+
+            # replaces values according to dictionary input for each output column
             if self.replace_values:
                 for field_name in self.to_columns:
                     dataframe = dataframe.replace({field_name: self.replace_values})
 
+            # drops nulls in each output column
             if not self.null:
                 dataframe = dataframe.dropna(subset=self.to_columns)
 
+            # sets the type for each output column
             if self.type in [str, int, float, object, "category"]:
                 dataframe = dataframe.astype(
                     {column: self.type for column in self.to_columns}
                 )
 
-            for field_name in self.to_columns:
-                if self.filters:
+            # filters the dataframe using the provided filters for each output column
+            if self.filters:
+                for field_name in self.to_columns:
                     dataframe = filter_dataframe(
                         dataframe=dataframe,
                         filters=[
@@ -110,6 +133,7 @@ class BaseField(Generic[T]):
                             for filter in self.filters
                         ],
                     )
+
         except Exception as e:
             if self.required:
                 raise e
@@ -121,11 +145,6 @@ class BaseField(Generic[T]):
             dataframe[self.field_name] = dataframe.iloc[:, 0].apply(func)
 
         return dataframe
-
-    # except Exception as e:
-    #     raise Exception(
-    #         f"Failed getting value for {self.field_name}. {traceback.format_exc()}"
-    #     )
 
 
 class CharField(BaseField[str]):
@@ -166,7 +185,30 @@ class DatetimeField(BaseField[datetime]):
         return super().execute(dataframe)
 
 
-class QueryArgField(BaseField[str]):
+# class InheritedField(BaseField[T]):
+#     def __init__(
+#         self,
+#         type: Type,
+#         # source: BaseHTMLTable,
+#         func: Callable[[pd.DataFrame], pd.DataFrame],
+#         **kwargs,
+#     ):
+#         dependencies = [Dependency()]
+
+#         super().__init__(type, post_validated=dependencies, **kwargs)
+
+#     #     self.source = None
+#     #     self.func = func
+
+#     # def execute(self, dataframe: pd.DataFrame) -> pd.DataFrame:
+#     #     new_data = self.func(self.source.data.data)
+
+#     #     dataframe = pd.concat([dataframe, new_data])
+
+#     #     return dataframe
+
+
+class StaticField(BaseField[str]):
     def __init__(self, from_column: Optional[str] = None, **kwargs):
         super().__init__(str, from_column=from_column, **kwargs)
 
@@ -174,18 +216,6 @@ class QueryArgField(BaseField[str]):
 class HTMLSaveField(BaseField[str]):
     def __init__(self, from_column: str, **kwargs):
         super().__init__(str, from_column=from_column, **kwargs)
-
-
-class RenameField(BaseField[T]):
-    def __init__(self, from_column: str, *args, type: Type, **kwargs):
-        super().__init__(type=type, from_column=from_column, *args, **kwargs)
-
-        # self._from_column = from_column
-
-    # def execute(self, dataframe: pd.DataFrame) -> pd.DataFrame:
-    #     dataframe = dataframe.rename(columns={self.from_column: self.field_name})
-
-    #     return super().execute(dataframe)
 
 
 class TransformationField(BaseField[Generic[T]]):
@@ -209,12 +239,7 @@ class TransformationField(BaseField[Generic[T]]):
     def from_columns(self) -> list[str]:
         return self._from_columns or [self.field_name]
 
-    # @property
-    # def to_columns(self):
-    #     return self._to_columns or [self.field_name]
-
     def execute(self, dataframe: pd.DataFrame) -> pd.DataFrame:
-        # if not all([column in dataframe.columns for column in self.from_columns]):
         for column in self.from_columns:
             if column not in dataframe.columns:
                 raise Exception(

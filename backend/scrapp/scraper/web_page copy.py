@@ -308,16 +308,48 @@ class BaseWebPage(
 
         self.__tables.append(table)
 
-    def add_inheritance(
+    def add_table_inheritance(
         self,
-        table: str | DataframeController,
-        source: DataStateManager,
+        table: str,
+        source_table: str | DataframeController,
         fields: list[str],
+        web_page: Optional["BaseWebPage"] = None,
     ):
-        if isinstance(table, DataframeController):
-            table.add_inheritance(source, fields)
+        """
+        Add an inheritance to the web page. Inheritances take data from another table
+        (possibly another web page).
+
+        If the inherited table is one of this web page:
+            perform the inheritance to pull data across tables
+        If the inherited table is from another web page:
+            if that web page is a subpage of the current page:
+                create the queryset
+                process it for queryset
+            if the web page is an indpendent page:
+                process the web page
+
+            perfrom the inheritance
+
+
+        """
+        if not web_page:
+            web_page = self
+
+        if isinstance(source_table, str):
+            source = web_page.table_configs[source_table]["table"].data
+
+        elif isinstance(source_table, DataframeController):
+            source = source_table.data
+
         else:
-            self.__table_configs[table]["table"].add_inheritance(source, fields)
+            raise Exception("'source_table' must be a string matching the name of a table on the web page or a DataframeController")
+        
+        self.__table_configs[table] = 
+
+        # if isinstance(table, DataframeController):
+        #     table.add_inheritance(source, fields)
+        # else:
+        #     self.__table_configs[table]["table"].add_inheritance(source, fields)
 
     def add_dependency(
         self,
@@ -750,19 +782,3 @@ class BaseWebPage(
             self.logger.debug(
                 f"\n---------------------------------------------------------\n"
             )
-
-
-class HTMLTableConfig:
-    # The controller that cleans and saves the input table.
-    controller: DataframeController
-
-    # The identifier function that will identify the desired table.
-    identifier: Callable[[list[pd.DataFrame]], Optional[pd.DataFrame]]
-
-    stale_condition: Callable[[], bool] | AdvancedQuery | CachedQueryConfig | None
-
-    # A list of inheritances that describe where external data should come from to complete the table.
-    inheritances: list[TableInheritance]
-
-    # A list of dependencies that need to be saved before the desired table can be saved.
-    dependencies: list[TableInheritance]

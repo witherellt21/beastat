@@ -19,9 +19,9 @@ from scrapp.scraper import (
     CharField,
     DatetimeField,
     FloatField,
-    QueryArgField,
     QueryArgs,
     RenameField,
+    StaticField,
     TransformationField,
 )
 
@@ -150,7 +150,7 @@ def get_cached_gamelog_query_data(query_args: QueryArgs):
 class PlayerBoxScoreTableConfig(BaseHTMLTableSerializer):
     Rk = CharField(replace_values={"Rk": np.nan}, cache=False)
     id = CharField(default=uuid.uuid4)
-    player_id = QueryArgField("player_id")
+    player_id = StaticField("player_id")
     G = CharField(replace_values={"": np.nan}, null=True)
     Date = DatetimeField(format="%Y-%m-%d", null=True)
     Age = CharField()

@@ -1,32 +1,29 @@
 import json
-import uuid
 from typing import Annotated
 
-from peewee import CharField, UUIDField
+from peewee import CharField
 from playhouse.postgres_ext import BinaryJSONField
-from pydantic import UUID4
 from pydantic import BaseModel as BaseSerializer
-from pydantic import Field, StringConstraints
+from pydantic import StringConstraints
 from scrapp.db.models import BaseModel
 from scrapp.tables import BaseTable
 
 
 class NFLTeam(BaseModel):
-    id = UUIDField(primary_key=True, unique=True)
+    id = CharField(primary_key=True, unique=True, max_length=3)
     name = CharField()
     abbr = CharField(max_length=3)
     alt_abbrs = BinaryJSONField(dumps=json.dumps)
 
 
 class NFLTeamSerializer(BaseSerializer):
-    id: UUID4 = Field(default_factory=uuid.uuid4)
+    id: Annotated[str, StringConstraints(min_length=3, max_length=3)]
     name: str
     abbr: Annotated[str, StringConstraints(min_length=3, max_length=3)]
     alt_abbrs: list[Annotated[str, StringConstraints(min_length=3, max_length=3)]] = []
 
 
 class NFLTeamReadSerializer(NFLTeamSerializer):
-    # id: UUID4  # type: ignore
     pass
 
 

@@ -11,8 +11,8 @@ from scrapp.scraper import (
     AugmentationField,
     BaseHTMLTableSerializer,
     CharField,
-    QueryArgField,
     RenameField,
+    StaticField,
     TransformationField,
 )
 
@@ -162,7 +162,7 @@ class PlayerPropsTableEntrySerializer(BaseHTMLTableSerializer):
         str, get_game_id, from_columns=["player_id"], null=False
     )
     status = AugmentationField(int, set_statuses, null=True)
-    stat = QueryArgField(
+    stat = StaticField(
         from_column="stat_subcategory",
         replace_values={
             "points": "PTS",

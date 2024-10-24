@@ -8,11 +8,11 @@ class NFLPlayerBaseInfoSerializer(BaseSerializer):
     player_id: str
     season: int
     age: int
-    team_id: UUID4
+    team_id: str
     pos: str
     gp: int
 
 
-class NFLPlayerBaseInfoReadSerializer(NFLPlayerBaseInfoSerializer):
-    _team_id: UUID4
-    team: NFLTeamReadSerializer
+# class NFLPlayerBaseInfoReadSerializer(NFLPlayerBaseInfoSerializer):
+#     _team_id: UUID4
+#     team: NFLTeamReadSerializer

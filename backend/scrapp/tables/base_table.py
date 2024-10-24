@@ -26,6 +26,16 @@ class AdvancedQuery(BaseSerializer):
     less_than: dict[str, Union[int, float, datetime]] = {}
     equal_to: dict[str, Any] = {}
     in_: dict[str, list[Any]] = {}
+    startswith: dict[str, str] = {}
+
+
+class EmptyQuery(AdvancedQuery):
+    """
+    Subclass of AdvancedQuery where all query arguments are empty.
+    """
+
+    def __init__(self):
+        super().__init__()
 
 
 class BaseTable:
@@ -141,26 +151,28 @@ class BaseTable:
 
         for record in query:
             if as_df:
-                records.append(model_to_dict(record, recurse=False))
+                data = model_to_dict(record, recurse=False)
+
+                for field in record._meta.refs:
+                    field_name = field.name
+                    data[f"{field_name}_id"] = data.pop(field_name)
+
+                records.append(data)
             else:
                 serialized = self.read_serializer_class(**model_to_dict(record))
                 records.append(serialized)
 
         return pd.DataFrame(records) if as_df else records
 
-    def get_record(self, query: dict = {}) -> Optional[BaseSerializer]:
-        try:
-            db_row = self.model_class.get(
-                *[
-                    getattr(self.model_class, field) == value
-                    for field, value in query.items()
-                ]
-            )
+    def get_record(self, query: dict = {}) -> BaseSerializer:
+        db_row = self.model_class.get(
+            *[
+                getattr(self.model_class, field) == value
+                for field, value in query.items()
+            ]
+        )
 
-            return self.read_serializer_class(**model_to_dict(db_row))
-
-        except peewee.DoesNotExist as e:
-            return None
+        return self.read_serializer_class(**model_to_dict(db_row))
 
     def get_or_create(self, *, data: dict[str, str] = {}) -> Optional[BaseSerializer]:
         validated_data: BaseSerializer = self.serializer_class(**data)
@@ -211,8 +223,6 @@ class BaseTable:
     ) -> pd.DataFrame:
         search = self.model_class.select()
 
-        # print(query.in_.items())
-
         if query:
             search = search.where(
                 *[
@@ -231,6 +241,10 @@ class BaseTable:
                     getattr(self.model_class, key) << value
                     for key, value in query.in_.items()
                 ],
+                *[
+                    getattr(self.model_class, key).startswith(value)
+                    for key, value in query.startswith.items()
+                ],
             )
 
         if confuse:
@@ -240,8 +254,14 @@ class BaseTable:
             search = search.limit(limit)
 
         rows = []
-        for row in search:
-            rows.append(model_to_dict(row, recurse=False))
+        for record in search:
+            data = model_to_dict(record, recurse=False)
+
+            for field in record._meta.refs:
+                field_name = field.name
+                data[f"{field_name}_id"] = data.pop(field_name)
+
+            rows.append(data)
 
         return pd.DataFrame(rows)
 
@@ -275,13 +295,12 @@ class BaseTable:
         """
         Insert a row into the database.
         """
-        id_fields = kwargs.get("id_fields", self.__class__.PKS)
-
         validated_data: BaseSerializer = self.serializer_class(
             **data, timestamp=datetime.now()
         )
+        v_data = validated_data.model_dump()
 
-        result: BaseModel = self.model_class.create(**validated_data.model_dump())
+        result: BaseModel = self.model_class.create(**v_data)
 
         if result:
             return validated_data
@@ -389,6 +408,7 @@ class BaseTable:
         id_fields = kwargs.get("id_fields", self.__class__.PKS)
 
         existing_row: Optional[BaseModel]
+
         try:
             existing_row = self.model_class.get(
                 *[
@@ -458,38 +478,3 @@ class BaseTable:
 
         # Serialize rows and convert to desired output type
         return count
-
-
-# def load_fixture(json_file: str, table: BaseTable):
-#     """
-#     Load static data from json file to table.
-#     """
-#     try:
-#         with open(json_file, "r") as teams_file:
-#             team_data = json.load(teams_file)
-#             for record in team_data:
-#                 table.update_or_insert_record(data=record)
-
-#     except FileNotFoundError as e:
-#         print(f"Unable to download team data. {e}")
-
-
-# def dump_fixture(json_file: str, table: BaseTable):
-#     """
-#     Dump static data from table to json file.
-#     """
-#     try:
-#         with open(json_file, "w") as file:
-#             full_data = []
-
-#             records = table.get_all_records()
-#             for record in records:
-#                 data = record.model_dump(exclude={"id"})
-#                 data["id"] = str(record.id)  # type: ignore
-
-#                 full_data.append(data)
-
-#             file.write(json.dumps(full_data))
-
-# except FileNotFoundError as e:
-#     print(f"Unable to download team data. {e}")

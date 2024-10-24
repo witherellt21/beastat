@@ -9,6 +9,69 @@
     {
         "model": "nflteams",
         "fields": {
+            "name": "Atlanta Falcons",
+            "abbr": "ATL"
+        }
+    },
+    {
+        "model": "nflteams",
+        "fields": {
+            "name": "Baltimore Revens",
+            "abbr": "BAL"
+        }
+    },
+    {
+        "model": "nflteams",
+        "fields": {
+            "name": "Buffalo Bills",
+            "abbr": "BUF"
+        }
+    },
+    {
+        "model": "nflteams",
+        "fields": {
+            "name": "Carolina Panthers",
+            "abbr": "CAR"
+        }
+    },
+    {
+        "model": "nflteams",
+        "fields": {
+            "name": "Chicago Bears",
+            "abbr": "CHI"
+        }
+    },
+    {
+        "model": "nflteams",
+        "fields": {
+            "name": "Cincinnati Bengals",
+            "abbr": "CIN"
+        }
+    },
+    {
+        "model": "nflteams",
+        "fields": {
+            "name": "Cleveland Browns",
+            "abbr": "CLE"
+        }
+    },
+    {
+        "model": "nflteams",
+        "fields": {
+            "name": "Dallas Cowboys",
+            "abbr": "DAL"
+        }
+    },
+    {
+        "model": "nflteams",
+        "fields": {
+            "name": "Denver Broncos",
+            "abbr": "DEN"
+        }
+    },
+    {
+        "model": "nflteams",
+        "fields": {
             "name": "Detroit Lions",
             "abbr": "DET"
         }
@@ -16,8 +79,78 @@
     {
         "model": "nflteams",
         "fields": {
+            "name": "Green Bay Packers",
+            "abbr": "GNB"
+        }
+    },
+    {
+        "model": "nflteams",
+        "fields": {
+            "name": "Houston Texans",
+            "abbr": "HOU"
+        }
+    },
+    {
+        "model": "nflteams",
+        "fields": {
+            "name": "Indianapolis Colts",
+            "abbr": "IND"
+        }
+    },
+    {
+        "model": "nflteams",
+        "fields": {
             "name": "Jaxonville Jaguars",
             "abbr": "JAX"
+        }
+    },
+    {
+        "model": "nflteams",
+        "fields": {
+            "name": "Kansas City Chiefs",
+            "abbr": "KAN"
+        }
+    },
+    {
+        "model": "nflteams",
+        "fields": {
+            "name": "Las Vegas Raiders",
+            "abbr": "LVR"
+        }
+    },
+    {
+        "model": "nflteams",
+        "fields": {
+            "name": "Philadelphia Eagles",
+            "abbr": "PHI"
+        }
+    },
+    {
+        "model": "nflteams",
+        "fields": {
+            "name": "Pittsburgh Steelers",
+            "abbr": "PIT"
+        }
+    },
+    {
+        "model": "nflteams",
+        "fields": {
+            "name": "Los Angeles Chargers",
+            "abbr": "LAC"
+        }
+    },
+    {
+        "model": "nflteams",
+        "fields": {
+            "name": "Pittsburgh Steelers",
+            "abbr": "PIT"
+        }
+    },
+    {
+        "model": "nflteams",
+        "fields": {
+            "name": "Pittsburgh Steelers",
+            "abbr": "PIT"
         }
     }
 ]
