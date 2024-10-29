@@ -6,8 +6,7 @@ import logging
 from string import ascii_uppercase
 
 from scrapp.scraper.identification_functions import indexed
-
-from backend.scrapp.scraper.web_page import BaseWebPage
+from scrapp.scraper.web_page import BaseWebPage
 
 from . import player_info_table
 from .player_summary_page import player_summary_page

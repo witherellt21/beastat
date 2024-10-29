@@ -1,0 +1,8 @@
+webpage:
+  metadata:
+    name: "MyPage"
+
+table:
+  metadata:
+    name: "MyTable"
+

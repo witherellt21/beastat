@@ -1,2 +1,3 @@
+from .defensive_splits import NFLDefensiveSplitsTable
 from .kick_and_punt_returns import NFLKickAndPuntReturnSplitsTable
 from .rushing_and_receiving import NFLRushingAndReceivingSplitsTable

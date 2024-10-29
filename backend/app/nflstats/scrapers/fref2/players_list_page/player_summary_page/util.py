@@ -47,7 +47,7 @@ def has_regular_season_return_data(
     )
 
 
-def has_regular_season_receiving_column(
+def has_regular_season_rushing_and_receiving_columns(
     tables: list[pd.DataFrame],
 ) -> Optional[pd.DataFrame]:
     return next(
@@ -56,6 +56,20 @@ def has_regular_season_receiving_column(
             for table in tables
             if "Rushing" in table.columns.get_level_values(0)
             and "Receiving" in table.columns.get_level_values(0)
+            and "AV" in table.columns.get_level_values(1)
+        ),
+        None,
+    )
+
+
+def has_regular_season_defensive_data(
+    tables: list[pd.DataFrame],
+) -> Optional[pd.DataFrame]:
+    return next(
+        (
+            table
+            for table in tables
+            if "Def Interceptions" in table.columns.get_level_values(0)
             and "AV" in table.columns.get_level_values(1)
         ),
         None,

@@ -98,7 +98,7 @@ class BaseField(Generic[T]):
 
                 if not column_found:
                     raise Exception(
-                        f"Cannot resolve column {self.field_name}. None of the source columns {self._from_column} were found in the source dataframe."
+                        f"Cannot resolve column {self.field_name}. None of the source columns {self._from_column} were found in the source dataframe with columns {dataframe.columns}."
                     )
 
             for column in self.to_columns:

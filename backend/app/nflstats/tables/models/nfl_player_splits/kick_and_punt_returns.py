@@ -1,8 +1,6 @@
 from typing import Optional
 
 from peewee import CharField, FloatField, ForeignKeyField, IntegerField
-from pydantic import UUID4
-from pydantic import BaseModel as BaseSerializer
 from scrapp.db.models import BaseModel
 from scrapp.tables import BaseTable
 

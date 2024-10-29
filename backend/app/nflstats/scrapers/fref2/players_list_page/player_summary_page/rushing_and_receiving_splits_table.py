@@ -25,7 +25,7 @@ class RushingAndReceivingSplitsHTMLTableSerializer(BaseDataframeValidator):
     )
     pos = CharField(from_column="Unnamed: 4_level_0_Pos")
     gp = IntegerField(from_column="Unnamed: 5_level_0_G")
-    gs = CharField(from_column="Unnamed: 6_level_0_GS")
+    gs = IntegerField(from_column="Unnamed: 6_level_0_GS")
 
     rush = IntegerField(from_column="Rushing_Att")
     rush_yds = IntegerField(from_column="Rushing_Yds")
