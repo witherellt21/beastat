@@ -1,14 +1,10 @@
-from scrapp import setup
-from scrapp.scraper.identification_functions import indexed
-from scrapp.tables.base_table import AdvancedQuery
-
-setup()
-
 import logging
 
 from scrapp.scraper import BaseWebPage
+from scrapp.scraper.identification_functions import indexed
 
-from .teams import teams_table
+from . import teams_table
+from .util import database_has_32_teams
 
 teams_list_page = BaseWebPage(
     name="NFLTeamsList",
@@ -18,5 +14,7 @@ teams_list_page = BaseWebPage(
 )
 
 teams_list_page.add_table(
-    teams_table, identification_function=indexed, stale_condition=None
+    teams_table.table,
+    identification_function=indexed(0),
+    stale_condition=None,
 )

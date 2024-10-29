@@ -19,18 +19,20 @@ def extract_season_as_int_or_none(season: Any) -> Optional[int]:
 
         return int(year_match.group(0)) if year_match else None
 
+    elif type(season) == int:
+        return season
+
     else:
         return None
 
 
-def get_team_id_by_abbr_or_none(abbr: str):
-    try:
-        record = schema.table("nflteams").get_record({"abbr": abbr})
+def extract_team_from_team_link(link: str) -> str:
+    team_id = link.rsplit("/", 2)[1].split(".")[0]
 
-        return record.id  # type: ignore
+    # Will throw error if the team does not exist in which case we have an issue
+    schema.table("nflteams").get_record({"id": team_id})
 
-    except DoesNotExist:
-        return None
+    return team_id
 
 
 def has_regular_season_return_data(
@@ -72,5 +74,14 @@ def has_regular_season_defensive_data(
             if "Def Interceptions" in table.columns.get_level_values(0)
             and "AV" in table.columns.get_level_values(1)
         ),
+        None,
+    )
+
+
+def has_regular_season_passing_data(
+    tables: list[pd.DataFrame],
+) -> Optional[pd.DataFrame]:
+    return next(
+        (table for table in tables if "Cmp" in table.columns and "AV" in table.columns),
         None,
     )

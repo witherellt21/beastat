@@ -19,8 +19,8 @@ class NFLTeam(BaseModel):
 class NFLTeamSerializer(BaseSerializer):
     id: Annotated[str, StringConstraints(min_length=3, max_length=3)]
     name: str
-    abbr: Annotated[str, StringConstraints(min_length=3, max_length=3)]
-    alt_abbrs: list[Annotated[str, StringConstraints(min_length=3, max_length=3)]] = []
+    abbr: Annotated[str, StringConstraints(min_length=2, max_length=3)]
+    alt_abbrs: list[Annotated[str, StringConstraints(min_length=2, max_length=3)]] = []
 
 
 class NFLTeamReadSerializer(NFLTeamSerializer):
@@ -31,4 +31,4 @@ class NFLTeamsTable(BaseTable):
     MODEL_CLASS = NFLTeam
     SERIALIZER_CLASS = NFLTeamSerializer
     READ_SERIALIZER_CLASS = NFLTeamReadSerializer
-    PKS = ["abbr"]
+    PKS = ["id"]

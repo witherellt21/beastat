@@ -212,7 +212,12 @@ class BaseDataframeValidator(PydanticValidatorMixin):
 
         return df
 
+    def preprocess(self, df: pd.DataFrame) -> pd.DataFrame:
+        return df
+
     def validate(self, df: pd.DataFrame, extra_columns: dict[str, Any]):
+        df = self.preprocess(df)
+
         # Add metadata from the extra_columns attribute
         for column_name, value in extra_columns.items():
             df = safe_set_column(df, column_name, value)

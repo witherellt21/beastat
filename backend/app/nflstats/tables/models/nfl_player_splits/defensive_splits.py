@@ -43,7 +43,7 @@ class NFLDefensiveSplit(BaseModel):
     timestamp = DateTimeField(default=datetime.now)
 
     class Meta:
-        indexes = ((("player_id", "season"), True),)
+        indexes = ((("player_id", "season", "team_id"), True),)
 
 
 class NFLDefensiveSplitSerializer(NFLPlayerBaseInfoSerializer):
@@ -85,4 +85,4 @@ class NFLDefensiveSplitsTable(BaseTable):
     MODEL_CLASS = NFLDefensiveSplit
     SERIALIZER_CLASS = NFLDefensiveSplitSerializer
     READ_SERIALIZER_CLASS = NFLDefensiveSplitReadSerializer
-    PKS = ["player_id", "season"]
+    PKS = ["player_id", "season", "team_id"]

@@ -538,15 +538,15 @@ class BaseWebPage(
                 if data is None:
                     # TODO: Temporary solution that shouldn't have to be set here
                     # config["table"].data_source = "cached"
-                    self.logger.debug(f"-> {config.table.name}: Not found.")
+                    self.logger.debug(f"--- {config.table.name}: Not found.")
                     continue
 
                 config.table.preprocess(data, additional_fields=query_args)
 
-                self.logger.debug(f"--- {config.table.name}: Downloaded.")
+                self.logger.debug(f"-> {config.table.name}: Downloaded.")
 
             else:
-                self.logger.debug(f"--- {config.table.name}: Pulled from cache.")
+                self.logger.debug(f"-> {config.table.name}: Pulled from cache.")
 
         return tables
 

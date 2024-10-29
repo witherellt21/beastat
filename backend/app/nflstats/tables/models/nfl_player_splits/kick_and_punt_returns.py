@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import Optional
 
-from peewee import CharField, FloatField, ForeignKeyField, IntegerField
+from peewee import CharField, DateTimeField, FloatField, ForeignKeyField, IntegerField
 from scrapp.db.models import BaseModel
 from scrapp.tables import BaseTable
 
@@ -26,9 +27,10 @@ class NFLKickAndPuntReturnSplit(BaseModel):
     kr_tds = IntegerField()
     kr_long = IntegerField()
     kr_yards_avg = FloatField(null=True)
+    timestamp = DateTimeField(default=datetime.now)
 
     class Meta:
-        indexes = ((("player_id", "season"), True),)
+        indexes = ((("player_id", "season", "team_id"), True),)
 
 
 class NFLKickAndPuntReturnSplitSerializer(NFLPlayerBaseInfoSerializer):
@@ -56,4 +58,4 @@ class NFLKickAndPuntReturnSplitsTable(BaseTable):
     MODEL_CLASS = NFLKickAndPuntReturnSplit
     SERIALIZER_CLASS = NFLKickAndPuntReturnSplitSerializer
     READ_SERIALIZER_CLASS = NFLKickAndPuntReturnSplitReadSerializer
-    PKS = ["player_id", "season"]
+    PKS = ["player_id", "season", "team_id"]

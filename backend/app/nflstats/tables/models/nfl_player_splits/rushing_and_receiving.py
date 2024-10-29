@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import Optional
 
-from peewee import CharField, FloatField, ForeignKeyField, IntegerField
+from peewee import CharField, DateTimeField, FloatField, ForeignKeyField, IntegerField
 from pydantic import UUID4
 from scrapp.db.models import BaseModel
 from scrapp.tables import BaseTable
@@ -41,6 +42,10 @@ class NFLRushingAndReceivingSplit(BaseModel):
     rec_yds_per_game = FloatField()
     catch_perc = FloatField(null=True)
     yds_per_target = FloatField(null=True)
+    timestamp = DateTimeField(default=datetime.now)
+
+    class Meta:
+        indexes = ((("player_id", "season", "team_id"), True),)
 
 
 class NFLRushingAndReceivingSplitSerializer(NFLPlayerBaseInfoSerializer):
@@ -82,4 +87,4 @@ class NFLRushingAndReceivingSplitsTable(BaseTable):
     MODEL_CLASS = NFLRushingAndReceivingSplit
     SERIALIZER_CLASS = NFLRushingAndReceivingSplitSerializer
     READ_SERIALIZER_CLASS = NFLRushingAndReceivingSplitReadSerializer
-    PKS = ["player_id", "season"]
+    PKS = ["player_id", "season", "team_id"]

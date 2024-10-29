@@ -27,7 +27,7 @@ players_list_page.add_table(
     identification_function=indexed(0),
     stale_condition={
         "from_args": ["player_last_initial"],
-        "query": {"startswith": {"id": "player_last_initial"}},
+        "query": {"startswith": {"id": "CCC"}},
     },
 )
 

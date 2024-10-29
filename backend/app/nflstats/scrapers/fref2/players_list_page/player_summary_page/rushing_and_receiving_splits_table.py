@@ -1,5 +1,4 @@
 from scrapp.core.dataframes.serializers import (
-    BaseDataframeValidator,
     CharField,
     FloatField,
     IntegerField,
@@ -9,10 +8,11 @@ from scrapp.core.dataframes.serializers import (
 from scrapp.scraper import DataframeController
 from scrapp.tables import schema
 
-from .util import extract_season_as_int_or_none, get_team_id_by_abbr_or_none
+from .base import BaseSplitsDataframeValidator
+from .util import extract_season_as_int_or_none, extract_team_from_team_link
 
 
-class RushingAndReceivingSplitsHTMLTableSerializer(BaseDataframeValidator):
+class RushingAndReceivingSplitsHTMLTableSerializer(BaseSplitsDataframeValidator):
     player_id = StaticField()
     season = TransformationField(
         int, extract_season_as_int_or_none, from_columns=["Unnamed: 0_level_0_Season"]
@@ -20,9 +20,10 @@ class RushingAndReceivingSplitsHTMLTableSerializer(BaseDataframeValidator):
     age = IntegerField(from_column="Unnamed: 1_level_0_Age")
     team_id = TransformationField(
         str,
-        get_team_id_by_abbr_or_none,
-        from_columns=["Unnamed: 2_level_0_Team"],
+        extract_team_from_team_link,
+        from_columns=["Unnamed: 2_level_0_Team_link"],
     )
+
     pos = CharField(from_column="Unnamed: 4_level_0_Pos")
     gp = IntegerField(from_column="Unnamed: 5_level_0_G")
     gs = IntegerField(from_column="Unnamed: 6_level_0_GS")
