@@ -1,5 +1,5 @@
 from scrapp import setup
-from scrapp.scraper.identification_functions import first
+from scrapp.scraper.identification_functions import indexed
 from scrapp.tables.base_table import AdvancedQuery
 
 setup()
@@ -18,5 +18,5 @@ teams_list_page = BaseWebPage(
 )
 
 teams_list_page.add_table(
-    teams_table, identification_function=first, stale_condition=None
+    teams_table, identification_function=indexed, stale_condition=None
 )

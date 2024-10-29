@@ -428,10 +428,10 @@ class BaseWebPage(
             elif callable(stale_condition):
                 stale_condition()
 
-            if table["table"].data_source == "downloaded":
+            if table["table"].status == "downloaded":
                 all_cached = False
 
-            elif table["table"].data_source == "cached":
+            elif table["table"].status == "cached":
                 any_cached = True
 
         # A check to determine whether tables should be fetched from the
@@ -442,7 +442,7 @@ class BaseWebPage(
 
         elif self.query_cached_condition == "any" and any_cached:
             for table in self.__tables:
-                table.data_source = "cached"
+                table.status = "cached"
 
             data_source = "cached"
 
@@ -500,7 +500,7 @@ class BaseWebPage(
             # TODO: Fix the order of how the datasource is set so that this makes
             # more sense. Maybe make it a boolean saying whether or not the
             # data in the data manager is from cache or not
-            if config["table"].data_source == "downloaded":
+            if config["table"].status == "downloaded":
                 data = config["identifier"](tables)
 
                 if data is None:
@@ -528,7 +528,7 @@ class BaseWebPage(
         # waiting for a dependency
         self.logger.info("\n")
         for config in self.__table_configs.values():
-            if config["table"].data_source != "cached":
+            if config["table"].status != "cached":
                 # TODO: We should find another way to handle this
                 try:
                     config["table"].data.commit()
@@ -553,7 +553,7 @@ class BaseWebPage(
                 return False
 
         for dependency in table["dependencies"]:
-            if dependency["source"].data_source != "cached":
+            if dependency["source"].status != "cached":
                 return False
 
         return True
@@ -575,7 +575,7 @@ class BaseWebPage(
         for config in self.__table_configs.values():
             config["table"].attempt_save()
 
-            if config["table"].data_source != "cached":
+            if config["table"].status != "cached":
                 unsaved_tables.append(config)
 
         # Processes each nested web page, which depend on the current web page.
@@ -631,7 +631,7 @@ class BaseWebPage(
         for config in table_configs:
             config["table"].attempt_save(raise_exception=True)
 
-            if config["table"].data_source != "cached":
+            if config["table"].status != "cached":
                 unsaved_tables.append(config)
 
         self.clear_cache()

@@ -1,17 +1,21 @@
 import datetime
 import json
+from typing import Annotated
 
-from peewee import CharField, DateTimeField, IntegerField
+from peewee import CharField, DateTimeField, ForeignKeyField, IntegerField
 from playhouse.postgres_ext import JSONField
 from pydantic import BaseModel as BaseSerializer
+from pydantic import StringConstraints
 from scrapp.db import DB
 from scrapp.db.models import BaseModel
 from scrapp.tables import BaseTable
 
+from .nfl_team import NFLTeam
+
 
 class NFLPlayer(BaseModel):
     id = CharField(unique=True, primary_key=True)
-    # team = ForeignKeyField(Team, backref="players", null=True)
+    # team = ForeignKeyField(NFLTeam, backref="players", null=True)
     name = CharField()
     pos = JSONField(dumps=json.dumps)
     active_from = IntegerField()
@@ -26,6 +30,7 @@ class NFLPlayer(BaseModel):
 class NFLPlayerSerializer(BaseSerializer):
     id: str
     name: str
+    # team_id: Annotated[str, StringConstraints(min_length=3, max_length=3)]
     pos: list[str]
     active_from: int
     active_to: int

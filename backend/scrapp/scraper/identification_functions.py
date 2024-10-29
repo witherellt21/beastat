@@ -1,7 +1,13 @@
-from typing import Optional
+from typing import Callable, Optional
 
 import pandas as pd
 
 
-def first(tables: list[pd.DataFrame]) -> Optional[pd.DataFrame]:
-    return tables[0]
+def indexed(index: int) -> Callable[[list[pd.DataFrame]], Optional[pd.DataFrame]]:
+    def func(tables: list[pd.DataFrame]):
+        if len(tables) < index + 1:
+            return None
+
+        return tables[index]
+
+    return func

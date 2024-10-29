@@ -29,9 +29,6 @@ class BaseDataframeValidator(PydanticValidatorMixin):
     # __dependencies__: list[BaseField] =
 
     NAN_VALUES: list[str] = []
-    # CACHED_QUERY_GENERATOR: Callable[[Optional[QueryArgs]], pd.DataFrame] = (
-    #     lambda x: pd.DataFrame()
-    # )
     MULTI_INDEX_MAPPER: Callable[[tuple[str, str]], str] = "_".join
 
     def __init_subclass__(cls, **kwargs):
@@ -105,11 +102,11 @@ class BaseDataframeValidator(PydanticValidatorMixin):
                 self.__transformations__[field_name] = field
 
             # If the field is pulled from HTML
-            if isinstance(field, HTMLSaveField):
-                self.__html_save_fields__[field.from_column] = field_name
+            # if isinstance(field, HTMLSaveField):
+            #     self.__html_save_fields__[field.from_column] = field_name
 
-            if isinstance(field, StaticField):
-                self.__static_fields__[field_name] = field.from_column
+            # if isinstance(field, StaticField):
+            #     self.__static_fields__[field_name] = field.from_column
 
             # If the field has filters
             if field.filters:
@@ -230,7 +227,7 @@ class BaseDataframeValidator(PydanticValidatorMixin):
         return df
 
     def validate(self, df: pd.DataFrame, extra_columns: dict[str, Any]):
-        # Add metadata from the additional_fields attribute
+        # Add metadata from the extra_columns attribute
         for column_name, value in extra_columns.items():
             df = safe_set_column(df, column_name, value)
 
@@ -239,16 +236,7 @@ class BaseDataframeValidator(PydanticValidatorMixin):
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.map("_".join).str.strip("_")
 
-        # flatten all columns TODO: probably should just make every field have a second column then reference
-        # for column in df.columns:
-        #     if column in self.html_save_fields:
-        #         df[self.html_save_fields[column]] = df[column].apply(lambda x: x[1])
-
-        #     df[column] = df[column].apply(lambda x: x[0] if type(x) == tuple else x)
-
         df = df.replace(self.nan_values, np.nan, regex=True)
-
-        # print(df.columns)
 
         for name, field in self.fields.items():
             if field.post_validated:

@@ -7,7 +7,7 @@ from .models import (
     NFLTeamsTable,
 )
 
-tables.schema.register(NFLPlayersTable())
 tables.schema.register(NFLTeamsTable())
+tables.schema.register(NFLPlayersTable())
 tables.schema.register(NFLKickAndPuntReturnSplitsTable())
 tables.schema.register(NFLRushingAndReceivingSplitsTable())

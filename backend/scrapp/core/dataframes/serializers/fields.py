@@ -1,4 +1,3 @@
-import traceback
 from datetime import datetime
 from typing import (
     Any,
@@ -15,8 +14,6 @@ from typing import (
 import pandas as pd
 from lib.dataframes import filter_dataframe
 from pandera.typing import Series
-
-# from scrapp.scraper.html_table import BaseHTMLTable
 from typing_extensions import TypedDict
 
 T = TypeVar("T")
@@ -53,7 +50,7 @@ class BaseField(Generic[T]):
         filters: list[Callable[[Any], Series[bool]]] = [],
         cache: bool = True,
         field_name: str = "",
-        from_column: Optional[str] = None,
+        from_column: Optional[str | tuple[str]] = None,
         to_columns: Optional[list[str]] = None,
         post_validated: bool = False,
         **kwargs: Unpack[FieldKwargs],
@@ -69,7 +66,12 @@ class BaseField(Generic[T]):
         self.post_validated = post_validated
         self.fill_none = []
 
-        self._from_column = from_column
+        # Fix from_column to a list that can be scanned for existing column
+        if isinstance(from_column, str):
+            from_column = (from_column,)
+
+        self._from_column: Optional[tuple[str]] = from_column
+
         self._to_columns = to_columns
 
         if not self.required and self.default == None and not self.null:
@@ -78,8 +80,8 @@ class BaseField(Generic[T]):
         self.cache = cache
 
     @property
-    def from_column(self) -> str:
-        return self._from_column or self.field_name
+    def from_column(self) -> tuple[str]:
+        return self._from_column or (self.field_name,)
 
     @property
     def to_columns(self) -> list[str]:
@@ -92,17 +94,24 @@ class BaseField(Generic[T]):
         try:
             # If data comes from a different column, rename the column if it exists
             if self._from_column:
-                if self._from_column not in dataframe:
-                    raise Exception(
-                        f"{self.field_name} refers to a missing column: {self._from_column}"
-                    )
+                column_found = False
 
-                # adds a new column using the from column for each to column
-                for column in self.to_columns:
-                    dataframe.loc[:, [column]] = dataframe[self._from_column]
-                # dataframe = dataframe.rename(
-                #     columns={self._from_column: self.field_name}
-                # )
+                for from_column in self.from_column:
+                    if from_column not in dataframe:
+                        continue
+                    # raise Exception(
+                    #     f"{self.field_name} refers to a missing column: {self._from_column}"
+                    # )
+                    column_found = True
+
+                    # adds a new column using the from column for each to column
+                    for to_column in self.to_columns:
+                        dataframe.loc[:, [to_column]] = dataframe[from_column]
+
+                if not column_found:
+                    raise Exception(
+                        f"Cannot resolve column {self.field_name}. None of the source columns {self._from_column} were found in the source dataframe."
+                    )
 
             for column in self.to_columns:
                 if column not in dataframe.columns:
@@ -178,43 +187,30 @@ class DatetimeField(BaseField[datetime]):
         self.format = format
 
     def execute(self, dataframe: pd.DataFrame) -> pd.DataFrame:
-        dataframe[self.field_name] = pd.to_datetime(
-            dataframe[self.from_column], format=self.format
-        )
+        column_found = False
+        for column in self.from_column:
+
+            if column not in dataframe.columns:
+                continue
+
+            column_found = True
+
+            dataframe[self.field_name] = pd.to_datetime(
+                dataframe[self.from_column], format=self.format
+            )
+
+            self._from_column = None
+
+        if not column_found:
+            raise Exception(
+                f"Cannot resolve column {self.field_name}. None of the source columns {self.from_column} were found in the source dataframe."
+            )
 
         return super().execute(dataframe)
 
 
-# class InheritedField(BaseField[T]):
-#     def __init__(
-#         self,
-#         type: Type,
-#         # source: BaseHTMLTable,
-#         func: Callable[[pd.DataFrame], pd.DataFrame],
-#         **kwargs,
-#     ):
-#         dependencies = [Dependency()]
-
-#         super().__init__(type, post_validated=dependencies, **kwargs)
-
-#     #     self.source = None
-#     #     self.func = func
-
-#     # def execute(self, dataframe: pd.DataFrame) -> pd.DataFrame:
-#     #     new_data = self.func(self.source.data.data)
-
-#     #     dataframe = pd.concat([dataframe, new_data])
-
-#     #     return dataframe
-
-
 class StaticField(BaseField[str]):
     def __init__(self, from_column: Optional[str] = None, **kwargs):
-        super().__init__(str, from_column=from_column, **kwargs)
-
-
-class HTMLSaveField(BaseField[str]):
-    def __init__(self, from_column: str, **kwargs):
         super().__init__(str, from_column=from_column, **kwargs)
 
 

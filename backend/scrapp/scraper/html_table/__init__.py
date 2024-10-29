@@ -24,6 +24,7 @@ class DataframeControllerInheritance:
         self,
         source: "DataStateManager",
         fields: list[str],
+        on_keys: dict[str, str],
     ) -> None:
         for field in fields:
             if field not in source.data_fields:
@@ -31,30 +32,27 @@ class DataframeControllerInheritance:
 
         self.source: "DataStateManager" = source
         self.fields: list[str] = fields
+        self.on_keys: dict[str, str] = on_keys
 
     def __str__(self) -> str:
-        return f"DataframeControllerInheritance :: {self.fields} from {self.source}"
+        return f"{self.__class__.__name__} :: {self.fields} from {self.source}"
 
-    def perform(self, primary_keys: list[str]):
+    def is_ready(self):
+        return not self.source.commits.empty
+
+    def perform(self):
         """
         Perform the inheritance operation to get a new dataframe consisting
         of the requested field and keys to merge on.
         """
-        if not self.source.stage.empty:
-            fields = [*primary_keys, *self.fields]
+        if not self.source.commits.empty:
+            fields = [*self.on_keys.keys(), *self.fields]
+            data = self.source.commits[fields]
 
-            print(fields)
-            print(self.source.stage)
-
-            data = self.source.stage[fields]
-
-            data = data.rename(
-                columns={col: f"inherited_{col}" for col in data.columns}
-            )
+            data = data.rename(columns=self.on_keys)
+            data = data.rename(columns={col: f"inherited_{col}" for col in self.fields})
 
             return data
-            # except KeyError as e:
-            #     raise ColumnDoesNotExist(str(e), self.source.stage.columns)
 
         else:
             raise StageEmpty(
@@ -116,7 +114,7 @@ class DataframeController(
         #     "cached_query_generator", self.__class__.CACHED_QUERY_GENERATOR
         # )
 
-        self.data_source: Literal["downloaded", "cached"] = "downloaded"
+        self.status: Literal["downloaded", "cached"] = "downloaded"
 
         if data_manager and isinstance(data_manager, DataStateManager):
             self.__data_manager = data_manager
@@ -165,16 +163,12 @@ class DataframeController(
     def ready_to_save(self):
         pass
 
-    def cached_data(
-        self, query_args: Optional[QueryArgs] = None
-    ) -> Optional[pd.DataFrame]:
-        """
-        Get the data for the specified query arguments from the database.
-        """
-        # if query_args == None:
-        #     return None
+    def is_cached(self):
+        return self.status == "cached"
 
-        # return self.__cached_query_generator(query_args)
+    def set_cached(self):
+        # TODO: There is a better design out there
+        self.status = "cached"
 
     def load_from_cache(self, db_query: AdvancedQuery | None):
         """
@@ -185,10 +179,10 @@ class DataframeController(
 
         if not data.empty:
             self.__data_manager.add(data)
-            self.data_source = "cached"
+            self.status = "cached"
 
         else:
-            self.data_source = "downloaded"  # TODO: Should this be done here?
+            self.status = "downloaded"  # TODO: Should this be done here?
 
     def add_dependency(
         self,
@@ -199,7 +193,7 @@ class DataframeController(
 
     def check_dependencies(self):
         for dependency in self.dependencies:
-            if dependency.source.data_source != "cached":
+            if dependency.source.status != "cached":
                 return False
 
         return True
@@ -226,7 +220,7 @@ class DataframeController(
 
         if self.ready_for_save():
             self.data.push()
-            self.data_source = "cached"
+            self.status = "cached"
 
     def resolve_inheritances(self):
         """
@@ -238,6 +232,11 @@ class DataframeController(
             data = self.__serializer.post_validate(data)
 
             self.__data_manager.update(data)
+
+    def save(self, *, persist_data: bool = False):
+        self.__data_manager.push(persist_data=persist_data)
+
+        self.status = "cached"
 
     def postprocess(self, *, persist_data: bool = False):
         self.resolve_inheritances()

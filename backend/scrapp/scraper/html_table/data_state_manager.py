@@ -1,3 +1,4 @@
+from shlex import join
 from typing import Iterable
 
 import numpy as np
@@ -95,12 +96,13 @@ class DataStateManager:
             raise DataInsertionError(concatenate_exceptions(exceptions))
 
         # Concatenate all independent columns
-        self.__staged_data = safe_concat(
-            self.__staged_data.set_index(self.__primary_keys),
-            data.set_index(self.__primary_keys),
-            axis=1,
-            join="outer",
-        ).reset_index()
+        # self.__staged_data = safe_concat(
+        #     self.__staged_data.set_index(self.__primary_keys),
+        #     data.set_index(self.__primary_keys),
+        #     axis=1,
+        #     join="outer",
+        # ).reset_index()
+        self.__staged_data = safe_concat(self.__staged_data, data, join="inner")
 
         exceptions: list[Exception] = []
         for column in self.__base_fields:
@@ -147,7 +149,7 @@ class DataStateManager:
         if not persist_data:
             self.reset()
 
-    def push(self) -> None:
+    def push(self, *, persist_data: bool = False) -> pd.DataFrame:
         """
         Save the data for the dataset and any nested datasets.
         """
@@ -156,18 +158,19 @@ class DataStateManager:
         if self.__committed_data.empty:
             if self.__staged_data.empty:
                 raise StageEmpty(
-                    "There is no staged data to push. First, process a dataframe using 'process', then add it to the stage using 'stage_changes'."
+                    "There is no staged data to push. First stage data using 'add'. Then, commit it using 'commit'."
                 )
             else:
                 raise StageEmpty(
-                    "There is no staged data to push. Run 'stage_changes' to add existing data to the stage."
+                    "There is no staged data to push. Run 'commit' to add commit staged data for push."
                 )
 
-        data = self.__committed_data
+        data = self.__committed_data.copy()
 
         # Empty the stage because if the save fails, we won't be running
         # it again.
-        self.unstage()
+        if not persist_data:
+            self.unstage()
 
         data = data.fillna(np.nan).replace([np.nan], [None])
 
@@ -181,3 +184,5 @@ class DataStateManager:
             row_data["id"] = index
 
             self.__db_table.update_or_insert_record(data=row_data)
+
+        return data
