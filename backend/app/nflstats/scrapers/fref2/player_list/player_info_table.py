@@ -19,7 +19,7 @@ class PlayerInfoTableEntrySerializer(BaseDataframeValidator):
     active_to = IntegerField(filters=[lambda x: x == 2024])
 
 
-player_info_table = DataframeController(
+table = DataframeController(
     "NFLPlayersInfo",
     PlayerInfoTableEntrySerializer(),
     db_table=schema.table("nflplayers"),

@@ -7,14 +7,7 @@ from lib.pydantic_validator import PydanticValidatorMixin
 from pydantic import conint
 from scrapp.core.dataframes.util import safe_concat, safe_set_column
 
-from .fields import (
-    BaseField,
-    DatetimeField,
-    Dependency,
-    HTMLSaveField,
-    StaticField,
-    TransformationField,
-)
+from .fields import BaseField, DatetimeField, TransformationField
 
 
 class BaseDataframeValidator(PydanticValidatorMixin):
@@ -38,12 +31,6 @@ class BaseDataframeValidator(PydanticValidatorMixin):
         cls.__field_set__ = set(cls.__fields__.keys())
 
         for field_name, field in cls.__fields__.items():
-            # if field.dependencies:
-            # for dependency in field.dependencies:
-            # cls.__dependencies__[field_name] =
-
-            # cls.__post_validated_fields__[field_name] = field
-
             if field.post_validated:
                 cls.__post_validated_fields__[field_name] = field
                 cls.__post_validation_set__.add(field_name)
@@ -63,7 +50,6 @@ class BaseDataframeValidator(PydanticValidatorMixin):
         self.__rename_columns__: dict[str, str] = {}
         self.__html_save_fields__: dict[str, str] = {}
         self.__static_fields__: dict[str, str] = {}
-        # self.__dependencies__: dict[str, str] = {}
         self.__filters__: list[Callable[[pd.DataFrame], pd.Series[bool]]] = []
 
         self.multi_index_mapper = self.__class__.MULTI_INDEX_MAPPER

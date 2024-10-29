@@ -1,10 +1,10 @@
 import logging
 
 import pandas as pd
-from scrapp.scraper.web_page2 import BaseWebPage, NestedWebPage
 
-from .kick_and_punt_return_splits import kick_and_punt_return_splits_table
-from .rushing_and_receiving_splits import rushing_and_receiving_splits_table
+from backend.scrapp.scraper.web_page import BaseWebPage, NestedWebPage
+
+from . import kick_and_punt_return_splits_table, rushing_and_receiving_splits_table
 from .util import has_regular_season_receiving_column, has_regular_season_return_data
 
 pd.set_option("future.no_silent_downcasting", True)
@@ -35,7 +35,7 @@ player_summary_page = NestedWebPage(
 # )
 
 player_summary_page.add_table(
-    rushing_and_receiving_splits_table,
+    rushing_and_receiving_splits_table.table,
     identification_function=has_regular_season_receiving_column,
     stale_condition={
         "from_args": ["player_id"],
@@ -44,7 +44,7 @@ player_summary_page.add_table(
 )
 
 player_summary_page.add_table(
-    kick_and_punt_return_splits_table,
+    kick_and_punt_return_splits_table.table,
     identification_function=has_regular_season_return_data,
     stale_condition={
         "from_args": ["player_id"],

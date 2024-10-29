@@ -1,16 +1,12 @@
-import sys
-from typing import Any, Callable, Literal, NotRequired, Optional, Unpack, overload
+from typing import Any, Literal, Optional, overload
 
 import pandas as pd
-from fastapi import dependencies
 from lib.dependency_trees import DependencyKwargs, DependentObject
 from lib.pydantic_validator import PydanticValidatorMixin
-from scrapp.core.dataframes import BaseDataframeValidator, safe_concat
+from scrapp.core.dataframes import BaseDataframeValidator
 from scrapp.core.exceptions import ColumnDoesNotExist, StageEmpty
-from scrapp.scraper.util import QueryArgs
 from scrapp.tables import BaseTable
 from scrapp.tables.base_table import AdvancedQuery
-from typing_extensions import TypedDict
 
 from .data_state_manager import DataStateManager
 
@@ -60,23 +56,12 @@ class DataframeControllerInheritance:
             )
 
 
-class DataframeControllerKwargs(TypedDict):
-    # cache_generator
-    cached_query_generator: NotRequired[
-        Callable[[Optional[QueryArgs]], Optional[pd.DataFrame]]
-    ]
-
-
 class DataframeController(
     DependentObject["DataframeController", DependencyKwargs], PydanticValidatorMixin
 ):
     """
     Controls the validation and saving of pandas dataframes.
     """
-
-    CACHED_QUERY_GENERATOR: Callable[[Optional[QueryArgs]], Optional[pd.DataFrame]] = (
-        lambda x: None
-    )
 
     @overload
     def __init__(
@@ -103,16 +88,12 @@ class DataframeController(
         *,
         data_manager: Optional[DataStateManager] = None,
         db_table: Optional[BaseTable] = None,
-        **kwargs: Unpack[DataframeControllerKwargs],
     ):
         super().__init__(name=name, validator=DependencyKwargs)
 
         self.__data_manager: DataStateManager
         self.__serializer: BaseDataframeValidator = serializer
         self.__inheritances: list[DataframeControllerInheritance] = []
-        # self.__cached_query_generator = kwargs.get(
-        #     "cached_query_generator", self.__class__.CACHED_QUERY_GENERATOR
-        # )
 
         self.status: Literal["downloaded", "cached"] = "downloaded"
 
@@ -132,16 +113,16 @@ class DataframeController(
     def __str__(self):
         return self.name
 
-    def add_inheritance(
-        self,
-        source: "DataStateManager",
-        fields: list[str],
-    ):
-        """
-        Add an inheritance to the table so that it can import foreign data from another webpage/table.
+    # def add_inheritance(
+    #     self,
+    #     source: "DataStateManager",
+    #     fields: list[str],
+    # ):
+    #     """
+    #     Add an inheritance to the table so that it can import foreign data from another webpage/table.
 
-        """
-        self.__inheritances.append(DataframeControllerInheritance(source, fields))
+    #     """
+    #     self.__inheritances.append(DataframeControllerInheritance(source, fields))
 
     @property
     def data(self):
@@ -159,9 +140,6 @@ class DataframeController(
     @property
     def inheritances(self):
         return self.__inheritances
-
-    def ready_to_save(self):
-        pass
 
     def is_cached(self):
         return self.status == "cached"
@@ -205,43 +183,43 @@ class DataframeController(
         """
         return not self.data.commits.empty and self.check_dependencies()
 
-    def attempt_save(self, *, raise_exception: bool = False):
-        """
-        Try to postprocess the current staged data and save it if successful.
-        """
-        try:
-            self.resolve_inheritances()
+    # def attempt_save(self, *, raise_exception: bool = False):
+    #     """
+    #     Try to postprocess the current staged data and save it if successful.
+    #     """
+    #     try:
+    #         self.resolve_inheritances()
 
-            self.__data_manager.commit(persist_data=True)
+    #         self.__data_manager.commit(persist_data=True)
 
-        except StageEmpty as e:
-            if raise_exception:
-                raise e
+    #     except StageEmpty as e:
+    #         if raise_exception:
+    #             raise e
 
-        if self.ready_for_save():
-            self.data.push()
-            self.status = "cached"
+    #     if self.ready_for_save():
+    #         self.data.push()
+    #         self.status = "cached"
 
-    def resolve_inheritances(self):
-        """
-        Perform inheritances to draw data from external data sources.
-        """
-        for inheritance in self.inheritances:
-            data = inheritance.perform(self.__data_manager.primary_keys)
+    # def resolve_inheritances(self):
+    #     """
+    #     Perform inheritances to draw data from external data sources.
+    #     """
+    #     for inheritance in self.inheritances:
+    #         data = inheritance.perform(self.__data_manager.primary_keys)
 
-            data = self.__serializer.post_validate(data)
+    #         data = self.__serializer.post_validate(data)
 
-            self.__data_manager.update(data)
+    #         self.__data_manager.update(data)
 
     def save(self, *, persist_data: bool = False):
         self.__data_manager.push(persist_data=persist_data)
 
         self.status = "cached"
 
-    def postprocess(self, *, persist_data: bool = False):
-        self.resolve_inheritances()
+    # def postprocess(self, *, persist_data: bool = False):
+    #     self.resolve_inheritances()
 
-        self.__data_manager.commit(persist_data=persist_data)
+    #     self.__data_manager.commit(persist_data=persist_data)
 
     def preprocess(self, df: pd.DataFrame, additional_fields: dict[str, Any] = {}):
         """

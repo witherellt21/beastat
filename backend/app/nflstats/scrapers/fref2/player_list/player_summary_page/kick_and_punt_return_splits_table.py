@@ -48,7 +48,10 @@ class KickAndPuntReturnSplitsDataframeValidator(BaseDataframeValidator):
     )
 
 
-kick_and_punt_return_splits_table = DataframeController(
+# TODO: dataframe validators __init__ actions should be moved to __init_subclass__
+# and init actions should accept data and validate them outputting the object
+
+table = DataframeController(
     "NFLKickAndPuntReturnsSplits",
     KickAndPuntReturnSplitsDataframeValidator(),
     db_table=schema.table("nflkickandpuntreturnsplits"),

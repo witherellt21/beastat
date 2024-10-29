@@ -7,7 +7,7 @@ from lib.dependency_trees import topological_sort_dependency_tree
 from typing_extensions import TypedDict
 
 from .util import QueryArgs, QuerySet, Thread
-from .web_page import BaseWebPage
+from .web_page3 import BaseWebPage
 
 DEFAULT_LOG_FORMATTER = logging.Formatter(
     "[{levelname:^10}] [ {asctime} ] [{threadName:^20}]  {message}",

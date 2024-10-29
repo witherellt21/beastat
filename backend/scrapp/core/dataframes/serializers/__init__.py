@@ -1,10 +1,9 @@
-from .base_dataframe_serializer import BaseDataframeValidator
+from .base_dataframe_validator import BaseDataframeValidator
 from .fields import (
     AugmentationField,
     CharField,
     DatetimeField,
     FloatField,
-    HTMLSaveField,
     IntegerField,
     ListField,
     StaticField,

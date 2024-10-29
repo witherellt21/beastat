@@ -53,7 +53,7 @@ class RushingAndReceivingSplitsHTMLTableSerializer(BaseDataframeValidator):
     NAN_VALUES = ["Did not play - Did not sign"]
 
 
-rushing_and_receiving_splits_table = DataframeController(
+table = DataframeController(
     "NFLPlayerRushingAndReceivingSplits",
     RushingAndReceivingSplitsHTMLTableSerializer(),
     db_table=schema.table("nflrushingandreceivingsplits"),

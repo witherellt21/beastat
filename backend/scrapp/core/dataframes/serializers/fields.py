@@ -25,18 +25,6 @@ class FieldKwargs(TypedDict):
     ]
 
 
-class Dependency:
-    def __init__(self):
-        self.dependency = None
-        self.__confirmed = False
-
-    def is_confirmed(self):
-        return self.__confirmed
-
-    def confirm(self):
-        self.__confirmed = True
-
-
 class BaseField(Generic[T]):
     """
     Base class for a an HTMLTable field.
