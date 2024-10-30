@@ -58,7 +58,7 @@ def has_regular_season_rushing_and_receiving_columns(
             for table in tables
             if "Rushing" in table.columns.get_level_values(0)
             and "Receiving" in table.columns.get_level_values(0)
-            and "AV" in table.columns.get_level_values(1)
+            and "Season" in table.columns.get_level_values(1)
         ),
         None,
     )
@@ -72,7 +72,7 @@ def has_regular_season_defensive_data(
             table
             for table in tables
             if "Def Interceptions" in table.columns.get_level_values(0)
-            and "AV" in table.columns.get_level_values(1)
+            and "Season" in table.columns.get_level_values(1)
         ),
         None,
     )
@@ -83,5 +83,14 @@ def has_regular_season_passing_data(
 ) -> Optional[pd.DataFrame]:
     return next(
         (table for table in tables if "Cmp" in table.columns and "AV" in table.columns),
+        None,
+    )
+
+
+def has_regular_season_offensive_line_data(
+    tables: list[pd.DataFrame],
+) -> Optional[pd.DataFrame]:
+    return next(
+        (table for table in tables if "Holding" in table.columns),
         None,
     )

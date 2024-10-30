@@ -1,3 +1,4 @@
+import numpy as np
 from scrapp.core.dataframes.serializers import (
     CharField,
     FloatField,
@@ -13,7 +14,7 @@ from .util import extract_season_as_int_or_none, extract_team_from_team_link
 
 
 class RushingAndReceivingSplitsHTMLTableSerializer(BaseSplitsDataframeValidator):
-    player_id = StaticField()
+    player_id = StaticField(str)
     season = TransformationField(
         int, extract_season_as_int_or_none, from_columns=["Unnamed: 0_level_0_Season"]
     )
@@ -25,7 +26,7 @@ class RushingAndReceivingSplitsHTMLTableSerializer(BaseSplitsDataframeValidator)
     )
 
     pos = CharField(from_column="Unnamed: 4_level_0_Pos")
-    gp = IntegerField(from_column="Unnamed: 5_level_0_G")
+    gp = IntegerField(from_column="Unnamed: 5_level_0_G", replace_values={0: np.nan})
     gs = IntegerField(from_column="Unnamed: 6_level_0_GS")
 
     rush = IntegerField(from_column="Rushing_Att")
@@ -51,7 +52,7 @@ class RushingAndReceivingSplitsHTMLTableSerializer(BaseSplitsDataframeValidator)
     catch_perc = FloatField(from_column="Receiving_Ctch%", default=None, null=True)
     yds_per_target = FloatField(from_column="Receiving_Y/Tgt", default=None, null=True)
 
-    NAN_VALUES = ["Did not play - Did not sign"]
+    NAN_VALUES = [r"Did not play"]
 
 
 table = DataframeController(

@@ -11,7 +11,7 @@ from .util import extract_season_as_int_or_none, extract_team_from_team_link
 
 
 class BaseSplitsDataframeValidator(BaseDataframeValidator):
-    player_id = StaticField()
+    player_id = StaticField(str)
     season = TransformationField(
         int, extract_season_as_int_or_none, from_columns=["Unnamed: 0_level_0_Season"]
     )
@@ -58,4 +58,4 @@ class BaseSplitsDataframeValidator(BaseDataframeValidator):
 
                 split_seasons -= 1
 
-        return df
+        return super().preprocess(df)

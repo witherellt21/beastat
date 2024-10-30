@@ -1,5 +1,6 @@
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 from scrapp.core.dataframes.serializers import (
     CharField,
@@ -44,7 +45,7 @@ def parse_qb_ties(record_str: str):
 
 class NFLPassingSplitsDataframeValidator(BaseSplitsDataframeValidator):
     # Overrides
-    player_id = StaticField()
+    player_id = StaticField(str)
     season = TransformationField(
         int, extract_season_as_int_or_none, from_columns=["Season"]
     )
@@ -55,7 +56,7 @@ class NFLPassingSplitsDataframeValidator(BaseSplitsDataframeValidator):
         from_columns=["Team_link"],
     )
     pos = CharField(from_column="Pos")
-    gp = IntegerField(from_column="G")
+    gp = IntegerField(from_column="G", replace_values={0: np.nan})
     gs = IntegerField(from_column="GS")
 
     wins = TransformationField(

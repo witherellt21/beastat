@@ -15,7 +15,7 @@ from .util import extract_season_as_int_or_none, extract_team_from_team_link
 
 class KickAndPuntReturnSplitsDataframeValidator(BaseSplitsDataframeValidator):
 
-    player_id = StaticField()
+    player_id = StaticField(str)
     season = TransformationField(
         int, extract_season_as_int_or_none, from_columns=["Unnamed: 0_level_0_Year"]
     )
@@ -26,7 +26,7 @@ class KickAndPuntReturnSplitsDataframeValidator(BaseSplitsDataframeValidator):
         from_columns=["Unnamed: 2_level_0_Tm_link"],
     )
     pos = CharField(from_column="Unnamed: 3_level_0_Pos")
-    gp = IntegerField(from_column="Games_G")
+    gp = IntegerField(from_column="Games_G", replace_values={0: np.nan})
 
     pr = IntegerField(from_column="Punt Returns_Ret", replace_values={"": 0})
     pr_yards = IntegerField(from_column="Punt Returns_Yds", replace_values={"": 0})

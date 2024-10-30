@@ -213,12 +213,12 @@ class BaseDataframeValidator(PydanticValidatorMixin):
         return df
 
     def preprocess(self, df: pd.DataFrame) -> pd.DataFrame:
-        return df
+        return df.replace(self.nan_values, np.nan, regex=True)
 
     def validate(self, df: pd.DataFrame, extra_columns: dict[str, Any]):
         df = self.preprocess(df)
 
-        # Add metadata from the extra_columns attribute
+        # Add metadata from the extra_columns attribute.
         for column_name, value in extra_columns.items():
             df = safe_set_column(df, column_name, value)
 
@@ -227,8 +227,7 @@ class BaseDataframeValidator(PydanticValidatorMixin):
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.map("_".join).str.strip("_")
 
-        df = df.replace(self.nan_values, np.nan, regex=True)
-
+        # Validate each field individually.
         for name, field in self.fields.items():
             if field.post_validated:
                 continue
@@ -238,6 +237,7 @@ class BaseDataframeValidator(PydanticValidatorMixin):
             except Exception as e:
                 raise Exception(f"Error executing field `{name}`: {e}.")
 
+        # Slice the dataframe to only include the validator's fields.
         return df[
             [col for col, field in self.fields.items() if not field.post_validated]
         ]

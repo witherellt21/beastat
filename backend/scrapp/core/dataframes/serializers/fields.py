@@ -33,12 +33,13 @@ class BaseField(Generic[T]):
     def __init__(
         self,
         type: Type,
+        *,
         null: bool = False,
         replace_values: dict[Any, Any] = {},
         filters: list[Callable[[Any], Series[bool]]] = [],
         cache: bool = True,
         field_name: str = "",
-        from_column: Optional[str | tuple[str]] = None,
+        from_column: Optional[str | tuple[str, ...]] = None,
         to_columns: Optional[list[str]] = None,
         post_validated: bool = False,
         **kwargs: Unpack[FieldKwargs],
@@ -58,7 +59,7 @@ class BaseField(Generic[T]):
         if isinstance(from_column, str):
             from_column = (from_column,)
 
-        self._from_column: Optional[tuple[str]] = from_column
+        self._from_column: Optional[tuple[str, ...]] = from_column
 
         self._to_columns = to_columns
 
@@ -68,7 +69,7 @@ class BaseField(Generic[T]):
         self.cache = cache
 
     @property
-    def from_column(self) -> tuple[str]:
+    def from_column(self) -> tuple[str, ...]:
         return self._from_column or (self.field_name,)
 
     @property
@@ -146,31 +147,148 @@ class BaseField(Generic[T]):
 
 class CharField(BaseField[str]):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(type=str, *args, **kwargs)
+    def __init__(
+        self,
+        *,
+        null: bool = False,
+        replace_values: dict[Any, Any] = {},
+        filters: list[Callable[[Any], Series[bool]]] = [],
+        cache: bool = True,
+        field_name: str = "",
+        from_column: Optional[str | tuple[str, ...]] = None,
+        to_columns: Optional[list[str]] = None,
+        post_validated: bool = False,
+        **kwargs: Unpack[FieldKwargs],
+    ):
+        super().__init__(
+            str,
+            null=null,
+            replace_values=replace_values,
+            filters=filters,
+            cache=cache,
+            field_name=field_name,
+            from_column=from_column,
+            to_columns=to_columns,
+            post_validated=post_validated,
+            **kwargs,
+        )
 
 
 class IntegerField(BaseField[int]):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(type=int, *args, **kwargs)
+    def __init__(
+        self,
+        *,
+        null: bool = False,
+        replace_values: dict[Any, Any] = {},
+        filters: list[Callable[[Any], Series[bool]]] = [],
+        cache: bool = True,
+        field_name: str = "",
+        from_column: Optional[str | tuple[str, ...]] = None,
+        to_columns: Optional[list[str]] = None,
+        post_validated: bool = False,
+        **kwargs: Unpack[FieldKwargs],
+    ):
+        super().__init__(
+            type=int,
+            null=null,
+            replace_values=replace_values,
+            filters=filters,
+            cache=cache,
+            field_name=field_name,
+            from_column=from_column,
+            to_columns=to_columns,
+            post_validated=post_validated,
+            **kwargs,
+        )
 
 
 class FloatField(BaseField[float]):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(type=float, *args, **kwargs)
+    def __init__(
+        self,
+        *,
+        null: bool = False,
+        replace_values: dict[Any, Any] = {},
+        filters: list[Callable[[Any], Series[bool]]] = [],
+        cache: bool = True,
+        field_name: str = "",
+        from_column: Optional[str | tuple[str, ...]] = None,
+        to_columns: Optional[list[str]] = None,
+        post_validated: bool = False,
+        **kwargs: Unpack[FieldKwargs],
+    ):
+        super().__init__(
+            type=float,
+            null=null,
+            replace_values=replace_values,
+            filters=filters,
+            cache=cache,
+            field_name=field_name,
+            from_column=from_column,
+            to_columns=to_columns,
+            post_validated=post_validated,
+            **kwargs,
+        )
 
 
 class ListField(BaseField[list[T]]):
-    def __init__(self, type: Type, *args, **kwargs):
-        super().__init__(type=list[type], *args, **kwargs)
+    def __init__(
+        self,
+        type: Type,
+        *,
+        null: bool = False,
+        replace_values: dict[Any, Any] = {},
+        filters: list[Callable[[Any], Series[bool]]] = [],
+        cache: bool = True,
+        field_name: str = "",
+        from_column: Optional[str | tuple[str, ...]] = None,
+        to_columns: Optional[list[str]] = None,
+        post_validated: bool = False,
+        **kwargs: Unpack[FieldKwargs],
+    ):
+        super().__init__(
+            type=list[type],
+            null=null,
+            replace_values=replace_values,
+            filters=filters,
+            cache=cache,
+            field_name=field_name,
+            from_column=from_column,
+            to_columns=to_columns,
+            post_validated=post_validated,
+            **kwargs,
+        )
 
 
 class DatetimeField(BaseField[datetime]):
 
-    def __init__(self, format: str = "%Y/%m/%d", *args, **kwargs):
-        super().__init__(type=datetime, *args, **kwargs)
+    def __init__(
+        self,
+        format: str = "%Y/%m/%d",
+        *,
+        null: bool = False,
+        replace_values: dict[Any, Any] = {},
+        filters: list[Callable[[Any], Series[bool]]] = [],
+        cache: bool = True,
+        field_name: str = "",
+        from_column: Optional[str | tuple[str, ...]] = None,
+        to_columns: Optional[list[str]] = None,
+        post_validated: bool = False,
+        **kwargs: Unpack[FieldKwargs],
+    ):
+        super().__init__(
+            type=datetime,
+            null=null,
+            replace_values=replace_values,
+            filters=filters,
+            cache=cache,
+            field_name=field_name,
+            from_column=from_column,
+            to_columns=to_columns,
+            post_validated=post_validated,
+            **kwargs,
+        )
 
         self.format = format
 
@@ -198,8 +316,32 @@ class DatetimeField(BaseField[datetime]):
 
 
 class StaticField(BaseField[str]):
-    def __init__(self, from_column: Optional[str] = None, **kwargs):
-        super().__init__(str, from_column=from_column, **kwargs)
+    def __init__(
+        self,
+        type: Type,
+        *,
+        null: bool = False,
+        replace_values: dict[Any, Any] = {},
+        filters: list[Callable[[Any], Series[bool]]] = [],
+        cache: bool = True,
+        field_name: str = "",
+        from_column: Optional[str | tuple[str, ...]] = None,
+        to_columns: Optional[list[str]] = None,
+        post_validated: bool = False,
+        **kwargs: Unpack[FieldKwargs],
+    ):
+        super().__init__(
+            type,
+            null=null,
+            replace_values=replace_values,
+            filters=filters,
+            cache=cache,
+            field_name=field_name,
+            from_column=from_column,
+            to_columns=to_columns,
+            post_validated=post_validated,
+            **kwargs,
+        )
 
 
 class TransformationField(BaseField[Generic[T]]):
@@ -209,10 +351,27 @@ class TransformationField(BaseField[Generic[T]]):
         type: Type,
         function: Callable[..., pd.Series] | Callable[..., Any],
         from_columns: Optional[list[str]] = None,
+        *,
+        null: bool = False,
+        replace_values: dict[Any, Any] = {},
+        filters: list[Callable[[Any], Series[bool]]] = [],
+        cache: bool = True,
+        field_name: str = "",
         to_columns: Optional[list[str]] = None,
-        **kwargs,
+        post_validated: bool = False,
+        **kwargs: Unpack[FieldKwargs],
     ):
-        super().__init__(type=type, to_columns=to_columns, **kwargs)
+        super().__init__(
+            type=type,
+            to_columns=to_columns,
+            null=null,
+            replace_values=replace_values,
+            filters=filters,
+            cache=cache,
+            field_name=field_name,
+            post_validated=post_validated,
+            **kwargs,
+        )
 
         self._from_columns = from_columns
         self._to_columns = to_columns
@@ -258,9 +417,28 @@ class AugmentationField(BaseField[Generic[T]]):
         type: Type,
         function: Callable[[pd.DataFrame], pd.Series | pd.DataFrame],
         to_columns: Optional[list[str]] = None,
-        **kwargs,
+        *,
+        null: bool = False,
+        replace_values: dict[Any, Any] = {},
+        filters: list[Callable[[Any], Series[bool]]] = [],
+        cache: bool = True,
+        field_name: str = "",
+        from_column: Optional[str | tuple[str, ...]] = None,
+        post_validated: bool = False,
+        **kwargs: Unpack[FieldKwargs],
     ):
-        super().__init__(type=type, to_columns=to_columns, **kwargs)
+        super().__init__(
+            type=type,
+            to_columns=to_columns,
+            null=null,
+            replace_values=replace_values,
+            filters=filters,
+            cache=cache,
+            field_name=field_name,
+            from_column=from_column,
+            post_validated=post_validated,
+            **kwargs,
+        )
         self.function = function
 
     def execute(self, dataframe: pd.DataFrame) -> pd.DataFrame:

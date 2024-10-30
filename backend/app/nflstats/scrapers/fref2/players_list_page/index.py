@@ -16,7 +16,9 @@ from .util import get_player_list_page_tables
 players_list_page = BaseWebPage(
     name="NFLPlayersList",
     base_download_url="https://www.pro-football-reference.com/players/{player_last_initial}/",
-    default_query_set=[{"player_last_initial": letter} for letter in ascii_uppercase],
+    default_query_set=[
+        {"player_last_initial": letter} for letter in ascii_uppercase[1:]
+    ],
     extract_tables=get_player_list_page_tables,
     log_level=logging.DEBUG,
 )

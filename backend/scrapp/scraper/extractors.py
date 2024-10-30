@@ -3,7 +3,7 @@ import pandas as pd
 
 def href_table_extractor(url: str) -> list[pd.DataFrame]:
     """
-    Base extractor that extracts links from the html
+    Base extractor that extracts links from the html.
     """
     tables = pd.read_html(url, extract_links="body")
 
