@@ -3,7 +3,6 @@ from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
-from peewee import DoesNotExist
 from scrapp.tables import schema
 
 
@@ -24,15 +23,6 @@ def extract_season_as_int_or_none(season: Any) -> Optional[int]:
 
     else:
         return None
-
-
-def extract_team_from_team_link(link: str) -> str:
-    team_id = link.rsplit("/", 2)[1].split(".")[0]
-
-    # Will throw error if the team does not exist in which case we have an issue
-    schema.table("nflteams").get_record({"id": team_id})
-
-    return team_id
 
 
 def has_regular_season_return_data(

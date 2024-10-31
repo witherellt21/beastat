@@ -1,7 +1,7 @@
 import logging
 import os
 from datetime import datetime
-from typing import Any, Literal, Optional, Type, Union, overload
+from typing import Any, Literal, NotRequired, Optional, Type, TypedDict, Union, overload
 
 import pandas as pd
 import peewee
@@ -27,6 +27,14 @@ class AdvancedQuery(BaseSerializer):
     equal_to: dict[str, Any] = {}
     in_: dict[str, list[Any]] = {}
     startswith: dict[str, str] = {}
+
+
+class Query(TypedDict):
+    greater_than: NotRequired[dict[str, Union[int, float, datetime]]]
+    less_than: NotRequired[dict[str, Union[int, float, datetime]]]
+    equal_to: NotRequired[dict[str, Any]]
+    in_: NotRequired[dict[str, list[Any]]]
+    startswith: NotRequired[dict[str, str]]
 
 
 class EmptyQuery(AdvancedQuery):
@@ -216,7 +224,7 @@ class BaseTable:
 
     def filter_records_advanced(
         self,
-        query: Optional[AdvancedQuery] = None,
+        query: Optional[AdvancedQuery | Query] = None,
         columns: list[str] = [],
         confuse: bool = False,
         limit: Optional[int] = None,
@@ -224,6 +232,9 @@ class BaseTable:
         search = self.model_class.select()
 
         if query:
+            if isinstance(query, dict):
+                query = AdvancedQuery(**query)
+
             search = search.where(
                 *[
                     getattr(self.model_class, key) == value

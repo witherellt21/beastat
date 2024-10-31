@@ -8,6 +8,21 @@ def href_table_extractor(url: str) -> list[pd.DataFrame]:
     tables = pd.read_html(url, extract_links="body")
 
     for df in tables:
+
+        # Rename any enumerated unnamed columns to non index-based names
+        if isinstance(df.columns, pd.MultiIndex):
+            # Perform the function for all column levels
+            for level in range(df.columns.nlevels):
+                df.rename(
+                    columns={
+                        col: "Unnamed"
+                        for col in df.columns.get_level_values(level)
+                        if col.startswith("Unnamed")
+                    },
+                    level=level,
+                    inplace=True,
+                )
+
         for column in df.columns:
 
             # the columns are multi-indexed, append the _link identifier to the end

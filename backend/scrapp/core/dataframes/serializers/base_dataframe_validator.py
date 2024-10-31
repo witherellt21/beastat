@@ -1,3 +1,4 @@
+from operator import index
 from typing import Any, Callable, Type
 
 import numpy as np
@@ -15,10 +16,14 @@ class BaseDataframeValidator(PydanticValidatorMixin):
     Base class for a serializing an HTMLTable into savable types.
     """
 
+    class Meta:
+        groups: dict[str, tuple[str]] = {}
+
     __fields__: dict[str, BaseField] = {}
     __field_set__: set[str] = set()
     __post_validated_fields__: dict[str, BaseField] = {}
     __post_validation_set__: set[str] = set()
+    __groups__: dict[str, set[str]] = {}
     # __dependencies__: list[BaseField] =
 
     NAN_VALUES: list[str] = []
@@ -31,9 +36,33 @@ class BaseDataframeValidator(PydanticValidatorMixin):
         cls.__field_set__ = set(cls.__fields__.keys())
 
         for field_name, field in cls.__fields__.items():
+            field.bind(field_name)
+
             if field.post_validated:
-                cls.__post_validated_fields__[field_name] = field
-                cls.__post_validation_set__.add(field_name)
+                cls.__post_validated_fields__[field.field_name] = field
+                cls.__post_validation_set__.add(field.field_name)
+
+            if field.groups:
+                for group in field.groups:
+                    cls.__groups__.setdefault(group, set())
+                    cls.__groups__[group].add(field.field_name)
+
+        for group_name, group in cls.Meta.groups.items():
+            full_group = set()
+
+            for element in group:
+                if element in cls.__fields__:
+                    full_group.add(element)
+
+                elif element in cls.__groups__:
+                    full_group = full_group | cls.__groups__[element]
+
+                else:
+                    raise Exception(
+                        f"Group element {element} of group {group_name} must be a valid field name or existing group name."
+                    )
+
+            cls.__groups__[group_name] = full_group
 
     def __init__(self):
         """
@@ -103,6 +132,16 @@ class BaseDataframeValidator(PydanticValidatorMixin):
 
             # Add all fields that are being cached to the column types, except datetime
             self.__column_types__[field_name] = field.type
+
+    @property
+    def groups(self):
+        return self.__groups__
+
+    def group(self, name: str) -> set[str]:
+        if not name in self.__groups__:
+            raise KeyError(f"Group {name} does not exist.")
+
+        return self.__groups__[name]
 
     @property
     def datetime_fields(self):
@@ -215,6 +254,9 @@ class BaseDataframeValidator(PydanticValidatorMixin):
     def preprocess(self, df: pd.DataFrame) -> pd.DataFrame:
         return df.replace(self.nan_values, np.nan, regex=True)
 
+    def postprocess(self, df: pd.DataFrame) -> pd.DataFrame:
+        return df
+
     def validate(self, df: pd.DataFrame, extra_columns: dict[str, Any]):
         df = self.preprocess(df)
 
@@ -238,9 +280,9 @@ class BaseDataframeValidator(PydanticValidatorMixin):
                 raise Exception(f"Error executing field `{name}`: {e}.")
 
         # Slice the dataframe to only include the validator's fields.
-        return df[
-            [col for col, field in self.fields.items() if not field.post_validated]
-        ]
+        df = df[[col for col, field in self.fields.items() if not field.post_validated]]
+
+        return self.postprocess(df)
 
 
 if __name__ == "__main__":

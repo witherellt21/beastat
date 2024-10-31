@@ -1,4 +1,5 @@
 import numpy as np
+from pandas import DataFrame
 from scrapp.core.dataframes.serializers.fields import (
     CharField,
     FloatField,
@@ -9,30 +10,33 @@ from scrapp.core.dataframes.serializers.fields import (
 from scrapp.scraper import DataframeController
 from scrapp.tables import schema
 
+from ..util import extract_team_from_team_link
 from .base import BaseSplitsDataframeValidator
-from .util import extract_season_as_int_or_none, extract_team_from_team_link
+from .util import extract_season_as_int_or_none
 
 
 class DefensiveSplitsDataframeValidator(BaseSplitsDataframeValidator):
     player_id = StaticField(str)
     season = TransformationField(
-        int, extract_season_as_int_or_none, from_columns=["Unnamed: 0_level_0_Season"]
+        int, extract_season_as_int_or_none, from_columns=["Unnamed_Season"]
     )
-    age = IntegerField(from_column="Unnamed: 1_level_0_Age")
+    age = IntegerField(from_column="Unnamed_Age")
     team_id = TransformationField(
         str,
         extract_team_from_team_link,
-        from_columns=["Unnamed: 2_level_0_Team_link"],
+        from_columns=["Unnamed_Team_link"],
     )
 
-    pos = CharField(from_column="Unnamed: 4_level_0_Pos")
-    gp = IntegerField(from_column="Unnamed: 5_level_0_G", replace_values={"0": np.nan})
-    gs = IntegerField(from_column="Unnamed: 6_level_0_GS")
+    pos = CharField(from_column="Unnamed_Pos")
+    gp = IntegerField(from_column="Unnamed_G", replace_values={"0": np.nan})
+    gs = IntegerField(from_column="Unnamed_GS")
 
-    ints = IntegerField(from_column="Def Interceptions_Int")
-    int_yds = IntegerField(from_column="Def Interceptions_Yds")
-    int_tds = IntegerField(from_column="Def Interceptions_IntTD")
-    int_long = IntegerField(from_column="Def Interceptions_Lng")
+    ints = IntegerField(from_column="Def Interceptions_Int", replace_values={"": 0})
+    int_yds = IntegerField(from_column="Def Interceptions_Yds", replace_values={"": 0})
+    int_tds = IntegerField(
+        from_column="Def Interceptions_IntTD", replace_values={"": 0}
+    )
+    int_long = IntegerField(from_column="Def Interceptions_Lng", replace_values={"": 0})
     passes_def = IntegerField(
         from_column="Def Interceptions_PD", replace_values={"": 0}
     )
@@ -43,7 +47,7 @@ class DefensiveSplitsDataframeValidator(BaseSplitsDataframeValidator):
     fumb_yds = IntegerField(from_column="Fumbles_Yds")
     fumb_tds = IntegerField(from_column="Fumbles_FRTD")
 
-    sack = FloatField(from_column="Unnamed: 17_level_0_Sk")
+    sack = FloatField(from_column="Unnamed_Sk", replace_values={"": 0})
 
     tack = IntegerField(from_column="Tackles_Comb", replace_values={"": 0})
     tack_solo = IntegerField(from_column="Tackles_Solo", replace_values={"": 0})
@@ -51,12 +55,8 @@ class DefensiveSplitsDataframeValidator(BaseSplitsDataframeValidator):
     tack_fl = IntegerField(from_column="Tackles_TFL", replace_values={"": 0})
     tack_qb = IntegerField(from_column="Tackles_QBHits", replace_values={"": 0})
 
-    safety = IntegerField(from_column="Unnamed: 23_level_0_Sfty")
-    value = IntegerField(
-        from_column="Unnamed: 24_level_0_AV", replace_values={"": 0}, default=0
-    )
-
-    NAN_VALUES = [r"Did not play"]
+    safety = IntegerField(from_column="Unnamed_Sfty", replace_values={"": 0})
+    value = IntegerField(from_column="Unnamed_AV", replace_values={"": 0}, default=0)
 
 
 table = DataframeController(

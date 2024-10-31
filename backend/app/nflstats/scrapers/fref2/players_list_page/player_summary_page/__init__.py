@@ -33,7 +33,7 @@ def get_player_ids_from_parent(web_page: BaseWebPage):
 
 
 player_summary_page = NestedWebPage(
-    query="{player_id}.htm",
+    url_query_path="{player_id}.htm",
     query_set_provider=get_player_ids_from_parent,
     name="NFLPlayerSummary",
     log_level=logging.DEBUG,

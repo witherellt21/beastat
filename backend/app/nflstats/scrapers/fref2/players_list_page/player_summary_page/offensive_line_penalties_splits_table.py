@@ -1,3 +1,4 @@
+import numpy as np
 from scrapp.core.dataframes.serializers.fields import (
     CharField,
     IntegerField,
@@ -7,8 +8,9 @@ from scrapp.core.dataframes.serializers.fields import (
 from scrapp.scraper import DataframeController
 from scrapp.tables import schema
 
+from ..util import extract_team_from_team_link
 from .base import BaseSplitsDataframeValidator
-from .util import extract_season_as_int_or_none, extract_team_from_team_link
+from .util import extract_season_as_int_or_none
 
 
 class OffensiveLinePenaltiesSplitsDataframeValidator(BaseSplitsDataframeValidator):
@@ -24,15 +26,13 @@ class OffensiveLinePenaltiesSplitsDataframeValidator(BaseSplitsDataframeValidato
     )
 
     pos = CharField(from_column="Pos")
-    gp = IntegerField(from_column="G")
+    gp = IntegerField(from_column="G", replace_values={"0": np.nan})
     gs = IntegerField(from_column="GS")
 
     holding = IntegerField(from_column="Holding")
     false_start = IntegerField(from_column="False Start")
     voided = IntegerField(from_column="Decl/Offs")
     pen_tot = IntegerField(from_column="All Pen.")
-
-    NAN_VALUES = [r"Did not play"]
 
 
 table = DataframeController(

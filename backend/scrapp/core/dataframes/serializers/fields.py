@@ -1,5 +1,7 @@
+import math
 from datetime import datetime
 from typing import (
+    Annotated,
     Any,
     Callable,
     Generic,
@@ -11,9 +13,11 @@ from typing import (
     Unpack,
 )
 
+import numpy as np
 import pandas as pd
 from lib.dataframes import filter_dataframe
 from pandera.typing import Series
+from scrapp.core.exceptions import ColumnDoesNotExist
 from typing_extensions import TypedDict
 
 T = TypeVar("T")
@@ -21,8 +25,11 @@ T = TypeVar("T")
 
 class FieldKwargs(TypedDict):
     default: NotRequired[
-        Union[str, int, float, None, Callable[..., Union[str, int, float, None]]]
+        Union[
+            str, np.int64, float, None, Callable[..., Union[str, np.int64, float, None]]
+        ]
     ]
+    groups: NotRequired[Annotated[Optional[tuple[str, ...]], None]]
 
 
 class BaseField(Generic[T]):
@@ -32,7 +39,7 @@ class BaseField(Generic[T]):
 
     def __init__(
         self,
-        type: Type,
+        type: Type[np.int64 | str | bool | float | None | datetime | list],
         *,
         null: bool = False,
         replace_values: dict[Any, Any] = {},
@@ -44,9 +51,11 @@ class BaseField(Generic[T]):
         post_validated: bool = False,
         **kwargs: Unpack[FieldKwargs],
     ):
+        if type == int and null:
+            type = np.int64
+
         self.type = type
         self.field_name = field_name
-
         self.null = null
         self.replace_values = replace_values
         self.filters = filters
@@ -54,6 +63,8 @@ class BaseField(Generic[T]):
         self.required = "default" not in kwargs
         self.post_validated = post_validated
         self.fill_none = []
+        # self.group = kwargs.
+        self.groups: Optional[tuple[str, ...]] = kwargs.get("groups", None)
 
         # Fix from_column to a list that can be scanned for existing column
         if isinstance(from_column, str):
@@ -102,6 +113,7 @@ class BaseField(Generic[T]):
                         f"Cannot resolve column {self.field_name}. None of the source columns {self._from_column} were found in the source dataframe with columns {dataframe.columns}."
                     )
 
+            # TODO: I don't think we need this check
             for column in self.to_columns:
                 if column not in dataframe.columns:
                     raise Exception(f"Column {column} does not exist in the dataframe.")
@@ -137,10 +149,10 @@ class BaseField(Generic[T]):
                 raise e
 
             func = lambda x: (
-                self.type(self.default()) if callable(self.default) else self.default
+                self.type(self.default()) if callable(self.default) else self.default  # type: ignore
             )
 
-            dataframe[self.field_name] = dataframe.iloc[:, 0].apply(func)
+            dataframe[self.field_name] = dataframe.iloc[:, 0].apply(func)  # type: ignore
 
         return dataframe
 
@@ -190,7 +202,7 @@ class IntegerField(BaseField[int]):
         **kwargs: Unpack[FieldKwargs],
     ):
         super().__init__(
-            type=int,
+            type=np.int64,
             null=null,
             replace_values=replace_values,
             filters=filters,
@@ -201,6 +213,10 @@ class IntegerField(BaseField[int]):
             post_validated=post_validated,
             **kwargs,
         )
+
+    # def execute(self, dataframe: pd.DataFrame) -> pd.DataFrame:
+    #     for field_name in self.to_columns:
+    #         dataframe = dataframe
 
 
 class FloatField(BaseField[float]):
@@ -232,10 +248,39 @@ class FloatField(BaseField[float]):
         )
 
 
+class BooleanField(BaseField[bool]):
+
+    def __init__(
+        self,
+        *,
+        null: bool = False,
+        replace_values: dict[Any, Any] = {},
+        filters: list[Callable[[Any], Series[bool]]] = [],
+        cache: bool = True,
+        field_name: str = "",
+        from_column: Optional[str | tuple[str, ...]] = None,
+        to_columns: Optional[list[str]] = None,
+        post_validated: bool = False,
+        **kwargs: Unpack[FieldKwargs],
+    ):
+        super().__init__(
+            type=bool,
+            null=null,
+            replace_values=replace_values,
+            filters=filters,
+            cache=cache,
+            field_name=field_name,
+            from_column=from_column,
+            to_columns=to_columns,
+            post_validated=post_validated,
+            **kwargs,
+        )
+
+
 class ListField(BaseField[list[T]]):
     def __init__(
         self,
-        type: Type,
+        type: Type[np.int64 | str | bool | float | None | datetime],
         *,
         null: bool = False,
         replace_values: dict[Any, Any] = {},
@@ -302,10 +347,8 @@ class DatetimeField(BaseField[datetime]):
             column_found = True
 
             dataframe[self.field_name] = pd.to_datetime(
-                dataframe[self.from_column], format=self.format
+                dataframe[column], format=self.format
             )
-
-            self._from_column = None
 
         if not column_found:
             raise Exception(
@@ -318,7 +361,7 @@ class DatetimeField(BaseField[datetime]):
 class StaticField(BaseField[str]):
     def __init__(
         self,
-        type: Type,
+        type: Type[np.int64 | str | bool | float | None | datetime],
         *,
         null: bool = False,
         replace_values: dict[Any, Any] = {},
@@ -348,7 +391,7 @@ class TransformationField(BaseField[Generic[T]]):
 
     def __init__(
         self,
-        type: Type,
+        type: Type[np.int64 | str | bool | float | None | datetime],
         function: Callable[..., pd.Series] | Callable[..., Any],
         from_columns: Optional[list[str]] = None,
         *,
@@ -385,9 +428,17 @@ class TransformationField(BaseField[Generic[T]]):
     def execute(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         for column in self.from_columns:
             if column not in dataframe.columns:
-                raise Exception(
-                    f"{self.field_name} refers to a missing column: {column}."
+                if self.required:
+                    raise ColumnDoesNotExist(column, dataframe.columns)
+
+                func = lambda x: (
+                    self.type(self.default()) if callable(self.default) else self.default  # type: ignore
                 )
+
+                dataframe[self.field_name] = dataframe.iloc[:, 0].apply(func)  # type: ignore
+
+                return dataframe
+
         from_columns = (
             self.from_columns[0] if len(self.from_columns) == 1 else self.from_columns
         )
@@ -395,26 +446,45 @@ class TransformationField(BaseField[Generic[T]]):
             self.to_columns[0] if len(self.to_columns) == 1 else self.to_columns
         )
 
+        # Account for nan values to allow the function to do its work.
+        # func = lambda val: safe_func(self.function, val)
         try:
             if type(from_columns) == list:
                 dataframe[to_columns] = dataframe[from_columns].apply(
-                    self.function, axis=1
+                    safe_func(self.function), axis=1
                 )
             else:
-                dataframe[to_columns] = dataframe[from_columns].apply(self.function)
+                # TODO: fix fragmentation
+                dataframe[to_columns] = dataframe[from_columns].apply(
+                    safe_func(self.function)
+                )
         except Exception as e:
             raise Exception(
-                f"Error applying {self.function} to columns `{self.from_columns}` for field `{self.field_name}`: {e}"
+                f"Error applying `{self.function.__name__}` to columns `{self.from_columns}` for field `{self.field_name}`: {e}"
             )
 
         return super().execute(dataframe)
+
+
+def safe_func(func: Callable[..., Any]):
+    """
+    A wrapper for a function that handles nan's before applying the function.
+    """
+
+    def inner(val):
+        if isinstance(val, float) and np.isnan(val):
+            return val
+
+        return func(val)
+
+    return inner
 
 
 class AugmentationField(BaseField[Generic[T]]):
 
     def __init__(
         self,
-        type: Type,
+        type: Type[np.int64 | str | bool | float | None | datetime],
         function: Callable[[pd.DataFrame], pd.Series | pd.DataFrame],
         to_columns: Optional[list[str]] = None,
         *,

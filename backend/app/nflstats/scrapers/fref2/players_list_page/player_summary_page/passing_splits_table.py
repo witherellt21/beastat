@@ -12,8 +12,9 @@ from scrapp.core.dataframes.serializers import (
 from scrapp.scraper.html_table import DataframeController
 from scrapp.tables import schema
 
+from ..util import extract_team_from_team_link
 from .base import BaseSplitsDataframeValidator
-from .util import extract_season_as_int_or_none, extract_team_from_team_link
+from .util import extract_season_as_int_or_none
 
 
 def parse_qb_record(record: str) -> Optional[pd.Series]:
@@ -56,7 +57,7 @@ class NFLPassingSplitsDataframeValidator(BaseSplitsDataframeValidator):
         from_columns=["Team_link"],
     )
     pos = CharField(from_column="Pos")
-    gp = IntegerField(from_column="G", replace_values={0: np.nan})
+    gp = IntegerField(from_column="G", replace_values={"0": np.nan})
     gs = IntegerField(from_column="GS")
 
     wins = TransformationField(
@@ -84,14 +85,14 @@ class NFLPassingSplitsDataframeValidator(BaseSplitsDataframeValidator):
     ints = IntegerField(from_column="Int")
     int_perc = FloatField(from_column="Int%")
     fds = IntegerField(from_column="1D")
-    succ_rate = FloatField(from_column="Succ%")
-    long = IntegerField(from_column="Lng")
+    succ_rate = FloatField(from_column="Succ%", replace_values={"": 0})
+    long = IntegerField(from_column="Lng", replace_values={"": 0})
     yds_per_att = FloatField(from_column="Y/A")
     yds_per_att_adj = FloatField(from_column="AY/A")
     yds_per_comp = FloatField(from_column="Y/C")
     yds_per_gp = FloatField(from_column="Y/G")
     rating = FloatField(from_column="Rate")
-    qbr = FloatField(from_column="QBR")
+    qbr = FloatField(from_column="QBR", replace_values={"": 0})
     sacks = IntegerField(from_column="Sk")
     sack_yds = IntegerField(from_column="Yds.1")
     sack_perc = FloatField(from_column="Sk%")

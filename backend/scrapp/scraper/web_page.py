@@ -1,15 +1,19 @@
+import json
 import logging
+import random
 import time
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Callable, Literal, NotRequired, Optional, Union, Unpack
 
 import pandas as pd
 from lib.dependency_trees import DependencyKwargs, DependentObject
 from lib.pydantic_validator import PydanticValidatorMixin
+from peewee import DoesNotExist
 from scrapp.core.exceptions import ColumnDoesNotExist, StageEmpty
+from scrapp.tables import schema
 from scrapp.tables.base_table import AdvancedQuery
-from scrapp.utils.string_formatting import generate_inline_list
+from scrapp.utils.string_formatting import generate_bulleted_list, generate_inline_list
 from typing_extensions import TypedDict
 
 from .configurable import Configurable
@@ -161,10 +165,11 @@ class WebTableConfig:
                 yield inheritance
 
     def perform_cached_inheritances(self):
+        # TODO: will need to update the way this works as well.
         for inheritance in self.inheritances:
             if (
                 not inheritance.source_table.data.commits.empty
-                or inheritance.web_page.is_cached()
+                or inheritance.web_page.is_cached()  # type: ignore (This function has been deprecated but we may need similar functionality later)
             ):
                 # inherit the data into the target table
                 data = inheritance.perform()
@@ -174,8 +179,11 @@ class WebTableConfig:
 
 class RateLock:
 
-    def __init__(self, rate: int):
+    def __init__(
+        self, rate: int, rate_type: Literal["inc", "dec", "var", "std"] = "std"
+    ):
         self.__rate = rate
+        self.__rate_type = rate_type
 
         # Ensures we are ready to download upon creation
         self.__last_execute_time = time.time() - rate
@@ -184,17 +192,32 @@ class RateLock:
     def rate(self):
         return self.__rate
 
-    def set_rate(self, value):
+    def set_rate(self, value: int):
         self.__rate = value
+
+    @property
+    def rate_type(self):
+        return self.__rate
+
+    def set_rate_type(self, value):
+        self.__rate_type = value
 
     def reset(self):
         self.__last_execute_time = time.time()
+
+    def get_wait_time(self) -> float:
+        if self.__rate_type == "var":
+            rate = random.randint(self.__rate, self.__rate * 2)
+        elif self.__rate_type == "std":
+            rate = self.__rate
+
+        return max(self.__last_execute_time - time.time() + rate, 0)
 
     def acquire(self):
         """
         Wait for the lock to be open.
         """
-        wait = max(self.__last_execute_time - time.time() + self.__rate, 0)
+        wait = self.get_wait_time()
 
         if wait > 0:
             time.sleep(wait)
@@ -227,6 +250,7 @@ class BaseWebPage(
         log_level: int = logging.INFO,
         download_rate: int = 5,
         query_cached_condition: Literal["all", "any"] = "any",
+        rate_type: Literal["inc", "dec", "var", "std"] = "var",
         **kwargs: Unpack[WebPageKwargs],
     ):
         super().__init__(name=name, validator=WebPageDependencyKwargs)
@@ -238,18 +262,21 @@ class BaseWebPage(
         self.__tables: list[DataframeController] = [
             config.table for config in self.__table_configs.values()
         ]
+        self.__table_names: list[str] = []
+
         self.query_cached_condition = query_cached_condition
 
         self._default_query_set: Optional[QuerySet] = (
             kwargs.get("default_query_set") or []
         )
         self._extract_tables = kwargs.get("extract_tables", href_table_extractor)
-        self.download_lock = RateLock(download_rate)
+
+        self.download_lock = RateLock(download_rate, rate_type)
 
         self.nested_web_pages: list["NestedWebPage"] = []
 
         # whether the current staged data has been pulled from cache or downloaded
-        self.data_source: Literal["cached", "downloaded"] = "downloaded"
+        # self.data_source: Literal["cached", "downloaded"] = "downloaded"
 
         # set whether or not the page depends on a dynamic query set
         self.static: bool = not validate_url_arguments(self.base_download_url)
@@ -282,11 +309,6 @@ class BaseWebPage(
         """
         return self.__table_configs
 
-    def bind_scraper(self, scraper):
-        self.scraper = scraper
-
-        self.logger = scraper.logger
-
     @property
     def download_rate(self):
         return self.download_lock.rate
@@ -294,6 +316,11 @@ class BaseWebPage(
     @download_rate.setter
     def download_rate(self, value: int):
         self.download_lock.set_rate(value)
+
+    def bind_scraper(self, scraper):
+        self.scraper = scraper
+
+        self.logger = scraper.logger
 
     def get_download_url(self, *, query_args: QueryArgs) -> str:
         """
@@ -318,6 +345,7 @@ class BaseWebPage(
         )
 
         self.__tables.append(table)
+        self.__table_names.append(table.name)
 
     def add_table_inheritance(
         self,
@@ -383,18 +411,6 @@ class BaseWebPage(
         # else:
         #     self.__table_configs[table]["table"].add_inheritance(source, fields)
 
-    def add_dependency(
-        self,
-        *,
-        source: "BaseWebPage",
-        table_name: str,
-        query_set_provider: Callable[[pd.DataFrame], list[dict[str, str]]],
-    ):
-        # Lets find a way to confirm the dependency exists
-        meta_data = {"table_name": table_name, "query_set_provider": query_set_provider}
-
-        return super().add_dependency(source=source, meta_data=meta_data)
-
     def add_nested_web_page(
         self,
         web_page: "NestedWebPage",
@@ -434,7 +450,37 @@ class BaseWebPage(
 
         super().configure()
 
-    def load_cached_data(self, *, query_args: Optional[QueryArgs] = None) -> None:
+    def log_query(self, query_args: Optional[QueryArgs] = None) -> None:
+        schema.table("scraperpagedownloads").update_or_insert_record(
+            data={
+                "page_name": self.name,
+                "query_args": json.dumps(query_args),
+                "tables": [table.name for table in self.__tables],
+                "timestamp": datetime.now(),
+            }
+        )
+
+    def is_query_stale(self, query_args: Optional[QueryArgs] = None) -> bool:
+        try:
+            query_log = schema.table("scraperpagedownloads").get_record(
+                query={
+                    "page_name": self.name,
+                    "query_args": json.dumps(query_args),
+                }
+            )
+        except DoesNotExist:
+            return True
+
+        if not all(
+            item in query_log.tables for item in self.__table_names  # type: ignore
+        ) or query_log.timestamp < datetime.now() - timedelta(  # type: ignore
+            days=1
+        ):  # type: ignore
+            return True
+
+        return False
+
+    def load_query(self, query_args: Optional[QueryArgs] = None) -> None:
         """
         Get any existing data for the given query args in the existing table configuration.
         """
@@ -480,19 +526,19 @@ class BaseWebPage(
         # A check to determine whether tables should be fetched from the
         # web page for the given query based on if 'any' or 'all' of the
         # tables have been cached
-        if self.query_cached_condition == "all" and all_cached:
-            data_source = "cached"
+        # if self.query_cached_condition == "all" and all_cached:
+        #     data_source = "cached"
 
-        elif self.query_cached_condition == "any" and any_cached:
-            for table in self.__tables:
-                table.status = "cached"
+        # elif self.query_cached_condition == "any" and any_cached:
+        #     for table in self.__tables:
+        #         table.status = "cached"
 
-            data_source = "cached"
+        #     data_source = "cached"
 
-        else:
-            data_source = "downloaded"
+        # else:
+        #     data_source = "downloaded"
 
-        self.data_source = data_source
+        # self.data_source = data_source
 
     def extract_tables(self, *, url: str) -> list[pd.DataFrame]:
         """
@@ -504,14 +550,14 @@ class BaseWebPage(
             raise Exception(f"Error downloading data from {url}. {e}")
 
     def download_query(self, query_args: Optional[QueryArgs] = None):
-        query_args = query_args or {}
+        # query_args = query_args or {}
 
-        self.load_cached_data(query_args=query_args)
+        # self.load_query(query_args=query_args)
 
-        # No reason to download if the data is already cached
-        if self.data_source == "cached":
-            self.logger.debug(f"--- Web page {self.name} pulled from cache.")
-            return
+        # # No reason to download if the data is already cached
+        # if self.data_source == "cached":
+        #     self.logger.debug(f"--- Web page {self.name} pulled from cache.")
+        #     return
 
         # get the download url from the query args
         url = (
@@ -532,23 +578,22 @@ class BaseWebPage(
             # TODO: Fix the order of how the datasource is set so that this makes
             # more sense. Maybe make it a boolean saying whether or not the
             # data in the data manager is from cache or not
-            if config.table.status == "downloaded":
-                data = config.identifier(tables)
+            # if config.table.status == "downloaded":
+            data = config.identifier(tables)
 
-                if data is None:
-                    self.logger.debug(f"--- {config.table.name}: Not found.")
-                    continue
+            if data is None:
+                self.logger.debug(f"--- {config.table.name}: Not found.")
+                continue
 
-                self.logger.debug(f"-> {config.table.name}: Downloaded.")
+            self.logger.debug(f"=> {config.table.name}: Downloaded.")
 
-                config.table.preprocess(data, additional_fields=query_args)
+            config.table.preprocess(data, additional_fields=query_args or {})
 
-            else:
-                self.logger.debug(f"-> {config.table.name}: Pulled from cache.")
+        # else:
+        #     self.logger.debug(f"-> {config.table.name}: Pulled from cache.")
 
         return tables
 
-    def clear_cache(self) -> None:
         """
         Clear all staged changes for the tables.
         """
@@ -556,88 +601,89 @@ class BaseWebPage(
             table.data.reset()
             table.data.unstage()
 
-    def is_cached(self):
-        return self.data_source == "cached"
+    # def process_tables(self, tables: list[pd.DataFrame]):
 
-    def save_page(self) -> None:
-        """
-        Recursively save all savable tables on the page and any externally inherited
-        pages.
-        """
-        for config in self.__table_configs.values():
-            if config.savable() and not config.table.is_cached():
-                try:
-                    config.table.save()
-                    self.logger.info(
-                        f"-> Saved data to database for table {config.table.name}.\n"
-                    )
-                except StageEmpty:
-                    pass
+    def resolve_inheritances(self, query_args: Optional[QueryArgs]):
+        nested_configs: list[WebTableConfig] = []
 
+        # create a queue of table configs that have data to be saved
+        queue = deque(
+            [val for val in self.__table_configs.values() if val.has_staged_data()]
+        )
+        while queue:
+            config = queue.popleft()
+
+            config.perform_cached_inheritances()
+
+            for inheritance in config.local_inheritances(self):
+                if not inheritance.is_ready():
+                    queue.append(config)
+                    continue
+
+            # if the configuration does not have external inheritances
+            if not next(config.external_inheritances(self), None):
+                config.table.data.commit()
+
+                if config.savable():
+                    saved_data = config.table.save(persist_data=True)
+            else:
+                nested_configs.append(config)
+
+        # for table, inheritances in unsaved_configs.items():
+        for config in nested_configs:
             for inheritance in config.external_inheritances(self):
-                inheritance.web_page.save_page()
+                inheritance.web_page.process(query_args=query_args)
+                data = inheritance.perform()
+                data = config.table.serializer.post_validate(data)
+                config.table.data.update(data)
+
+            config.table.data.commit()
+
+            if config.savable():
+                saved_data = config.table.save(persist_data=True)
 
     def forward_pass(self, query_args: Optional[QueryArgs]):
         """
         Perform a single pass through of a dataset using specific query args and
         nesting inside nested web pages.
         """
-        # Downloads the data for the specific query
-        self.download_query(query_args=query_args)
+        if self.is_query_stale(query_args):
+            # Downloads the data for the specific query
+            self.download_query(query_args)
 
-        # if self.data_source
-        if self.is_cached():
-            pass
+            # TODO: temporary solution instead while not using inheritances
+            for table in self.__tables:
+                table.data.commit()
+
+            self.logger.debug("")
+            self.save()
+            self.log_query(query_args)
 
         else:
+            self.logger.debug(f"-> Query pulled from cache.")
 
-            # if self.nested_web_pages:
-            #     self.logger.debug(
-            #         f"\nNested web pages: {generate_bulleted_list(self.nested_web_pages)}\n"
-            #     )
+        # This should be able to be done within the nested web page itself, but for now we will
+        # leave it here
+        self.load_query(query_args=query_args)
+        for table in self.__tables:
+            table.data.commit()
 
-            nested_configs: list[WebTableConfig] = []
-
-            # create a queue of table configs that have data to be saved
-            queue = deque(
-                [val for val in self.__table_configs.values() if val.has_staged_data()]
+        if self.nested_web_pages:
+            self.logger.debug(
+                f"\nNested web pages: {generate_bulleted_list(self.nested_web_pages)}\n"
             )
-            while queue:
-                config = queue.popleft()
 
-                config.perform_cached_inheritances()
-
-                for inheritance in config.local_inheritances(self):
-                    if not inheritance.is_ready():
-                        queue.append(config)
-                        continue
-
-                # if the configuration does not have external inheritances
-                if not next(config.external_inheritances(self), None):
-                    config.table.data.commit()
-
-                    if config.savable():
-                        saved_data = config.table.save(persist_data=True)
-                else:
-                    nested_configs.append(config)
-
-            # for table, inheritances in unsaved_configs.items():
-            for config in nested_configs:
-                for inheritance in config.external_inheritances(self):
-                    inheritance.web_page.process(query_args=query_args)
-                    data = inheritance.perform()
-                    data = config.table.serializer.post_validate(data)
-                    config.table.data.update(data)
-
-                config.table.data.commit()
-
-                if config.savable():
-                    saved_data = config.table.save(persist_data=True)
-
-            self.save_page()
-
-            for web_page in self.nested_web_pages:
-                web_page.process(query_args=query_args)
+        for web_page in self.nested_web_pages:
+            self.logger.debug(
+                f"Running nested web page {web_page} with base query {generate_inline_list(query_args)}"  # type:ignore
+            )
+            self.logger.debug(
+                f"+++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
+            )
+            web_page.process(query_args=query_args)
+            self.logger.debug(
+                f"\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+            )
 
         self.clear_cache()
 
@@ -673,27 +719,56 @@ class BaseWebPage(
 
         idx, n = 0, len(query_set)
         for query in query_set:
-            # if self.RUNNING == False:
-            #     break
             self.logger.debug(
                 f"\n---------------------------------------------------------\n"
             )
 
             self.process_query(query)
-            idx += 1
-
-            self.logger.debug(f"\n...{round(idx/n * 100, 2)}% ({self.name})")
-
             self.logger.debug(
                 f"\n---------------------------------------------------------\n"
             )
+
+            idx += 1
+            self.logger.debug(f"...{round(idx/n * 100, 2)}% ({self.name})")
+
+    # def is_cached(self):
+    #     return self.data_source == "cached"
+
+    def save(self) -> None:
+        """
+        Recursively save all savable tables on the page and any externally inherited
+        pages.
+        """
+        for config in self.__table_configs.values():
+
+            if config.savable():  # and not config.table.is_cached():
+                try:
+                    num_records = len(config.table.data.commits)
+
+                    config.table.save()
+                    self.logger.info(
+                        f"+ Saved {num_records} record(s) to database for table {config.table.name}."
+                    )
+                except StageEmpty:
+                    self.logger.info(f"* No commits to save for {config.table.name}.")
+
+            for inheritance in config.external_inheritances(self):
+                inheritance.web_page.save()
+
+    def clear_cache(self) -> None:
+        """
+        Clear all staged changes for the tables.
+        """
+        for table in self.__tables:
+            table.data.reset()
+            table.data.unstage()
 
 
 class NestedWebPage(BaseWebPage):
 
     def __init__(
         self,
-        query: str,
+        url_query_path: str,
         query_set_provider: Callable[["BaseWebPage"], list[dict[str, str]]],
         *,
         name: str,
@@ -705,9 +780,9 @@ class NestedWebPage(BaseWebPage):
         if source_page:
             # Create the base url from the sources base url and the sub url
             parent_endpoint = source_page._base_download_url.strip("/")
-            base_download_url = "/".join([parent_endpoint, query])
+            base_download_url = "/".join([parent_endpoint, url_query_path])
         else:
-            base_download_url = query
+            base_download_url = url_query_path
 
         self.__source_page = source_page
         self.query_set_provider = query_set_provider

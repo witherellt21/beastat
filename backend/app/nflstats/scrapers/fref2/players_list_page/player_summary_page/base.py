@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from scrapp.core.dataframes import BaseDataframeValidator
 from scrapp.core.dataframes.serializers.fields import (
@@ -7,7 +8,8 @@ from scrapp.core.dataframes.serializers.fields import (
     TransformationField,
 )
 
-from .util import extract_season_as_int_or_none, extract_team_from_team_link
+from ..util import extract_team_from_team_link
+from .util import extract_season_as_int_or_none
 
 
 class BaseSplitsDataframeValidator(BaseDataframeValidator):
@@ -23,7 +25,9 @@ class BaseSplitsDataframeValidator(BaseDataframeValidator):
     )
 
     pos = CharField(from_column="Unnamed: 4_level_0_Pos")
-    gp = IntegerField(from_column="Unnamed: 5_level_0_G")
+    gp = IntegerField(from_column="Unnamed: 5_level_0_G", replace_values={"0": np.nan})
+
+    NAN_VALUES = [r"Did not play"]
 
     def preprocess(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -49,7 +53,7 @@ class BaseSplitsDataframeValidator(BaseDataframeValidator):
                 age = row[age_column]
                 df = df.drop(index)
 
-            elif split_seasons:
+            elif split_seasons and row[team_column]:
                 if not df.loc[index, season_column]:  # type: ignore
                     df.loc[index, season_column] = season  # type: ignore
 

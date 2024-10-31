@@ -5,9 +5,11 @@ from .models import (
     NFLKickAndPuntReturnSplitsTable,
     NFLOffensiveLinePenaltiesSplitsTable,
     NFLPassingSplitsTable,
+    NFLPlayerGameLogs,
     NFLPlayersTable,
     NFLRushingAndReceivingSplitsTable,
     NFLTeamsTable,
+    ScraperPageDownloadsTable,
 )
 
 tables.schema.register(NFLTeamsTable())
@@ -17,3 +19,5 @@ tables.schema.register(NFLRushingAndReceivingSplitsTable())
 tables.schema.register(NFLDefensiveSplitsTable())
 tables.schema.register(NFLPassingSplitsTable())
 tables.schema.register(NFLOffensiveLinePenaltiesSplitsTable())
+tables.schema.register(NFLPlayerGameLogs())
+tables.schema.register(ScraperPageDownloadsTable())

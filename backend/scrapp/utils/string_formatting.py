@@ -2,7 +2,7 @@ from typing import Literal
 
 
 def generate_bulleted_list(
-    input: dict | list, bullet_type: Literal["-", "num"] = "-"
+    input: dict | list, bullet_type: Literal["-", "num"] = "-", indentation: int = 3
 ) -> str:
     """
     Format a dictionary's attributes out in a list-like display.
@@ -12,13 +12,15 @@ def generate_bulleted_list(
     else:
         bullets = [bullet_type] * len(input)
 
+    indent = " " * indentation
+
     idx, res_str = 0, ""
     for inp in input:
         if type(input) == dict:
-            res_str += f"\n\t{bullets[idx]} {inp} = {input[inp]}"
+            res_str += f"\n{indent}{bullets[idx]} {inp} = {input[inp]}"
 
         elif type(input) == list:
-            res_str += f"\n\t{bullets[idx]} {inp}"
+            res_str += f"\n{indent}{bullets[idx]} {inp}"
         idx += 1
 
     return res_str

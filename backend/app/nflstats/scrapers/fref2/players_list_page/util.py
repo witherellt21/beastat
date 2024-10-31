@@ -1,6 +1,17 @@
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup, element
+from scrapp.scraper.web_page import BaseWebPage
+from scrapp.tables import schema
+
+
+def extract_team_from_team_link(link: str) -> str:
+    team_id = link.rsplit("/", 2)[1].split(".")[0]
+
+    # Will throw error if the team does not exist in which case we have an issue
+    schema.table("nflteams").get_record({"id": team_id})
+
+    return team_id
 
 
 def get_player_list_page_tables(url: str) -> list[pd.DataFrame]:
@@ -36,7 +47,7 @@ def get_player_list_page_tables(url: str) -> list[pd.DataFrame]:
         if not player_link:
             return []
 
-        player_id = player_link.rsplit("/", 1)[1].split(".", 1)[0]
+        player_id = player_link.rsplit("/", 1)[1].rsplit(".", 1)[0]
 
         name, rem = player_data.split("(")
         position, seasons = rem.split(")")
@@ -60,3 +71,14 @@ def get_player_list_page_tables(url: str) -> list[pd.DataFrame]:
         df_index += 1
 
     return [dataframe]
+
+
+def get_player_ids_from_players_info(web_page: BaseWebPage):
+    query_set = [
+        {"player_id": player_id}
+        for player_id in web_page.table_configs["NFLPlayersInfo"]
+        .table.data.commits["id"]
+        .values
+    ]
+
+    return query_set

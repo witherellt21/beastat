@@ -9,24 +9,25 @@ from scrapp.core.dataframes.serializers.fields import (
 from scrapp.scraper import DataframeController
 from scrapp.tables import schema
 
+from ..util import extract_team_from_team_link
 from .base import BaseSplitsDataframeValidator
-from .util import extract_season_as_int_or_none, extract_team_from_team_link
+from .util import extract_season_as_int_or_none
 
 
 class KickAndPuntReturnSplitsDataframeValidator(BaseSplitsDataframeValidator):
 
     player_id = StaticField(str)
     season = TransformationField(
-        int, extract_season_as_int_or_none, from_columns=["Unnamed: 0_level_0_Year"]
+        int, extract_season_as_int_or_none, from_columns=["Unnamed_Year"]
     )
-    age = IntegerField(from_column="Unnamed: 1_level_0_Age")
+    age = IntegerField(from_column="Unnamed_Age")
     team_id = TransformationField(
         str,
         extract_team_from_team_link,
-        from_columns=["Unnamed: 2_level_0_Tm_link"],
+        from_columns=["Unnamed_Tm_link"],
     )
-    pos = CharField(from_column="Unnamed: 3_level_0_Pos")
-    gp = IntegerField(from_column="Games_G", replace_values={0: np.nan})
+    pos = CharField(from_column="Unnamed_Pos")
+    gp = IntegerField(from_column="Games_G", replace_values={"0": np.nan})
 
     pr = IntegerField(from_column="Punt Returns_Ret", replace_values={"": 0})
     pr_yards = IntegerField(from_column="Punt Returns_Yds", replace_values={"": 0})

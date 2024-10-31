@@ -1,4 +1,5 @@
 import numpy as np
+from pandas import DataFrame
 from scrapp.core.dataframes.serializers import (
     CharField,
     FloatField,
@@ -9,25 +10,26 @@ from scrapp.core.dataframes.serializers import (
 from scrapp.scraper import DataframeController
 from scrapp.tables import schema
 
+from ..util import extract_team_from_team_link
 from .base import BaseSplitsDataframeValidator
-from .util import extract_season_as_int_or_none, extract_team_from_team_link
+from .util import extract_season_as_int_or_none
 
 
 class RushingAndReceivingSplitsHTMLTableSerializer(BaseSplitsDataframeValidator):
     player_id = StaticField(str)
     season = TransformationField(
-        int, extract_season_as_int_or_none, from_columns=["Unnamed: 0_level_0_Season"]
+        int, extract_season_as_int_or_none, from_columns=["Unnamed_Season"]
     )
-    age = IntegerField(from_column="Unnamed: 1_level_0_Age")
+    age = IntegerField(from_column="Unnamed_Age")
     team_id = TransformationField(
         str,
         extract_team_from_team_link,
-        from_columns=["Unnamed: 2_level_0_Team_link"],
+        from_columns=["Unnamed_Team_link"],
     )
 
-    pos = CharField(from_column="Unnamed: 4_level_0_Pos")
-    gp = IntegerField(from_column="Unnamed: 5_level_0_G", replace_values={0: np.nan})
-    gs = IntegerField(from_column="Unnamed: 6_level_0_GS")
+    pos = CharField(from_column="Unnamed_Pos")
+    gp = IntegerField(from_column="Unnamed_G", replace_values={"0": np.nan})
+    gs = IntegerField(from_column="Unnamed_GS")
 
     rush = IntegerField(from_column="Rushing_Att")
     rush_yds = IntegerField(from_column="Rushing_Yds")
@@ -51,8 +53,6 @@ class RushingAndReceivingSplitsHTMLTableSerializer(BaseSplitsDataframeValidator)
     rec_yds_per_game = FloatField(from_column="Receiving_Y/G", default=None, null=True)
     catch_perc = FloatField(from_column="Receiving_Ctch%", default=None, null=True)
     yds_per_target = FloatField(from_column="Receiving_Y/Tgt", default=None, null=True)
-
-    NAN_VALUES = [r"Did not play"]
 
 
 table = DataframeController(
